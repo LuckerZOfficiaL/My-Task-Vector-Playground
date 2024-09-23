@@ -16,6 +16,9 @@ def pretify_classname(classname):
 
 class EuroSATBase:
     def __init__(self, preprocess, test_split, location="~/datasets", batch_size=32, num_workers=16):
+        
+        self.preprocess = preprocess
+
         # Data loading code
         traindir = os.path.join(location, "EuroSAT_splits", "train")
         testdir = os.path.join(location, "EuroSAT_splits", test_split)
@@ -59,3 +62,18 @@ class EuroSAT(EuroSATBase):
 class EuroSATVal(EuroSATBase):
     def __init__(self, preprocess, location="~/datasets", batch_size=32, num_workers=16):
         super().__init__(preprocess, "val", location, batch_size, num_workers)
+
+        """
+        This may not make sense, as we are assigning the test split to the val loader
+        but it is the same "trick" that we had to use in regitry.py.
+        Check the comment there to see that is happening
+        """
+
+        valdir = os.path.join(location, "EuroSAT_splits", "test")
+        self.val_dataset = datasets.ImageFolder(valdir, transform=preprocess)
+        self.val_loader = torch.utils.data.DataLoader(
+            self.val_dataset, batch_size=batch_size, num_workers=num_workers
+        )
+
+        
+
