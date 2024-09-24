@@ -24,12 +24,13 @@ eval_datasets:
 - RESISC45
 - SVHN
 eval_on_train: false
+finetuning_method: valft
 misc:
   cache_dir: null
   ckpt_path: ${oc.env:PROJECT_ROOT}/checkpoints/${nn.module.model.model_name}
   openclip_cachedir: ${oc.env:PROJECT_ROOT}/checkpoints/openclip_cache
   pretrained_checkpoint: ${misc.ckpt_path}/zeroshot.pt
-order: 1
+order: 3
 seed_index: 0
 task_vectors:
   aggregator:
@@ -38,7 +39,7 @@ task_vectors:
   breadcrumbs_beta: 0.85
   breadcrumbs_gamma: 0.993
   dare_rate: 0.9
-  merging_method: pcgrad
+  merging_method: normal
   num_task_vectors: 8
   orthogonalize: false
   scaling_coefficient: 1

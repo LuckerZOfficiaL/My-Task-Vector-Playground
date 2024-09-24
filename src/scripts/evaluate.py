@@ -50,9 +50,6 @@ torch.set_float32_matmul_precision("high")
 
 
 def run(cfg: DictConfig) -> str:
-    epochs = cfg.epochs
-    order = cfg.order
-
     num_to_th = {
     1: "st",
     2: "nd",
@@ -110,10 +107,10 @@ def run(cfg: DictConfig) -> str:
     logger: NNLogger = NNLogger(logging_cfg=cfg.train.logging, cfg=cfg, resume_id=template_core.resume_id)
 
 
-    if order == 1:
+    if cfg.order == 1:
         zeroshot_identifier = f"{cfg.nn.module.model.model_name}_pt"
     else:
-        zeroshot_identifier = f"{cfg.nn.module.model.model_name}_{cfg.task_vectors.merging_method}_{cfg.epochs}Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_{cfg.seed_index}" 
+        zeroshot_identifier = f"{cfg.nn.module.model.model_name}_{cfg.task_vectors.merging_method}_{cfg.finetuning_method}_{cfg.epochs}Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_{cfg.seed_index}" 
     zeroshot_model = load_model_from_artifact(artifact_path=f"{zeroshot_identifier}:latest", run=logger.experiment)
 
     #finetuned_id_fn = lambda dataset: f"{cfg.nn.module.model.model_name}_{dataset}_{cfg.seed_index}_PosthocClipAndTrain0.1:v0" 
@@ -126,7 +123,7 @@ def run(cfg: DictConfig) -> str:
     #finetuned_id_fn = lambda dataset: f"{cfg.nn.module.model.model_name}_{dataset}_{cfg.seed_index}:v0"
     #finetuned_id_fn = lambda dataset: f"{cfg.nn.module.model.model_name}_{dataset}_{cfg.seed_index}_10Eps1stOrder:latest"
     #finetuned_id_fn = lambda dataset: f"{cfg.nn.module.model.model_name}_{dataset}_{cfg.seed_index}_2Eps{cfg.order}{num_to_th[cfg.order]}Order:latest"
-    finetuned_id_fn = lambda dataset: f"{cfg.nn.module.model.model_name}_{dataset}_{cfg.seed_index}_{cfg.task_vectors.merging_method}_{cfg.epochs}Eps{order}{num_to_th[order]}Order:latest"
+    finetuned_id_fn = lambda dataset: f"{cfg.nn.module.model.model_name}_{dataset}_{cfg.seed_index}_{cfg.task_vectors.merging_method}_{cfg.finetuning_method}_{cfg.epochs}Eps{cfg.order}{num_to_th[cfg.order]}Order:latest"
 
     finetuned_models = {
         dataset: load_model_from_artifact(artifact_path=finetuned_id_fn(dataset), run=logger.experiment)
@@ -204,7 +201,7 @@ def run(cfg: DictConfig) -> str:
     #artifact_name = f"{cfg.nn.module.model.model_name}_10Eps_UnifiedModel_{cfg.seed_index}"
     #artifact_name = f"{cfg.nn.module.model.model_name}_TIEScrumbs10EpsUnifiedModel_{cfg.seed_index}"
     #Eps{cfg.order}{num_to_th[cfg.order]}
-    artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.task_vectors.merging_method}_{epochs}Eps{order}{num_to_th[order]}OrderUnifiedModel_{cfg.seed_index}"
+    artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.task_vectors.merging_method}_{cfg.finetuning_method}_{cfg.epochs}Eps{cfg.order}{num_to_th[cfg.order]}OrderUnifiedModel_{cfg.seed_index}"
     metadata = {"model_name": f"{cfg.nn.module.model.model_name}", "model_class": "tvp.modules.encoder.ImageEncoder"}
     upload_model_to_wandb(task_equipped_model, artifact_name, logger.experiment, cfg, metadata)
 
