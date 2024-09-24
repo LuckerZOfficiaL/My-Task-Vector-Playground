@@ -158,11 +158,16 @@ def run(cfg: DictConfig):
     if cfg.ft_on_data_split == "train":
         ft_dataloader = dataset.train_loader
     elif cfg.ft_on_data_split == "val":
-        ft_dataloader = dataset.val_loader
+        ft_dataloader = dataset.test_loader
     else:
         raise ValueError(f"Unknown data split to fine-tune on: {cfg.ft_on_data_split}. Possible values: \"train\" or \"val\"")
     
+    print("\n\n")
+    pylogger.info("Finetuning on {} data split!".format(cfg.ft_on_data_split))
+    pylogger.info("len(dataset.train_loader.dataset): {}".format(len(dataset.train_loader.dataset)))
+    pylogger.info("len(dataset.test_loader.dataset): {}".format(len(dataset.test_loader.dataset)))
     trainer.fit(model=model, train_dataloaders=ft_dataloader, ckpt_path=template_core.trainer_ckpt_path)
+    print("\n\n")
 
     pylogger.info("Starting testing!")
     trainer.test(model=model, dataloaders=dataset.test_loader)

@@ -242,6 +242,12 @@ def run(cfg: DictConfig) -> str:
             **cfg.train.trainer,
         )
 
+        print("\n\n")
+        pylogger.info("Finetuning on {} data split!".format(cfg.ft_on_data_split))
+        pylogger.info("len(dataset.train_loader.dataset): {}".format(len(dataset.train_loader.dataset)))
+        pylogger.info("len(dataset.test_loader.dataset): {}".format(len(dataset.test_loader.dataset)))
+        print("\n\n")
+
         # Evaluation
         if cfg.eval_on_train:
             pylogger.info("Evaluating on the training set")
