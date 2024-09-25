@@ -243,7 +243,6 @@ def run(cfg: DictConfig) -> str:
         )
 
         print("\n\n")
-        pylogger.info("Finetuning on {} data split!".format(cfg.ft_on_data_split))
         pylogger.info("len(dataset.train_loader.dataset): {}".format(len(dataset.train_loader.dataset)))
         pylogger.info("len(dataset.test_loader.dataset): {}".format(len(dataset.test_loader.dataset)))
         print("\n\n")
