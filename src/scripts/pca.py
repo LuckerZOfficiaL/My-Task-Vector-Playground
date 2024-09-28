@@ -126,10 +126,10 @@ def run():
     labels = ['', '', '', ''] + [f'{i+1}{num_to_th[i+1]}' for i in range(hota_arr.shape[0])]
 
     # Grouping information (assign a group ID to each array)
-    group_ids = ['Pretrained'] * pt_arr.shape[0] + ['Task Arithmetic'] * tva_arr.shape[0] + ['TIES'] * ties_arr.shape[0] + ['Breadcrumbs'] * bc_arr.shape[0] + ['HOTA'] * hota_arr.shape[0]
+    group_ids = ['Pretrained'] * pt_arr.shape[0] + ['Task Arithmetic'] * tva_arr.shape[0] + ['TIES'] * ties_arr.shape[0] + ['Breadcrumbs'] * bc_arr.shape[0] + ['ATM'] * hota_arr.shape[0]
 
     # Assign colors to each group
-    colors = {'Pretrained': 'black', 'Task Arithmetic': 'orange', 'TIES': 'blue', 'Breadcrumbs': 'green', 'HOTA': 'red'}
+    colors = {'Pretrained': 'black', 'Task Arithmetic': 'orange', 'TIES': 'blue', 'Breadcrumbs': 'green', 'ATM': 'red'}
 
     pca = PCA(n_components=2)
     data_2d = pca.fit_transform(collective_arr)
