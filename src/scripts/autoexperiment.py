@@ -7,7 +7,7 @@ import subprocess
 epochs = 1
 desired_orders = 10
 merging_method = "normal"
-finetuning_method = "valft"
+finetuning_method = "normal"
 
 yaml_file = "conf/nn/data/default.yaml"
 ft_conf_file = "conf/finetune.yaml"
@@ -22,7 +22,7 @@ for order in range(1, desired_orders+1):
             config['order'] = order
             config['merging_method'] = merging_method
             config['finetuning_method'] = finetuning_method
-            config['ft_on_data_split'] = "train" if order == 1 else "val"
+            config['ft_on_data_split'] = "train"
             print(config)
     with open(ft_conf_file, "w") as file:
         yaml.dump(config, file)

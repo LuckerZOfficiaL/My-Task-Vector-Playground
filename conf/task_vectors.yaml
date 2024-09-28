@@ -1,3 +1,7 @@
+clipping:
+  clipping_method: avg
+  fixed_clipping_norm: None
+  use_clipping: true
 conventions:
   x_key: x
   y_key: y
@@ -24,13 +28,17 @@ eval_datasets:
 - RESISC45
 - SVHN
 eval_on_train: false
-finetuning_method: valft
+finetuning_method: normal
 misc:
   cache_dir: null
   ckpt_path: ${oc.env:PROJECT_ROOT}/checkpoints/${nn.module.model.model_name}
   openclip_cachedir: ${oc.env:PROJECT_ROOT}/checkpoints/openclip_cache
   pretrained_checkpoint: ${misc.ckpt_path}/zeroshot.pt
-order: 3
+momentum:
+  momentum_coeff: 0.9
+  momentum_method: unified
+  use_momentum: true
+order: 5
 seed_index: 0
 task_vectors:
   aggregator:

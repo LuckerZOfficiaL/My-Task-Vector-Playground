@@ -15,15 +15,16 @@ defaults:
 - _self_
 epoch_divisor: None
 epochs: 1
-ft_on_data_split: train
-merging_method: pcgrad
+finetuning_method: normal
+ft_on_data_split: val
+merging_method: normal
 misc:
   cache_dir: null
   ckpt_path: ${oc.env:PROJECT_ROOT}/checkpoints/${nn.module.model.model_name}
   openclip_cachedir: ${oc.env:PROJECT_ROOT}/checkpoints/openclip_cache
   pretrained_checkpoint: ${misc.ckpt_path}/zeroshot.pt
   save_pretrained: false
-order: 1
+order: 5
 reset_classification_head: true
 reset_pretrained_model: false
 seed_index: 0
