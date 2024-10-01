@@ -17,6 +17,9 @@ from tvp.data.datamodule import MetaData
 from tvp.data.datasets.common import maybe_dictionarize
 from tvp.utils.utils import torch_load, torch_save
 
+import wandb
+import os
+
 pylogger = logging.getLogger(__name__)
 
 
@@ -51,6 +54,7 @@ class ImageClassifier(pl.LightningModule):
         self.stage = None
 
         self.save_grad_norms = kwargs.get("save_grad_norms", False)
+        self.save_grads_dir = kwargs.get("save_grads_dir", None)
     
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -108,6 +112,8 @@ class ImageClassifier(pl.LightningModule):
 
     def on_train_epoch_end(self):
 
+        # BEGIN save grad norms stuff
+
         if self.save_grad_norms:
        
             pylogger.info(f"\n\nEpoch {self.current_epoch}: Batch gradient norms: {self.batch_gradient_norms}\n\n")
@@ -122,6 +128,60 @@ class ImageClassifier(pl.LightningModule):
 
                 pylogger.info(f"\n\nEpoch {self.current_epoch}: Average gradient norm: {average_gradient_norm}")
                 pylogger.info(f"Epoch {self.current_epoch}: {self.epoch_gradient_norms}\n\n")
+
+        # END save grad norms stuff
+
+        # BEGIN save grad stuff
+
+        if self.save_grads_dir is not None:
+            
+            all_grads = []
+
+            # Get gradients from self.encoder, even if it's an external object or custom module
+            for param in getattr(self.encoder, 'parameters', lambda: [])():
+                if param.grad is not None:
+                    all_grads.append(param.grad.view(-1))  # Flatten and store the gradient
+
+            # Get gradients from self.classification_head, even if it's an external object or custom module
+            for param in getattr(self.classification_head, 'parameters', lambda: [])():
+                if param.grad is not None:
+                    all_grads.append(param.grad.view(-1))  # Flatten and store the gradient
+
+            # Handle any additional external parameters (if they are tensors directly and not modules)
+            for param in getattr(self.encoder, 'extra_params', []):
+                if isinstance(param, torch.Tensor) and param.grad is not None:
+                    all_grads.append(param.grad.view(-1))  # Flatten and store the gradient
+
+            for param in getattr(self.classification_head, 'extra_params', []):
+                if isinstance(param, torch.Tensor) and param.grad is not None:
+                    all_grads.append(param.grad.view(-1))  # Flatten and store the gradient
+
+            
+            if all_grads:  # If there are gradients to log
+                model_grads = torch.cat(all_grads)  # Combine all gradients into a single tensor
+                
+                # Save the combined tensor to disk
+                epoch_str = f"{self.current_epoch:02d}"
+                save_path = os.path.join(self.save_grads_dir, f"model_grads_epoch_{epoch_str}.pt")
+                torch.save(model_grads, save_path)
+                print(f"Saved combined gradients to {save_path}")
+                print(f"\n\nCombined gradients tensor shape: {model_grads.shape}\n\n")
+
+                # Log the combined gradient tensor statistics to W&B
+                # self.log(
+                #     "combined_gradients/histogram",
+                #     wandb.Histogram(model_grads.cpu().numpy())
+                # )
+                
+                # # Log the saved tensor file to W&B as an artifact
+                # artifact = wandb.Artifact(f"model_grads_epoch_{epoch_str}", type="gradient")
+                # artifact.add_file(save_path)
+                # wandb.log_artifact(artifact)
+        
+        # END save grad stuff
+
+        
+        
 
     def _step(self, batch: Dict[str, torch.Tensor], split: str) -> Mapping[str, Any]:
         batch = maybe_dictionarize(batch, self.hparams.x_key, self.hparams.y_key)

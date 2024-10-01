@@ -131,9 +131,23 @@ def run(cfg: DictConfig):
             run=logger.experiment
         )
 
+    if cfg.train.save_grads:
+        save_grads_dir = os.path.join(
+            cfg.train.save_grads_dir, 
+            f"{cfg.nn.module.model.model_name}", 
+            f"{cfg.nn.data.dataset.dataset_name}",
+            f"{logger._experiment.id}",
+        )
+
+        os.makedirs(save_grads_dir, exist_ok=True)
+
+        pylogger.info(f"Saving grad norms to {save_grads_dir}")
+    else:
+        save_grads_dir = None
+
     model: ImageClassifier = hydra.utils.instantiate(
         cfg.nn.module, encoder=image_encoder, classifier=classification_head, _recursive_=False, 
-        save_grad_norms=cfg.train.save_grad_norms
+        save_grad_norms=cfg.train.save_grad_norms, save_grads_dir=save_grads_dir
     )
 
     dataset = get_dataset(

@@ -18,7 +18,7 @@ defaults:
 - train: default
 - _self_
 epoch_divisor: None
-epochs: 1
+epochs: -6969
 eval_datasets:
 - CIFAR100
 - DTD

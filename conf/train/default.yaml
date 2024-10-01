@@ -3,6 +3,8 @@ seed_index: 0
 deterministic: False
 
 save_grad_norms: False
+save_grads: true
+save_grads_dir: grads
 
 trainer:
   fast_dev_run: False

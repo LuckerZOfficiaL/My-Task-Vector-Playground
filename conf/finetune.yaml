@@ -1,4 +1,4 @@
-accumulate_grad_batches: False
+accumulate_grad_batches: false
 conventions:
   x_key: x
   y_key: y
@@ -15,7 +15,7 @@ defaults:
 - train: default
 - _self_
 epoch_divisor: None
-epochs: 1
+epochs: -6969
 finetuning_method: normal
 ft_on_data_split: train
 merging_method: normal
