@@ -1,3 +1,4 @@
+accumulate_grad_batches: False
 conventions:
   x_key: x
   y_key: y
@@ -16,7 +17,7 @@ defaults:
 epoch_divisor: None
 epochs: 1
 finetuning_method: normal
-ft_on_data_split: val
+ft_on_data_split: train
 merging_method: normal
 misc:
   cache_dir: null
@@ -24,7 +25,7 @@ misc:
   openclip_cachedir: ${oc.env:PROJECT_ROOT}/checkpoints/openclip_cache
   pretrained_checkpoint: ${misc.ckpt_path}/zeroshot.pt
   save_pretrained: false
-order: 5
+order: 1
 reset_classification_head: true
 reset_pretrained_model: false
 seed_index: 0

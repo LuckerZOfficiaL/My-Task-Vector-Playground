@@ -1,7 +1,7 @@
 clipping:
   clipping_method: avg
   fixed_clipping_norm: None
-  use_clipping: true
+  use_clipping: false
 conventions:
   x_key: x
   y_key: y
@@ -35,10 +35,10 @@ misc:
   openclip_cachedir: ${oc.env:PROJECT_ROOT}/checkpoints/openclip_cache
   pretrained_checkpoint: ${misc.ckpt_path}/zeroshot.pt
 momentum:
-  momentum_coeff: 0.9
+  momentum_coeff: 0.2
   momentum_method: unified
-  use_momentum: true
-order: 5
+  use_momentum: false
+order: 1
 seed_index: 0
 task_vectors:
   aggregator:

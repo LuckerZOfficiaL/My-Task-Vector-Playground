@@ -2,6 +2,8 @@
 seed_index: 0
 deterministic: False
 
+save_grad_norms: False
+
 trainer:
   fast_dev_run: False
   accelerator: 'gpu'

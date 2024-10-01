@@ -45,6 +45,14 @@ class ImageClassifier(pl.LightningModule):
         self.classification_head = classifier
         self.encoder.create_tv_mask() # call this to create the TV sparsity mask in the encoder, the mask is applied to the gradient to prevent pruned weights from updating
 
+        self.batch_gradient_norms = []  # Store gradient norms for each batch
+        self.epoch_gradient_norms = []  # Store average gradient norms per epoch
+
+        self.stage = None
+
+        self.save_grad_norms = kwargs.get("save_grad_norms", False)
+    
+    
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Method for the forward pass.
 
@@ -59,6 +67,61 @@ class ImageClassifier(pl.LightningModule):
         logits = self.classification_head(embeddings)
 
         return logits
+    
+    def on_val_epoch_start(self):
+        self.stage = "val"
+    
+    def on_test_epoch_start(self):
+        self.stage = "test"
+    
+    def on_train_epoch_start(self):
+        self.stage = "train"
+
+        if self.save_grad_norms:
+
+            # Clear batch gradient norms at the start of each epoch
+            self.batch_gradient_norms.clear()
+
+    def on_after_backward(self):
+
+        if self.stage != "train":
+            return
+
+        if self.save_grad_norms:
+
+            # Calculate and store gradient norms for the current batch
+            total_norm = 0
+            
+            # Loop through parameters in encoder and classification head
+            for component in [self.encoder, self.classification_head]:
+                for p in component.parameters():
+                    if p.grad is not None:
+                        param_norm = p.grad.data.norm(2)  # Calculate L2 norm of gradients
+                        total_norm += param_norm.item() ** 2
+                        
+            total_norm = total_norm ** 0.5
+            # Store batch-level gradient norm
+            self.batch_gradient_norms.append(total_norm)
+            
+            # Log the batch-level gradient norm
+            self.log('grad_norm_batch', total_norm, on_step=True, on_epoch=False, prog_bar=False)
+
+    def on_train_epoch_end(self):
+
+        if self.save_grad_norms:
+       
+            pylogger.info(f"\n\nEpoch {self.current_epoch}: Batch gradient norms: {self.batch_gradient_norms}\n\n")
+            
+            # Calculate the average gradient norm for the entire epoch
+            if len(self.batch_gradient_norms) > 0:
+                average_gradient_norm = sum(self.batch_gradient_norms) / len(self.batch_gradient_norms)
+                self.epoch_gradient_norms.append(average_gradient_norm)
+                
+                # Log the average gradient norm for the epoch
+                self.log('grad_norm_epoch', average_gradient_norm, on_epoch=True, prog_bar=False)
+
+                pylogger.info(f"\n\nEpoch {self.current_epoch}: Average gradient norm: {average_gradient_norm}")
+                pylogger.info(f"Epoch {self.current_epoch}: {self.epoch_gradient_norms}\n\n")
 
     def _step(self, batch: Dict[str, torch.Tensor], split: str) -> Mapping[str, Any]:
         batch = maybe_dictionarize(batch, self.hparams.x_key, self.hparams.y_key)

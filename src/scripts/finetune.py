@@ -26,6 +26,8 @@ from tvp.pl_module.image_classifier import ImageClassifier
 from tvp.utils.io_utils import get_class, load_model_from_artifact
 from tvp.utils.utils import LabelSmoothing, build_callbacks
 
+from math import ceil
+
 pylogger = logging.getLogger(__name__)
 torch.set_float32_matmul_precision("high")
 
@@ -85,7 +87,8 @@ def run(cfg: DictConfig):
         #zeroshot_identifier = f"{cfg.nn.module.model.model_name}_{cfg.epochs}Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_0" 
         # zeroshot_identifier = f"{cfg.nn.module.model.model_name}_{cfg.merging_method}_{cfg.finetuning_method}_{cfg.epochs}Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_0"  
         # zeroshot_identifier = f"{cfg.nn.module.model.model_name}_{cfg.merging_method}_{cfg.finetuning_method}_avg_clipping_{cfg.epochs}Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_0"  
-        zeroshot_identifier = f"{cfg.nn.module.model.model_name}_{cfg.merging_method}_{cfg.finetuning_method}_unified_momentum_{cfg.epochs}Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_0"  
+        # zeroshot_identifier = f"{cfg.nn.module.model.model_name}_{cfg.merging_method}_{cfg.finetuning_method}_unified_momentum_{cfg.epochs}Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_0"  
+        zeroshot_identifier = f"{cfg.nn.module.model.model_name}_{cfg.merging_method}_{cfg.finetuning_method}_acc_grad_batches_{cfg.epochs}Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_0"  
 
 
     classification_head_identifier = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_head"
@@ -129,7 +132,8 @@ def run(cfg: DictConfig):
         )
 
     model: ImageClassifier = hydra.utils.instantiate(
-        cfg.nn.module, encoder=image_encoder, classifier=classification_head, _recursive_=False
+        cfg.nn.module, encoder=image_encoder, classifier=classification_head, _recursive_=False, 
+        save_grad_norms=cfg.train.save_grad_norms
     )
 
     dataset = get_dataset(
@@ -146,13 +150,20 @@ def run(cfg: DictConfig):
     storage_dir: str = cfg.core.storage_dir
 
     pylogger.info("Instantiating the <Trainer>")
+    
+    accumulate_grad_batches = 1 if cfg.accumulate_grad_batches == False else ceil(len(dataset.train_loader.dataset) / cfg.nn.data.batch_size.train)
+    if accumulate_grad_batches > 1:
+        pylogger.info(f"Accumulating gradients over {accumulate_grad_batches} batches")
+
     trainer = pl.Trainer(
         default_root_dir=storage_dir,
         plugins=[NNCheckpointIO(jailing_dir=logger.run_dir)],
         #max_epochs=int(cfg.nn.data.dataset.ft_epochs/cfg.epoch_divisor),
-        max_epochs=cfg.epochs,
+        # max_epochs=cfg.epochs,
+        max_epochs=cfg.nn.data.dataset.ft_epochs,
         logger=logger,
         callbacks=callbacks,
+        accumulate_grad_batches=accumulate_grad_batches,
         **cfg.train.trainer,
     )
 
@@ -182,7 +193,8 @@ def run(cfg: DictConfig):
     #artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_10Eps{cfg.order}{num_to_th[cfg.order]}Order"
     # artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_{cfg.merging_method}_{cfg.finetuning_method}_{cfg.epochs}Eps{cfg.order}{num_to_th[cfg.order]}Order"
     # artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_{cfg.merging_method}_{cfg.finetuning_method}_avg_clipping_{cfg.epochs}Eps{cfg.order}{num_to_th[cfg.order]}Order"
-    artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_{cfg.merging_method}_{cfg.finetuning_method}_unified_momentum_{cfg.epochs}Eps{cfg.order}{num_to_th[cfg.order]}Order"
+    # artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_{cfg.merging_method}_{cfg.finetuning_method}_unified_momentum_{cfg.epochs}Eps{cfg.order}{num_to_th[cfg.order]}Order"
+    artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_{cfg.merging_method}_{cfg.finetuning_method}_acc_grad_batches_{cfg.epochs}Eps{cfg.order}{num_to_th[cfg.order]}Order"
 
     model_class = get_class(image_encoder)
     
