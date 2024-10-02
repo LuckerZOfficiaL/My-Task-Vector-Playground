@@ -1,6 +1,7 @@
 import torch
 import os
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 import seaborn as sns
 import numpy as np
 import torch.nn.functional as F
@@ -121,7 +122,9 @@ def compute_cosine_similarity_lower_triangle(gradients):
 #     # Close the plot to free memory
 #     plt.close()
 
-def plot_cosine_similarity_matrix(cosine_sim_matrix, epoch_files, save_dir):
+def plot_cosine_similarity_matrix(
+        cosine_sim_matrix, epoch_files, save_dir, dataset
+    ):
     """
     Plot the cosine similarity matrix using a heatmap and save it to disk, showing only the
     lower triangular part along with the principal diagonal.
@@ -136,21 +139,30 @@ def plot_cosine_similarity_matrix(cosine_sim_matrix, epoch_files, save_dir):
     # Create a mask for the upper triangle only, excluding the diagonal
     mask = np.triu(np.ones_like(cosine_sim_matrix, dtype=bool), k=1)
 
+    # Extract the epoch numbers and create new tick labels in the format "epoch_xx"
+    tick_labels = [f"{int(file.split('_')[-1].split('.')[0])}" for file in epoch_files]
+
+    custom_cmap = sns.light_palette("#118AB2", as_cmap=True)
+
+    # Use the new labels in the heatmap
     sns.heatmap(
         cosine_sim_matrix,
         mask=mask,  # Apply the mask to hide the upper triangle but keep the diagonal
-        xticklabels=epoch_files,
-        yticklabels=epoch_files,
+        xticklabels=tick_labels,  # Use formatted labels
+        yticklabels=tick_labels,  # Use formatted labels
         annot=True,
         fmt=".2f",
-        cmap="coolwarm"
+        cmap=custom_cmap,
+        # cmap="coolwarm",
+        cbar=False
     )
-    plt.title("Cosine Similarity Matrix of Gradients Across Epochs (Lower Triangular + Diagonal)")
+
+    plt.title(f"{dataset}\nGradients Cosine Similarity Across Epochs")
     plt.xlabel("Epoch")
     plt.ylabel("Epoch")
 
     # Define the save path for the heatmap image
-    save_path = os.path.join(save_dir, "cosine_similarity_heatmap.png")
+    save_path = os.path.join(save_dir, f"{dataset}_cosine_similarity_heatmap.png")
 
     # Save the heatmap with higher DPI (e.g., 300 DPI)
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
@@ -163,7 +175,13 @@ def plot_cosine_similarity_matrix(cosine_sim_matrix, epoch_files, save_dir):
 
 
 # Define your folder path containing the gradient tensors
-folder_path = "./grads/ViT-B-16/DTD/z8h1ptk9"  # Replace this with the path to your folder
+# dataset = "RESISC45"
+# run_id = "epv0u3hx"
+# dataset = "DTD"
+# run_id = "zeo9fydv"
+dataset = "EuroSAT"
+run_id = "ghx6o5k2"
+folder_path = f"./grads/ViT-B-16/{dataset}/{run_id}"
 n_grads = 10
 
 # Load gradient tensors
@@ -173,4 +191,6 @@ gradients, epoch_files = load_gradients_from_folder(folder_path, n_grads)
 cosine_sim_matrix = compute_cosine_similarity_lower_triangle(gradients)
 
 # Plot the similarity matrix
-plot_cosine_similarity_matrix(cosine_sim_matrix, epoch_files, folder_path)
+plot_cosine_similarity_matrix(
+    cosine_sim_matrix, epoch_files, folder_path, dataset
+)
