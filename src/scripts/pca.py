@@ -15,8 +15,8 @@ import matplotlib.pyplot as plt
 plt.rcParams["font.family"] = "serif"
 plt.rcParams["text.usetex"] = True
 
-plt.rc('xtick', labelsize=16) 
-plt.rc('ytick', labelsize=16) 
+plt.rc('xtick', labelsize=20)
+plt.rc('ytick', labelsize=20)
 
 wandb.login()
 
@@ -129,7 +129,13 @@ def run():
     group_ids = ['Pretrained'] * pt_arr.shape[0] + ['Task Arithmetic'] * tva_arr.shape[0] + ['TIES'] * ties_arr.shape[0] + ['Breadcrumbs'] * bc_arr.shape[0] + ['ATM'] * hota_arr.shape[0]
 
     # Assign colors to each group
-    colors = {'Pretrained': 'black', 'Task Arithmetic': 'orange', 'TIES': 'blue', 'Breadcrumbs': 'green', 'ATM': 'red'}
+    colors = {
+        'Pretrained': 'black', 
+        'Task Arithmetic': '#ffd166', 
+        'TIES': '#118ab2', 
+        'Breadcrumbs': '#06d6a0', 
+        'ATM': '#ef476f'
+    }
 
     pca = PCA(n_components=2)
     data_2d = pca.fit_transform(collective_arr)
@@ -149,7 +155,7 @@ def run():
     #plt.xlabel('PC1', fontsize=11)
     #plt.ylabel('PC2', fontsize=11)
     plt.grid(True)
-    plt.legend(prop={'size': 12})
+    plt.legend(loc='lower center', prop={'size': 14})
     plt.show()
 
 
