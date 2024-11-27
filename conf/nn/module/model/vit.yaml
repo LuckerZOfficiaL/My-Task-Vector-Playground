@@ -1,5 +1,5 @@
 _target_: tvp.modules.encoder.ImageEncoder
-model_name: ViT-B-32 # ViT-B-16
+model_name: ViT-B-16 # ViT-B-16
 openclip_cachedir: ${misc.openclip_cachedir}
 cache_dir: ${misc.cache_dir}
 keep_lang: ??

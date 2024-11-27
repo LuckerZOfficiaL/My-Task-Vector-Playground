@@ -37,10 +37,10 @@ import hydra
 from hydra import initialize, compose
 from typing import Dict, List
 
-from competitors.my_ties import ties_merging
-from competitors.my_breadcrumbs import model_breadcrumbs
-from competitors.their_ties import *
-from competitors.my_dare import *
+# from competitors.my_ties import ties_merging
+# from competitors.my_breadcrumbs import model_breadcrumbs
+# from competitors.their_ties import *
+# from competitors.my_dare import *
 
 
 pylogger = logging.getLogger(__name__)
@@ -100,6 +100,16 @@ def run(cfg: DictConfig) -> str:
         "SVHN": 4,
     }
 
+    task_specific_accs = {
+        "CIFAR100": 0.8592000007629395,
+        "DTD": 0.7716186046600342,
+        "EuroSAT": 0.9937962889671326,
+        "GTSRB": 0.9958708882331848,
+        "MNIST": 0.9929999709129333,
+        "RESISC45": 0.9534391760826111,
+        "SVHN": 0.9607999920845032,
+    }
+
     """Generic train loop.
 
     Args:
@@ -108,6 +118,8 @@ def run(cfg: DictConfig) -> str:
     Returns:
         the run directory inside the storage_dir used by the current experiment
     """
+
+    # print(f"\n\n\n{cfg}\n\n\n")
 
     seed_index_everything(cfg)
 
@@ -121,10 +133,12 @@ def run(cfg: DictConfig) -> str:
 
     if order == 1:
         zeroshot_identifier = f"{cfg.nn.module.model.model_name}_pt"
-    else:
-        zeroshot_identifier = f"{cfg.nn.module.model.model_name}_One{epoch_divisor}Eps{order-1}{num_to_th[order-1]}OrderUnifiedModel_0" 
-        #zeroshot_identifier = f"{cfg.nn.module.model.model_name}_10Eps{order-1}{num_to_th[order-1]}OrderUnifiedModel_{cfg.seed_index}"
-    zeroshot_model = load_model_from_artifact(artifact_path=f"{zeroshot_identifier}:latest", run=logger.experiment)
+    # else:
+    #     zeroshot_identifier = f"{cfg.nn.module.model.model_name}_One{epoch_divisor}Eps{order-1}{num_to_th[order-1]}OrderUnifiedModel_0" 
+    #     zeroshot_identifier = f"{cfg.nn.module.model.model_name}_10Eps{order-1}{num_to_th[order-1]}OrderUnifiedModel_{cfg.seed_index}"
+    
+    zeroshot_model_atm = load_model_from_artifact(artifact_path=f"{zeroshot_identifier}:latest", run=logger.experiment)
+    zeroshot_model_ta  = load_model_from_artifact(artifact_path=f"{zeroshot_identifier}:latest", run=logger.experiment)
 
     #finetuned_id_fn = lambda dataset: f"{cfg.nn.module.model.model_name}_{dataset}_{cfg.seed_index}_PosthocClipAndTrain0.1:v0" 
     #finetuned_id_fn = lambda dataset: f"{cfg.nn.module.model.model_name}_{dataset}_{cfg.seed_index}__PosthocClipping0.1:v0" 
@@ -134,23 +148,35 @@ def run(cfg: DictConfig) -> str:
     #finetuned_id_fn = lambda dataset: f"{cfg.nn.module.model.model_name}_{dataset}_{cfg.seed_index}_One{epoch_divisor}Eps{order}{num_to_th[order]}Order:latest"
     #finetuned_id_fn = lambda dataset: f"{cfg.nn.module.model.model_name}_{dataset}_{cfg.seed_index}_One4Eps1stOrder:v0"
     #finetuned_id_fn = lambda dataset: f"{cfg.nn.module.model.model_name}_{dataset}_{cfg.seed_index}:v0"
-    finetuned_id_fn = lambda dataset: f"{cfg.nn.module.model.model_name}_{dataset}_{cfg.seed_index}_{dataset_name_to_ta_eps[dataset]}Eps1stOrder:latest"
+    #finetuned_id_fn = lambda dataset: f"{cfg.nn.module.model.model_name}_{dataset}_{cfg.seed_index}_10Eps1stOrder:latest"
     #finetuned_id_fn = lambda dataset: f"{cfg.nn.module.model.model_name}_{dataset}_{cfg.seed_index}_2Eps{cfg.order}{num_to_th[cfg.order]}Order:latest"
 
+    finetuned_id_fn_atm = lambda dataset: f"{cfg.nn.module.model.model_name}_{dataset}_{cfg.seed_index}_1Eps1stOrder:latest"
+    finetuned_id_fn_ta  = lambda dataset: f"{cfg.nn.module.model.model_name}_{dataset}_{cfg.seed_index}_{dataset_name_to_ta_eps[dataset]}Eps1stOrder:latest"
 
-    finetuned_models = {
-        dataset: load_model_from_artifact(artifact_path=finetuned_id_fn(dataset), run=logger.experiment)
+    finetuned_models_atm = {
+        dataset: load_model_from_artifact(artifact_path=finetuned_id_fn_atm(dataset), run=logger.experiment)
+        for dataset in cfg.task_vectors.to_apply
+    }
+    finetuned_models_ta = {
+        dataset: load_model_from_artifact(artifact_path=finetuned_id_fn_ta(dataset), run=logger.experiment)
         for dataset in cfg.task_vectors.to_apply
     }
 
-    zeroshot_orig_weights = copy.deepcopy(zeroshot_model.state_dict())
+    zeroshot_orig_weights_atm = copy.deepcopy(zeroshot_model_atm.state_dict())
+    zeroshot_orig_weights_ta  = copy.deepcopy(zeroshot_model_ta.state_dict())
 
     # Task vectors
     flatten = lambda model: parameters_to_vector(model.parameters())
 
-    zeroshot_vec = flatten(zeroshot_model)
-    task_vectors = [
-        TaskVector.from_models(zeroshot_model, finetuned_models[dataset]) for dataset in cfg.task_vectors.to_apply
+    zeroshot_vec_atm = flatten(zeroshot_model_atm)
+    zeroshot_vec_ta  = flatten(zeroshot_model_ta)
+    
+    task_vectors_atm = [
+        TaskVector.from_models(zeroshot_model_atm, finetuned_models_atm[dataset]) for dataset in cfg.task_vectors.to_apply
+    ]
+    task_vectors_ta = [
+        TaskVector.from_models(zeroshot_model_ta, finetuned_models_ta[dataset]) for dataset in cfg.task_vectors.to_apply
     ]
 
     def apply_task_vector(model, task_vector, scaling_coef=1):
@@ -158,67 +184,82 @@ def run(cfg: DictConfig) -> str:
         model.load_state_dict({k: v + 1/(scaling_coef)*task_vector[k] for k, v in model.state_dict().items()})
 
     # Make task vectors orthogonal among them
-    def tv_orthogonalization(vectors, method="gs"): # gs: gram schmidt
-        if method == "gs":
-            orthogonal_vectors = []
-            for v in vectors:
-                for u in orthogonal_vectors:
-                    v = v - (torch.dot(v, u) / torch.dot(u, u)) * u
-                orthogonal_vectors.append(v)
-            return torch.stack(orthogonal_vectors)
-        else:
-            raise ValueError("Unsupported method.")
+    # def tv_orthogonalization(vectors, method="gs"): # gs: gram schmidt
+    #     if method == "gs":
+    #         orthogonal_vectors = []
+    #         for v in vectors:
+    #             for u in orthogonal_vectors:
+    #                 v = v - (torch.dot(v, u) / torch.dot(u, u)) * u
+    #             orthogonal_vectors.append(v)
+    #         return torch.stack(orthogonal_vectors)
+    #     else:
+    #         raise ValueError("Unsupported method.")
 
     with torch.no_grad():
-        task_vectors = torch.stack(
-            [flatten(finetuned_models[dataset]) - zeroshot_vec for dataset in cfg.task_vectors.to_apply]
+        task_vectors_atm = torch.stack(
+            [flatten(finetuned_models_atm[dataset]) - zeroshot_vec_atm for dataset in cfg.task_vectors.to_apply]
+        )
+        task_vectors_ta = torch.stack(
+            [flatten(finetuned_models_ta[dataset]) - zeroshot_vec_ta for dataset in cfg.task_vectors.to_apply]
         )
     
-    if cfg.task_vectors.merging_method == "ties":
-        print("\nRunning TIES...\n")
-        #task_vectors = ties_merging(task_vectors, cfg.task_vectors.ties_topk)
-        multi_task_vector = their_ties_merging(reset_type="topk",
-                                          flat_task_checks=task_vectors, 
-                                          reset_thresh=cfg.task_vectors.ties_topk,
-                                          resolve_method="none",
-                                          merge_func="mean")
-    elif cfg.task_vectors.merging_method == "breadcrumbs":
-        print("\nRunning Model Breadcrumbs...\n")
-        task_vectors = model_breadcrumbs(task_vectors,beta=cfg.task_vectors.breadcrumbs_beta, gamma=cfg.task_vectors.breadcrumbs_gamma)
-    elif cfg.task_vectors.merging_method == "dare":
-        print("\nRunning DARE Merging...\n")
-        task_vectors = my_dare(task_vectors, ref_model=zeroshot_model, p=cfg.task_vectors.dare_rate)
-    else: print("\nRunning vanilla merging...\n")
-    if cfg.task_vectors.orthogonalize:
-        task_vectors = tv_orthogonalization(task_vectors, method='gs')
+    # if cfg.task_vectors.merging_method == "ties":
+    #     print("\nRunning TIES...\n")
+    #     #task_vectors = ties_merging(task_vectors, cfg.task_vectors.ties_topk)
+    #     multi_task_vector = their_ties_merging(reset_type="topk",
+    #                                       flat_task_checks=task_vectors, 
+    #                                       reset_thresh=cfg.task_vectors.ties_topk,
+    #                                       resolve_method="none",
+    #                                       merge_func="mean")
+    # elif cfg.task_vectors.merging_method == "breadcrumbs":
+    #     print("\nRunning Model Breadcrumbs...\n")
+    #     task_vectors = model_breadcrumbs(task_vectors,beta=cfg.task_vectors.breadcrumbs_beta, gamma=cfg.task_vectors.breadcrumbs_gamma)
+    # elif cfg.task_vectors.merging_method == "dare":
+    #     print("\nRunning DARE Merging...\n")
+    #     task_vectors = my_dare(task_vectors, ref_model=zeroshot_model, p=cfg.task_vectors.dare_rate)
+    # else: print("\nRunning vanilla merging...\n")
+    print("\nRunning vanilla merging...\n")
+    # if cfg.task_vectors.orthogonalize:
+    #     task_vectors = tv_orthogonalization(task_vectors, method='gs')
 
-    print_pairwise_cos_sim(task_vectors)
+    print("\nATM pairwise cosine similarity:")
+    print_pairwise_cos_sim(task_vectors_atm)
+    print("\nTA pairwise cosine similarity:")
+    print_pairwise_cos_sim(task_vectors_ta)
 
     if cfg.task_vectors.merging_method != "ties":
-        task_vector_aggregator = instantiate(cfg.task_vectors.aggregator)
-        multi_task_vector = task_vector_aggregator(task_vectors)
+        task_vector_aggregator_atm = instantiate(cfg.task_vectors.aggregator)
+        task_vector_aggregator_ta = instantiate(cfg.task_vectors.aggregator)
+        
+        multi_task_vector_atm = task_vector_aggregator_atm(task_vectors_atm)
+        multi_task_vector_ta = task_vector_aggregator_ta(task_vectors_ta)
 
-    delta_model = copy.deepcopy(zeroshot_model)
-    vector_to_parameters(multi_task_vector, delta_model.parameters())
-    task_equipped_model = copy.deepcopy(zeroshot_model)
-    apply_task_vector(task_equipped_model, delta_model.state_dict(), scaling_coef=cfg.task_vectors.scaling_coefficient)
+    delta_model_atm = copy.deepcopy(zeroshot_model_atm)
+    vector_to_parameters(multi_task_vector_atm, delta_model_atm.parameters())
+    task_equipped_model_atm = copy.deepcopy(zeroshot_model_atm)
+    apply_task_vector(task_equipped_model_atm, delta_model_atm.state_dict(), scaling_coef=cfg.task_vectors.scaling_coefficient)
+    
+    delta_model_ta = copy.deepcopy(zeroshot_model_ta)
+    vector_to_parameters(multi_task_vector_ta, delta_model_ta.parameters())
+    task_equipped_model_ta = copy.deepcopy(zeroshot_model_ta)
+    apply_task_vector(task_equipped_model_ta, delta_model_ta.state_dict(), scaling_coef=cfg.task_vectors.scaling_coefficient)
 
 
     # Save the unified model as artifact
     #artifact_name = f"{cfg.nn.module.model.model_name}_2stOrderUnifiedModel_{cfg.seed_index}"
-    # artifact_name = f"{cfg.nn.module.model.model_name}_One{epoch_divisor}Eps{order}{num_to_th[order]}OrderUnifiedModel_{cfg.seed_index}"
+    #artifact_name = f"{cfg.nn.module.model.model_name}_One{epoch_divisor}Eps{order}{num_to_th[order]}OrderUnifiedModel_{cfg.seed_index}"
     #artifact_name = f"{cfg.nn.module.model.model_name}_HalfEpsSomeDatasets2ndOrderUnifiedModel_{cfg.seed_index}" #################
     #artifact_name = f"{cfg.nn.module.model.model_name}_10Eps_UnifiedModel_{cfg.seed_index}"
     #artifact_name = f"{cfg.nn.module.model.model_name}_TIEScrumbs10EpsUnifiedModel_{cfg.seed_index}"
     #Eps{cfg.order}{num_to_th[cfg.order]}
     #artifact_name = f"{cfg.nn.module.model.model_name}_Breadcrumbs10Eps{order}{num_to_th[order]}OrderUnifiedModel_{cfg.seed_index}"
-    # metadata = {"model_name": f"{cfg.nn.module.model.model_name}", "model_class": "tvp.modules.encoder.ImageEncoder"}
+    #metadata = {"model_name": f"{cfg.nn.module.model.model_name}", "model_class": "tvp.modules.encoder.ImageEncoder"}
     #upload_model_to_wandb(task_equipped_model, artifact_name, logger.experiment, cfg, metadata)
 
 
     seed_index_everything(cfg)
 
-    results = {}
+    results_atm = {}
 
     for dataset_name in cfg.eval_datasets:
 
@@ -229,7 +270,7 @@ def run(cfg: DictConfig) -> str:
         )
 
         model = hydra.utils.instantiate(
-            cfg.nn.module, encoder=task_equipped_model, classifier=classification_head, _recursive_=False
+            cfg.nn.module, encoder=task_equipped_model_atm, classifier=classification_head, _recursive_=False
         )
 
         dataset = get_dataset(
@@ -260,9 +301,82 @@ def run(cfg: DictConfig) -> str:
         pylogger.info("Evaluating on the test set!")
         test_results = trainer.test(model=model, dataloaders=dataset.test_loader)
 
-        results[dataset_name] = test_results
+        test_results[0]["acc/test/normalized"] = test_results[0]["acc/test"] / task_specific_accs[dataset_name]
 
-    print(results)
+        results_atm[dataset_name] = test_results
+
+    # print(f"\nResults ATM: {results_atm}\n")
+
+    avg_acc_normalized_atm = sum([results_atm[dataset_name][0]["acc/test/normalized"] for dataset_name in results_atm.keys()]) / len(results_atm.keys())
+    avg_acc_atm            = sum([results_atm[dataset_name][0]["acc/test"]            for dataset_name in results_atm.keys()]) / len(results_atm.keys())
+
+    seed_index_everything(cfg)
+    
+    results_ta = {}
+
+    for dataset_name in cfg.eval_datasets:
+
+        classification_head_identifier = f"{cfg.nn.module.model.model_name}_{dataset_name}_head"
+        classification_head = load_model_from_artifact(
+            #artifact_path=f"{classification_head_identifier}:v0", run=logger.experiment
+            artifact_path=f"{classification_head_identifier}:latest", run=logger.experiment
+        )
+
+        model = hydra.utils.instantiate(
+            cfg.nn.module, encoder=task_equipped_model_ta, classifier=classification_head, _recursive_=False
+        )
+
+        dataset = get_dataset(
+            dataset_name,
+            preprocess_fn=model.encoder.train_preprocess,
+            location=cfg.nn.data.data_path,
+            batch_size=cfg.nn.data.batch_size.train,
+        )
+
+        callbacks: List[Callback] = build_callbacks(cfg.train.callbacks, template_core)
+
+        storage_dir: str = cfg.core.storage_dir
+
+        pylogger.info("Instantiating the <Trainer>")
+        trainer = pl.Trainer(
+            default_root_dir=storage_dir,
+            plugins=[NNCheckpointIO(jailing_dir=logger.run_dir)],
+            logger=False,
+            callbacks=callbacks,
+            **cfg.train.trainer,
+        )
+
+        # Evaluation
+        if cfg.eval_on_train:
+            pylogger.info("Evaluating on the training set")
+            trainer.test(model=model, dataloaders=dataset.train_loader)
+
+        pylogger.info("Evaluating on the test set!")
+        test_results = trainer.test(model=model, dataloaders=dataset.test_loader)
+
+        test_results[0]["acc/test/normalized"] = test_results[0]["acc/test"] / task_specific_accs[dataset_name]
+
+        results_ta[dataset_name] = test_results
+
+    # print(f"\nResults TA: {results_ta}\n")
+
+    avg_acc_normalized_ta = sum([results_ta[dataset_name][0]["acc/test/normalized"] for dataset_name in results_ta.keys()]) / len(results_ta.keys())
+    avg_acc_ta            = sum([results_ta[dataset_name][0]["acc/test"]            for dataset_name in results_ta.keys()]) / len(results_ta.keys())
+
+    cos_sim_atm_ta = F.cosine_similarity(multi_task_vector_atm, multi_task_vector_ta, dim=0).item()
+
+    results = {
+        "applied_task_vectors": cfg.task_vectors.to_apply,
+        "avg_acc_normalized_atm": avg_acc_normalized_atm,
+        "avg_acc_atm": avg_acc_atm,
+        "results_atm": results_atm,
+        "avg_acc_normalized_ta": avg_acc_normalized_ta,
+        "avg_acc_ta": avg_acc_ta,
+        "results_ta": results_ta,
+        "cos_sim_atm_ta": cos_sim_atm_ta,
+    }
+
+    print(f"\n\n\n\nResults ATM and TA: {results}\n\n\n\n")
 
 
 
