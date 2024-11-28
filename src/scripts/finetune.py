@@ -117,7 +117,13 @@ def run(cfg: DictConfig):
     pylogger.info("Starting testing!")
     trainer.test(model=model, dataloaders=dataset.test_loader)
 
-    artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_eps_{cfg.nn.dataset.ft_epochs}_order_{cfg.order}"
+    artifact_name = (
+        f"{cfg.nn.module.model.model_name}_"
+        f"{cfg.nn.data.dataset.dataset_name}_"
+        f"{cfg.seed_index}_"
+        f"epochs_{cfg.nn.data.dataset.ft_epochs}_"
+        f"order_{cfg.order}"
+    )
 
     model_class = get_class(image_encoder)
     
