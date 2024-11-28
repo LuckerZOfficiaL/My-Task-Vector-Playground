@@ -18,6 +18,16 @@ from tvp.data.datasets.resisc45 import RESISC45
 from tvp.data.datasets.stl10 import STL10
 from tvp.data.datasets.sun397 import SUN397
 from tvp.data.datasets.svhn import SVHN
+from tvp.data.datasets.flowers102 import Flowers102
+from tvp.data.datasets.food101 import Food101
+from tvp.data.datasets.fer2013 import FER2013
+from tvp.data.datasets.pcam import PCAM
+from tvp.data.datasets.oxfordpets import OxfordIIITPet
+from tvp.data.datasets.sst2 import RenderedSST2
+from tvp.data.datasets.emnist import EMNIST
+from tvp.data.datasets.fashionmnist import FashionMNIST
+from tvp.data.datasets.kmnist import KMNIST
+
 
 registry = {name: obj for name, obj in inspect.getmembers(sys.modules[__name__], inspect.isclass)}
 

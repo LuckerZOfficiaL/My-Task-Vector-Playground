@@ -1,4 +1,4 @@
 dataset_name: STL10
-ft_epochs: 6
+ft_epochs: 60
 posthoc_epochs: 2
 num_classes: 10

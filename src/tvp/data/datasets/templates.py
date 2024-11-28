@@ -200,6 +200,43 @@ svhn_template = [
     lambda c: f'a photo of the number: "{c}".',
 ]
 
+flowers102_template = [
+    lambda c: f"a photo of a {c}, a type of flower.",
+]
+
+fer2013_template = [
+    lambda c: f"a photo of a {c} looking face.",
+    lambda c: f"a photo of a face showing the emotion: {c}.",
+    lambda c: f"a photo of a face looking {c}.",
+    lambda c: f"a face that looks {c}.",
+    lambda c: f"they look {c}.",
+    lambda c: f"look at how {c} they are.",
+]
+
+pcam_template = [
+    lambda c: f"this is a photo of {c}",
+]
+
+oxfordpets_template = [
+    lambda c: f"a photo of a {c}, a type of pet.",
+]
+
+sst2_template = [
+    lambda c: f"a {c} review of a movie.",
+]
+
+emnist_template = [
+    lambda c: f'a photo of the digit character: "{c}".',
+]
+
+fashionmnist_template = [
+    lambda c: f"a photo of a {c}.",
+    lambda c: f"a photo of the {c}.",
+]
+
+kmnist_template = [
+    lambda c: f"a photo of the character {c}.",
+]
 
 dataset_to_template = {
     "Cars": cars_template,
@@ -215,6 +252,14 @@ dataset_to_template = {
     "STL10": stl10_template,
     "SUN397": sun397_template,
     "SVHN": svhn_template,
+    "Flowers102": flowers102_template,
+    "FER2013": fer2013_template,
+    "PCAM": pcam_template,
+    "OxfordIIITPet": oxfordpets_template,
+    "RenderedSST2": sst2_template,
+    "EMNIST": emnist_template,
+    "FashionMNIST": fashionmnist_template,
+    "KMNIST": kmnist_template,
 }
 
 

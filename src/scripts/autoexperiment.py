@@ -32,10 +32,16 @@ for order in range(1, desired_orders+1):
         yaml.dump(config, file)
     
 
-    datasets = ["cifar100", "dtd", "eurosat", "gtsrb", "mnist", "resisc45", "svhn"]
-    for dataset_id, dataset in enumerate(datasets): # modify the dataset hyperparameter in config
+    datasets_7 = ["cifar100", "dtd", "eurosat", "gtsrb", "mnist", "resisc45", "svhn"]
+    datasets_20 = [
+        "cars", "dtd", "eurosat", "gtsrb", "mnist", "resisc45", "sun397", 
+        "svhn", "cifar10", "cifar100", "stl10", "flowers102", "food101", 
+        "fer2013", "pcam", "oxfordiiitpet", "renderedsst2", "emnist", 
+        "fashionmnist", "kmnist"
+    ]
+    for dataset_id, dataset in enumerate(datasets_20): # modify the dataset hyperparameter in config
 
-        print(f"[bold]\n\n\n{dataset} ({dataset_id + 1}/{len(datasets)}), order ({order}/{desired_orders})\n\n\n")
+        print(f"[bold]\n\n\n{dataset} ({dataset_id + 1}/{len(datasets_20)}), order ({order}/{desired_orders})\n\n\n")
 
         with open(yaml_file, "r") as file:
             config = yaml.safe_load(file)

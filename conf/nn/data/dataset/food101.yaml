@@ -1,4 +1,4 @@
 # https://data.vision.ee.ethz.ch/cvl/datasets_extra/food-101/
-dataset_name: food101
-ft_epochs: ?? 
+dataset_name: Food101
+ft_epochs: 4
 num_classes: 101 

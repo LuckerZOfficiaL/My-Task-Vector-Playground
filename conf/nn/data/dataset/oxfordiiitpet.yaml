@@ -1,0 +1,3 @@
+dataset_name: OxfordIIITPet
+ft_epochs: 82
+num_classes: 37

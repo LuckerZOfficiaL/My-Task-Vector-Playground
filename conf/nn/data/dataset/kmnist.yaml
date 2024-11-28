@@ -1,0 +1,5 @@
+# emnist dataset offers six distinct splits: balanced, byclass, bymerge, digits, letters, and mnist
+# our experiments focus on the "digits" split, which, surprise surprise, only contains digits!
+dataset_name: KMNIST
+ft_epochs: 5
+num_classes: 10
