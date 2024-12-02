@@ -15,13 +15,26 @@ defaults:
 - _self_
 epoch_divisor: None
 eval_datasets:
-- CIFAR100
+- Cars
 - DTD
 - EuroSAT
 - GTSRB
 - MNIST
 - RESISC45
+- SUN397
 - SVHN
+- CIFAR10
+- CIFAR100
+- STL10
+- Food101
+- Flowers102
+- FER2013
+- PCAM
+- OxfordIIITPet
+- RenderedSST2
+- EMNIST
+- FashionMNIST
+- KMNIST
 eval_on_train: false
 misc:
   cache_dir: null
@@ -44,10 +57,23 @@ task_vectors:
   ties_lambda: 1
   ties_topk: 0.15
   to_apply:
-  - CIFAR100
+  - Cars
   - DTD
   - EuroSAT
   - GTSRB
   - MNIST
   - RESISC45
+  - SUN397
   - SVHN
+  - CIFAR10
+  - CIFAR100
+  - STL10
+  - Food101
+  - Flowers102
+  - FER2013
+  - PCAM
+  - OxfordIIITPet
+  - RenderedSST2
+  - EMNIST
+  - FashionMNIST
+  - KMNIST

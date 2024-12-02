@@ -28,6 +28,8 @@ class SUN397:
         idx_to_class = dict((v, k) for k, v in self.train_dataset.class_to_idx.items())
         self.classnames = [idx_to_class[i][2:].replace("_", " ") for i in range(len(idx_to_class))]
 
+        assert len(self.classnames) == 397, f"Expected 397 classes, got {len(self.classnames)}"
+
 
 def make_sun397():
     import os
@@ -46,7 +48,7 @@ def make_sun397():
     for file_name in tqdm(strings_list):
         source_path = os.path.join(source_base, file_name.lstrip('/'))
         file_name_trimmed = "/".join(file_name.split("/")[2:])
-        destination_path = os.path.join(destination_base, file_name_trimmed)
+        destination_path = os.path.join(destination_base, file_name_trimmed) 
 
         # Debugging
         # print(f"Source Path: {repr(source_path)}")
