@@ -2,6 +2,8 @@ from rich import print
 
 from itertools import combinations
 
+import random
+
 import yaml
 import subprocess
 
@@ -40,11 +42,12 @@ datasets_to_stylized = {
 }
 
 # assign this to pick the dataset_* list you want to use!
-datasets = datasets_20
+datasets = datasets_14
+datasets = sorted(datasets)
 
 # assign these to pick the range of combinations you want to use!
-datasets_combo_min = 19 # inclusive of the first combo length you want!
-datasets_combo_max = 19 # inclusive of the last combo length you want!
+datasets_combo_min = 11 # inclusive of the first combo length you want!
+datasets_combo_max = 11 # inclusive of the last combo length you want!
 
 all_combinations = []
 
@@ -56,12 +59,19 @@ all_combinations = list(all_combinations)
 
 print(f"Total number of combinations: {len(all_combinations)}")
 
+combos_idx_start = 0
+combos_idx_end = 100
+
+subsampled_combos = all_combinations[combos_idx_start:combos_idx_end]
+
+print(f"Subsampled number of combinations: {len(subsampled_combos)}")
+
 tv_conf_file = "conf/task_vectors.yaml"
 
-for combo_id, combo in enumerate(all_combinations):
+for combo_id, combo in enumerate(subsampled_combos):
     combo = list(combo)
     combo = [datasets_to_stylized[dataset] for dataset in combo]
-    print(f"{combo_id}/{len(all_combinations)}, {combo}")
+    print(f"\n\n\n{combo_id}/{len(subsampled_combos)}, {combo}\n\n\n")
 
     with open(tv_conf_file, "r") as file:
         config = yaml.safe_load(file)
