@@ -39,19 +39,19 @@ for order in range(1, desired_orders+1):
         "fer2013", "pcam", "oxfordiiitpet", "renderedsst2", "emnist", 
         "fashionmnist", "kmnist"
     ]
-    for dataset_id, dataset in enumerate(datasets_20): # modify the dataset hyperparameter in config
+    # for dataset_id, dataset in enumerate(datasets_20): # modify the dataset hyperparameter in config
 
-        print(f"[bold]\n\n\n{dataset} ({dataset_id + 1}/{len(datasets_20)}), order ({order}/{desired_orders})\n\n\n")
+    #     print(f"[bold]\n\n\n{dataset} ({dataset_id + 1}/{len(datasets_20)}), order ({order}/{desired_orders})\n\n\n")
 
-        with open(yaml_file, "r") as file:
-            config = yaml.safe_load(file)
-            config['defaults'][0]['dataset'] = dataset
-            print(config)
+    #     with open(yaml_file, "r") as file:
+    #         config = yaml.safe_load(file)
+    #         config['defaults'][0]['dataset'] = dataset
+    #         print(config)
 
-        with open(yaml_file, "w") as file:
-            yaml.dump(config, file)
+    #     with open(yaml_file, "w") as file:
+    #         yaml.dump(config, file)
 
-        subprocess.run(["python", "src/scripts/finetune.py"], check=True)
+    #     subprocess.run(["python", "src/scripts/finetune.py"], check=True)
 
     subprocess.run(["python", "src/scripts/evaluate.py"], check=True)
     

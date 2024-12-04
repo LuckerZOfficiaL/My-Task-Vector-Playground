@@ -42,6 +42,8 @@ from tvp.competitors.my_breadcrumbs import model_breadcrumbs
 from tvp.competitors.their_ties import *
 from tvp.competitors.my_dare import *
 
+import json
+
 
 pylogger = logging.getLogger(__name__)
 
@@ -70,7 +72,6 @@ DATASET_NAME_TO_TA_FT_EPOCHS = {
     "KMNIST": 5,
 }
 
-# TODO fill these in with the correct values
 TASK_SPECIFIC_ACCS = {
     "Cars": 0.8661857843399048,
     "DTD": 0.7597517967224121,
@@ -226,115 +227,29 @@ def run(cfg: DictConfig) -> str:
     zeroshot_model_ta = load_model_from_artifact(
         artifact_path=f"{zeroshot_identifier}:latest", run=logger.experiment
     )
-
-    finetuned_id_fn_atm = lambda dataset: (
+  
+    
+    task_equipped_model_atm = copy.deepcopy(zeroshot_model_atm)
+    model_name_atm = (
         f"{cfg.nn.module.model.model_name}_"
-        f"{dataset}_"
+        f"applied_TVs_{'_'.join(cfg.task_vectors.to_apply)}_"
         f"{cfg.seed_index}_"
         f"epochs_1_"
         f"order_1"
-        f":latest"
     )
-    
-    finetuned_id_fn_ta = lambda dataset: (
-        f"{cfg.nn.module.model.model_name}_"
-        f"{dataset}_"
-        f"{cfg.seed_index}_"
-        f"epochs_{DATASET_NAME_TO_TA_FT_EPOCHS[dataset]}_"
-        f"order_{cfg.order}"
-        f":latest"
-    )
-
-
-    finetuned_models_atm = {
-        dataset: load_model_from_artifact(
-            artifact_path=finetuned_id_fn_atm(dataset), 
-            run=logger.experiment
-        ) for dataset in cfg.task_vectors.to_apply
-    }
-    
-    finetuned_models_ta = {
-        dataset: load_model_from_artifact(
-            artifact_path=finetuned_id_fn_ta(dataset), 
-            run=logger.experiment
-        ) for dataset in cfg.task_vectors.to_apply
-    }
-
-
-    # Task vectors
-    flatten = lambda model: parameters_to_vector(model.parameters())
-
-
-    zeroshot_vec_atm = flatten(zeroshot_model_atm)
-
-    zeroshot_vec_ta = flatten(zeroshot_model_ta)
-
-
-    # task_vectors_atm = [
-    #     TaskVector.from_models(
-    #         pretrained_model=zeroshot_model_atm, 
-    #         finetuned_model=finetuned_models_atm[dataset]
-    #     ) for dataset in cfg.task_vectors.to_apply
-    # ]
-    
-    # task_vectors_ta = [
-    #     TaskVector.from_models(
-    #         pretrained_model=zeroshot_model_ta, 
-    #         finetuned_model=finetuned_models_ta[dataset]
-    #     ) for dataset in cfg.task_vectors.to_apply
-    # ]
-
-    
-    with torch.no_grad():
-        task_vectors_atm = torch.stack(
-            [
-                flatten(finetuned_models_atm[dataset]) - zeroshot_vec_atm for dataset in cfg.task_vectors.to_apply
-            ]
-        )
-        
-        task_vectors_ta = torch.stack(
-            [
-                flatten(finetuned_models_ta[dataset]) - zeroshot_vec_ta for dataset in cfg.task_vectors.to_apply
-            ]
-        )
-    
-
-    print("\nRunning vanilla merging...\n")
-
-    print_pairwise_cos_sim(task_vectors_atm)
-    
-    print_pairwise_cos_sim(task_vectors_ta)
-
-    if cfg.task_vectors.merging_method != "ties":
-        task_vector_aggregator_atm = instantiate(cfg.task_vectors.aggregator)
-        multi_task_vector_atm = task_vector_aggregator_atm(task_vectors_atm)
-        
-        task_vector_aggregator_ta = instantiate(cfg.task_vectors.aggregator)
-        multi_task_vector_ta = task_vector_aggregator_ta(task_vectors_ta)
-
-        cos_sim_atm_ta = F.cosine_similarity(multi_task_vector_atm, multi_task_vector_ta, dim=0).item()
-
-
-    delta_model_atm = copy.deepcopy(zeroshot_model_atm)
-    vector_to_parameters(multi_task_vector_atm, delta_model_atm.parameters())
-    
-    delta_model_ta = copy.deepcopy(zeroshot_model_ta)
-    vector_to_parameters(multi_task_vector_ta, delta_model_ta.parameters())
-    
-    
-    task_equipped_model_atm = copy.deepcopy(zeroshot_model_atm)
-    apply_task_vector(
-        model=task_equipped_model_atm, 
-        task_vector=delta_model_atm.state_dict(), 
-        scaling_coef=cfg.task_vectors.scaling_coefficient
-    )
+    model_path_atm = f"{cfg.core.storage_dir}/{model_name_atm}.ckpt"
+    task_equipped_model_atm.load_state_dict(torch.load(model_path_atm))
     
     task_equipped_model_ta = copy.deepcopy(zeroshot_model_ta)
-    apply_task_vector(
-        model=task_equipped_model_ta, 
-        task_vector=delta_model_ta.state_dict(), 
-        scaling_coef=cfg.task_vectors.scaling_coefficient
+    model_name_ta = (
+        f"{cfg.nn.module.model.model_name}_"
+        f"applied_TVs_{'_'.join(cfg.task_vectors.to_apply)}_"
+        f"{cfg.seed_index}_"
+        f"epochs_max_"
+        f"order_{cfg.order}"
     )
+    model_path_ta = f"{cfg.core.storage_dir}/{model_name_ta}.ckpt"
+    task_equipped_model_ta.load_state_dict(torch.load(model_path_ta))
 
 
     seed_index_everything(cfg)
@@ -442,6 +357,20 @@ def run(cfg: DictConfig) -> str:
 
     avg_acc_normalized_ta = sum([results_ta[dataset_name][0]["acc/test/normalized"] for dataset_name in results_ta.keys()]) / len(results_ta.keys())
     avg_acc_ta            = sum([results_ta[dataset_name][0]["acc/test"]            for dataset_name in results_ta.keys()]) / len(results_ta.keys())
+    
+    model_name_cos_sim = (
+        f"{cfg.nn.module.model.model_name}_"
+        f"applied_TVs_{'_'.join(cfg.task_vectors.to_apply)}_"
+        f"{cfg.seed_index}_"
+        f"atm_vs_ta_cos_sim"
+    )
+    model_path_cos_sim = f"{cfg.core.storage_dir}/{model_name_cos_sim}.json"
+    pylogger.info(f"\nLoading cosine similarity from {model_path_cos_sim}\n")
+
+    with open(model_path_cos_sim, "r") as f:
+        cos_sim_data = json.load(f)
+        cos_sim_atm_ta = cos_sim_data["cos_sim_atm_ta"]
+
 
     results = {
         "applied_task_vectors": cfg.task_vectors.to_apply,

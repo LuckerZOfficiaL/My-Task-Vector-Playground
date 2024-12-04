@@ -28,7 +28,7 @@ import tvp  # noqa
 from tvp.data.datamodule import MetaData
 from tvp.data.datasets.registry import get_dataset
 from tvp.task_vectors.task_vectors import TaskVector
-from tvp.utils.io_utils import load_model_from_artifact
+from tvp.utils.io_utils import load_model_from_artifact, export_model_to_disk
 from tvp.utils.utils import build_callbacks
 from torch.nn.utils import vector_to_parameters
 from torch.nn.utils import parameters_to_vector
@@ -41,6 +41,8 @@ from tvp.competitors.my_ties import ties_merging
 from tvp.competitors.my_breadcrumbs import model_breadcrumbs
 from tvp.competitors.their_ties import *
 from tvp.competitors.my_dare import *
+
+import json
 
 
 pylogger = logging.getLogger(__name__)
@@ -313,6 +315,18 @@ def run(cfg: DictConfig) -> str:
         multi_task_vector_ta = task_vector_aggregator_ta(task_vectors_ta)
 
         cos_sim_atm_ta = F.cosine_similarity(multi_task_vector_atm, multi_task_vector_ta, dim=0).item()
+        pylogger.info(f"\nCosine similarity between ATM and TA multi-task vectors: {cos_sim_atm_ta}\n")
+
+        model_name_cos_sim = (
+            f"{cfg.nn.module.model.model_name}_"
+            f"applied_TVs_{'_'.join(cfg.task_vectors.to_apply)}_"
+            f"{cfg.seed_index}_"
+            f"atm_vs_ta_cos_sim"
+        )
+        model_path_cos_sim = f"{cfg.core.storage_dir}/{model_name_cos_sim}.json"
+        pylogger.info(f"\nExporting cosine similarity to {model_path_cos_sim}\n")
+        with open(model_path_cos_sim, "w") as f:
+            json.dump({"cos_sim_atm_ta": cos_sim_atm_ta}, f)
 
 
     delta_model_atm = copy.deepcopy(zeroshot_model_atm)
@@ -337,124 +351,38 @@ def run(cfg: DictConfig) -> str:
     )
 
 
-    seed_index_everything(cfg)
+    model_name_atm = (
+        f"{cfg.nn.module.model.model_name}_"
+        f"applied_TVs_{'_'.join(cfg.task_vectors.to_apply)}_"
+        f"{cfg.seed_index}_"
+        f"epochs_1_"
+        f"order_1"
+    )
+    model_path_atm = f"{cfg.core.storage_dir}/{model_name_atm}.ckpt"
+    pylogger.info(f"\nExporting ATM model to {model_path_atm}\n")
+    export_model_to_disk(
+        model=task_equipped_model_atm, 
+        model_name=model_name_atm, 
+        model_path=model_path_atm
+    )
 
-    results_atm = {}
+    model_name_ta = (
+        f"{cfg.nn.module.model.model_name}_"
+        f"applied_TVs_{'_'.join(cfg.task_vectors.to_apply)}_"
+        f"{cfg.seed_index}_"
+        f"epochs_max_"
+        f"order_{cfg.order}"
+    )
+    model_path_ta = f"{cfg.core.storage_dir}/{model_name_ta}.ckpt"
+    pylogger.info(f"\nExporting TA model to {model_path_ta}\n")
+    export_model_to_disk(
+        model=task_equipped_model_ta,
+        model_name=model_name_ta,
+        model_path=model_path_ta
+    )
 
-    for dataset_name in cfg.eval_datasets:
 
-        classification_head_identifier = f"{cfg.nn.module.model.model_name}_{dataset_name}_head"
-        classification_head = load_model_from_artifact(
-            #artifact_path=f"{classification_head_identifier}:v0", run=logger.experiment
-            artifact_path=f"{classification_head_identifier}:latest", run=logger.experiment
-        )
-
-        model = hydra.utils.instantiate(
-            cfg.nn.module, encoder=task_equipped_model_atm, classifier=classification_head, _recursive_=False
-        )
-
-        dataset = get_dataset(
-            dataset_name,
-            preprocess_fn=model.encoder.train_preprocess,
-            location=cfg.nn.data.data_path,
-            batch_size=cfg.nn.data.batch_size.train,
-        )
-
-        callbacks: List[Callback] = build_callbacks(cfg.train.callbacks, template_core)
-
-        storage_dir: str = cfg.core.storage_dir
-
-        pylogger.info("Instantiating the <Trainer>")
-        trainer = pl.Trainer(
-            default_root_dir=storage_dir,
-            plugins=[NNCheckpointIO(jailing_dir=logger.run_dir)],
-            logger=False,
-            callbacks=callbacks,
-            **cfg.train.trainer,
-        )
-
-        # Evaluation
-        if cfg.eval_on_train:
-            pylogger.info("Evaluating on the training set")
-            trainer.test(model=model, dataloaders=dataset.train_loader)
-
-        pylogger.info("Evaluating on the test set!")
-        test_results = trainer.test(model=model, dataloaders=dataset.test_loader)
-
-        test_results[0]["acc/test/normalized"] = test_results[0]["acc/test"] / TASK_SPECIFIC_ACCS[dataset_name]
-
-        results_atm[dataset_name] = test_results
-
-    # print(f"\nResults ATM: {results_atm}\n")
-
-    avg_acc_normalized_atm = sum([results_atm[dataset_name][0]["acc/test/normalized"] for dataset_name in results_atm.keys()]) / len(results_atm.keys())
-    avg_acc_atm            = sum([results_atm[dataset_name][0]["acc/test"]            for dataset_name in results_atm.keys()]) / len(results_atm.keys())
-
-    seed_index_everything(cfg)
     
-    results_ta = {}
-
-    for dataset_name in cfg.eval_datasets:
-
-        classification_head_identifier = f"{cfg.nn.module.model.model_name}_{dataset_name}_head"
-        classification_head = load_model_from_artifact(
-            #artifact_path=f"{classification_head_identifier}:v0", run=logger.experiment
-            artifact_path=f"{classification_head_identifier}:latest", run=logger.experiment
-        )
-
-        model = hydra.utils.instantiate(
-            cfg.nn.module, encoder=task_equipped_model_ta, classifier=classification_head, _recursive_=False
-        )
-
-        dataset = get_dataset(
-            dataset_name,
-            preprocess_fn=model.encoder.train_preprocess,
-            location=cfg.nn.data.data_path,
-            batch_size=cfg.nn.data.batch_size.train,
-        )
-
-        callbacks: List[Callback] = build_callbacks(cfg.train.callbacks, template_core)
-
-        storage_dir: str = cfg.core.storage_dir
-
-        pylogger.info("Instantiating the <Trainer>")
-        trainer = pl.Trainer(
-            default_root_dir=storage_dir,
-            plugins=[NNCheckpointIO(jailing_dir=logger.run_dir)],
-            logger=False,
-            callbacks=callbacks,
-            **cfg.train.trainer,
-        )
-
-        # Evaluation
-        if cfg.eval_on_train:
-            pylogger.info("Evaluating on the training set")
-            trainer.test(model=model, dataloaders=dataset.train_loader)
-
-        pylogger.info("Evaluating on the test set!")
-        test_results = trainer.test(model=model, dataloaders=dataset.test_loader)
-
-        test_results[0]["acc/test/normalized"] = test_results[0]["acc/test"] / TASK_SPECIFIC_ACCS[dataset_name]
-
-        results_ta[dataset_name] = test_results
-
-    # print(f"\nResults TA: {results_ta}\n")
-
-    avg_acc_normalized_ta = sum([results_ta[dataset_name][0]["acc/test/normalized"] for dataset_name in results_ta.keys()]) / len(results_ta.keys())
-    avg_acc_ta            = sum([results_ta[dataset_name][0]["acc/test"]            for dataset_name in results_ta.keys()]) / len(results_ta.keys())
-
-    results = {
-        "applied_task_vectors": cfg.task_vectors.to_apply,
-        "avg_acc_normalized_atm": avg_acc_normalized_atm,
-        "avg_acc_atm": avg_acc_atm,
-        "results_atm": results_atm,
-        "avg_acc_normalized_ta": avg_acc_normalized_ta,
-        "avg_acc_ta": avg_acc_ta,
-        "results_ta": results_ta,
-        "cos_sim_atm_ta": cos_sim_atm_ta,
-    }
-
-    print(f"\n\n\n\nResults ATM and TA: {results}\n\n\n\n")
 
 
 @hydra.main(config_path=str(PROJECT_ROOT / "conf"), config_name="task_vectors.yaml")

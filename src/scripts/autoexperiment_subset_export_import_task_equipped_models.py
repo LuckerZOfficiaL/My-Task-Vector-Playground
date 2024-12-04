@@ -43,8 +43,8 @@ datasets_to_stylized = {
 datasets = datasets_20
 
 # assign these to pick the range of combinations you want to use!
-datasets_combo_min = 3 # inclusive of the first combo length you want!
-datasets_combo_max = 3 # inclusive of the last combo length you want!
+datasets_combo_min = 19 # inclusive of the first combo length you want!
+datasets_combo_max = 19 # inclusive of the last combo length you want!
 
 all_combinations = []
 
@@ -72,9 +72,10 @@ for combo_id, combo in enumerate(all_combinations):
 
 
     subprocess.run(
-        ["python", "src/scripts/evaluate_subset.py"], 
+        ["python", "src/scripts/evaluate_subset_export_task_equipped_models.py"], 
         check=True
     )
-    
-    
-    exit()
+    subprocess.run(
+        ["python", "src/scripts/evaluate_subset_import_task_equipped_models.py"], 
+        check=True
+    )
