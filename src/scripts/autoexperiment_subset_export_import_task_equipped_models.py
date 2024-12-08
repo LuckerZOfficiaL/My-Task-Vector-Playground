@@ -42,7 +42,7 @@ datasets_to_stylized = {
 }
 
 # assign this to pick the dataset_* list you want to use!
-datasets = datasets_14
+datasets = datasets_7
 datasets = sorted(datasets)
 
 # assign these to pick the range of combinations you want to use!
@@ -52,7 +52,7 @@ datasets_combo_max = 5 # inclusive of the last combo length you want!
 all_combinations = []
 
 for r in range(datasets_combo_min, datasets_combo_max + 1):
-    print(r)
+    print(f"r: {r}")
     all_combinations.extend(combinations(datasets, r))
 
 all_combinations = list(all_combinations)
@@ -60,7 +60,8 @@ all_combinations = list(all_combinations)
 print(f"Total number of combinations: {len(all_combinations)}")
 
 # subsampling_method = "index_range"
-subsampling_method = "random_num"
+# subsampling_method = "random_num"
+subsampling_method = "all"
 
 if subsampling_method == "index_range":
     
@@ -78,6 +79,10 @@ elif subsampling_method == "random_num":
     print(f"Number of combinations: {num_combos}")
 
     subsampled_combos = random.sample(all_combinations, num_combos)
+
+elif subsampling_method == "all":
+    print(f"Subsampling method: {subsampling_method}")
+    subsampled_combos = all_combinations
 
 else:
     raise ValueError("Invalid subsampling method!")
