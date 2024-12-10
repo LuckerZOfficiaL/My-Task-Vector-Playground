@@ -18,6 +18,10 @@ datasets_20 = [
     "fer2013", "pcam", "oxfordiiitpet", "renderedsst2", "emnist", 
     "fashionmnist", "kmnist"
 ]
+dataset_super_had = ["kmnist", "emnist"]
+dataset_hard = ["gtsrb", "fer2013", "mnist", "svhn", "eurosat", "dtd", "pcam"]
+dataset_medium = ["fashionmnist", "resisc45", "cars", "flowers102", "cifar100", "renderedsst2"]
+dataset_easy = ["sun397", "cifar10", "food101", "oxfordiiitpet", "stl10"]
 datasets_to_stylized = {
     "cifar100": "CIFAR100",
     "dtd": "DTD",
