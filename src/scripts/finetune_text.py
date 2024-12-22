@@ -19,65 +19,104 @@ from nn_core.common.utils import enforce_tags, seed_index_everything
 from nn_core.model_logging import NNLogger
 from nn_core.serialization import NNCheckpointIO
 
-from tvp.data.datasets.registry import get_dataset
-from tvp.modules.encoder import ImageEncoder
-from tvp.modules.heads import get_classification_head
-from tvp.pl_module.image_classifier import ImageClassifier
+from tvp.data.datasets.registry import get_text_dataset
+from tvp.modules.text_encoder import TextEncoder
+from tvp.modules.text_heads import get_classification_head
+from tvp.pl_module.text_classifier import TextClassifier
 from tvp.utils.io_utils import get_class, load_model_from_artifact
 from tvp.utils.utils import LabelSmoothing, build_callbacks
-
-from math import ceil
 
 pylogger = logging.getLogger(__name__)
 torch.set_float32_matmul_precision("high")
 
+num_to_th = {
+    1: "st",
+    2: "nd",
+    3: "rd",
+    4: "th",
+    5: "th",
+    6: "th",
+    7: "th",
+    8: "th",
+    9: "th",
+    10:"th",
+    11: "th",
+    12: "th",
+    13: "th",
+    14: "th",
+    15: "th",
+    16: "th",
+    17: "th",
+    18: "th",
+    19: "th",
+    20:"th"
+}
 
 def run(cfg: DictConfig):
+    
+    
     seed_index_everything(cfg)
 
+    
     template_core: NNTemplateCore = NNTemplateCore(
         restore_cfg=cfg.train.get("restore", None),
     )
 
-    logger: NNLogger = NNLogger(logging_cfg=cfg.train.logging, cfg=cfg, resume_id=template_core.resume_id)
 
+    logger: NNLogger = NNLogger(
+        logging_cfg=cfg.train.logging, 
+        cfg=cfg, 
+        resume_id=template_core.resume_id
+    )
+
+    
     if cfg.order == 1:
         zeroshot_identifier = f"{cfg.nn.module.model.model_name}_pt" 
     else:
-        raise NotImplementedError("Only order 1 is supported for now")
+        #zeroshot_identifier = f"{cfg.nn.module.model.model_name}_{cfg.epochs}Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_0" 
+        zeroshot_identifier = f"{cfg.nn.module.model.model_name}_{cfg.merging_method}_{cfg.epochs}Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_0" 
+
 
     classification_head_identifier = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_head"
 
+    
     if cfg.reset_pretrained_model:
-        image_encoder: ImageEncoder = hydra.utils.instantiate(cfg.nn.module.model, keep_lang=False)
-        model_class = get_class(image_encoder)
-
+        text_encoder: TextEncoder = hydra.utils.instantiate(cfg.nn.module.model, keep_lang=False)
+        
+        model_class = get_class(text_encoder)
         metadata = {"model_name": cfg.nn.module.model.model_name, "model_class": model_class}
-        upload_model_to_wandb(image_encoder, zeroshot_identifier, logger.experiment, cfg, metadata)
+        
+        upload_model_to_wandb(
+            text_encoder, zeroshot_identifier, logger.experiment, cfg, metadata
+        )
 
     else:
-        image_encoder = load_model_from_artifact(artifact_path=f"{zeroshot_identifier}:latest", run=logger.experiment)
+        text_encoder = load_model_from_artifact(
+            artifact_path=f"{zeroshot_identifier}:latest", 
+            run=logger.experiment
+        )
 
     if cfg.reset_classification_head:
         classification_head = get_classification_head(
-            cfg.nn.module.model.model_name,
-            cfg.nn.data.train_dataset,
-            cfg.nn.data.data_path,
-            cfg.misc.ckpt_path,
-            cache_dir=cfg.misc.cache_dir,
-            openclip_cachedir=cfg.misc.openclip_cachedir,
+            input_size=cfg.nn.module.model.hidden_size,
+            num_classes=cfg.nn.data.dataset.num_classes
         )
 
         model_class = get_class(classification_head)
+        
         metadata = {
             "model_name": cfg.nn.module.model.model_name,
             "model_class": model_class,
             "num_classes": cfg.nn.data.dataset.num_classes,
-            "input_size": classification_head.in_features,
+            "input_size": cfg.nn.module.model.hidden_size,
         }
 
         upload_model_to_wandb(
-            classification_head, classification_head_identifier, logger.experiment, cfg, metadata=metadata
+            classification_head, 
+            classification_head_identifier, 
+            logger.experiment, 
+            cfg, 
+            metadata=metadata
         )
 
     else:
@@ -86,30 +125,19 @@ def run(cfg: DictConfig):
             run=logger.experiment
         )
 
-    if cfg.train.save_grads:
-        save_grads_dir = os.path.join(
-            cfg.train.save_grads_dir, 
-            f"{cfg.nn.module.model.model_name}", 
-            f"{cfg.nn.data.dataset.dataset_name}",
-            f"{logger._experiment.id}",
-        )
-
-        os.makedirs(save_grads_dir, exist_ok=True)
-
-        pylogger.info(f"Saving grad norms to {save_grads_dir}")
-    else:
-        save_grads_dir = None
-
-    model: ImageClassifier = hydra.utils.instantiate(
-        cfg.nn.module, encoder=image_encoder, classifier=classification_head, _recursive_=False, 
-        save_grad_norms=cfg.train.save_grad_norms, save_grads_dir=save_grads_dir
+    model: TextClassifier = hydra.utils.instantiate(
+        cfg.nn.module, 
+        encoder=text_encoder, classifier=classification_head, 
+        _recursive_=False
     )
 
-    dataset = get_dataset(
-        cfg.nn.data.train_dataset,
-        preprocess_fn=model.encoder.train_preprocess,
-        location=cfg.nn.data.data_path,
+    dataset = get_text_dataset(
+        dataset_name=cfg.nn.data.train_dataset,
+        tokenizer_name=cfg.nn.module.model.model_name,
+        train_split_ratio_for_val=cfg.nn.data.splits_pct.val,
+        max_seq_length=cfg.nn.data.max_seq_length,
         batch_size=cfg.nn.data.batch_size.train,
+        num_workers=cfg.nn.data.num_workers.train
     )
 
     model.freeze_head()
@@ -119,42 +147,39 @@ def run(cfg: DictConfig):
     storage_dir: str = cfg.core.storage_dir
 
     pylogger.info("Instantiating the <Trainer>")
-    
-    accumulate_grad_batches = 1 if cfg.accumulate_grad_batches == False else ceil(len(dataset.train_loader.dataset) / cfg.nn.data.batch_size.train)
-    if accumulate_grad_batches > 1:
-        pylogger.info(f"Accumulating gradients over {accumulate_grad_batches} batches")
-
     trainer = pl.Trainer(
         default_root_dir=storage_dir,
         plugins=[NNCheckpointIO(jailing_dir=logger.run_dir)],
-        # max_epochs=cfg.nn.data.dataset.ft_epochs,
-        max_epochs=1,
+        max_epochs=cfg.epochs, 
         logger=logger,
         callbacks=callbacks,
-        accumulate_grad_batches=accumulate_grad_batches,
         **cfg.train.trainer,
     )
 
-    pylogger.info(f"Starting training for {trainer.max_epochs} epochs!")
-    trainer.fit(model=model, train_dataloaders=dataset.train_loader, ckpt_path=template_core.trainer_ckpt_path)
+    pylogger.info("Starting training!")
+    trainer.fit(
+        model=model, 
+        train_dataloaders=dataset.train_loader, 
+        ckpt_path=template_core.trainer_ckpt_path
+    )
 
     pylogger.info("Starting testing!")
     trainer.test(model=model, dataloaders=dataset.test_loader)
 
-    artifact_name = (
-        f"{cfg.nn.module.model.model_name}_"
-        f"{cfg.nn.data.dataset.dataset_name}_"
-        f"{cfg.seed_index}_"
-        # f"epochs_{cfg.nn.data.dataset.ft_epochs}_"
-        f"epochs_1_"
-        f"order_{cfg.order}"
-    )
 
-    model_class = get_class(image_encoder)
+    #artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_{cfg.epochs}Eps{cfg.order}{num_to_th[cfg.order]}Order"
+    artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_pcgrad_{cfg.epochs}Eps{cfg.order}{num_to_th[cfg.order]}Order"
+
+    model_class = get_class(text_encoder)
     
-    metadata = {"model_name": cfg.nn.module.model.model_name, "model_class": model_class}
+    metadata = {
+        "model_name": cfg.nn.module.model.model_name, 
+        "model_class": model_class
+    }
+
     upload_model_to_wandb(model.encoder, artifact_name, logger.experiment, cfg, metadata)
 
+    
     if logger is not None:
         logger.experiment.finish()
 

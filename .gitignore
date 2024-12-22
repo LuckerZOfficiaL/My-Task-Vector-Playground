@@ -1,6 +1,8 @@
 wandb
 multirun.yaml
 storage
+cache
+grads
 
 # ignore the _version.py file
 _version.py

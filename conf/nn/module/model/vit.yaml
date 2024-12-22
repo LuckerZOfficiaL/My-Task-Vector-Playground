@@ -3,3 +3,5 @@ model_name: ViT-B-16 # ViT-B-16
 openclip_cachedir: ${misc.openclip_cachedir}
 cache_dir: ${misc.cache_dir}
 keep_lang: ??
+x_key: ${conventions.x_key}
+y_key: ${conventions.y_key}

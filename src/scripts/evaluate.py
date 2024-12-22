@@ -29,7 +29,7 @@ from tvp.data.datamodule import MetaData
 from tvp.data.datasets.registry import get_dataset
 from tvp.task_vectors.task_vectors import TaskVector
 from tvp.utils.io_utils import load_model_from_artifact
-from tvp.utils.utils import build_callbacks
+from tvp.utils.utils import build_callbacks, clip_vector_norm_
 from torch.nn.utils import vector_to_parameters
 from torch.nn.utils import parameters_to_vector
 from hydra.utils import instantiate
@@ -69,7 +69,6 @@ DATASET_NAME_TO_TA_FT_EPOCHS = {
         "FashionMNIST": 5,
         "KMNIST": 5,
     }
-
 
 def apply_task_vector(model, task_vector, scaling_coef=1):
     #model.load_state_dict({k: v + task_vector[k] for k, v in model.state_dict().items()})
@@ -232,6 +231,7 @@ def run(cfg: DictConfig) -> str:
     
     elif cfg.task_vectors.merging_method == "dare":
         print("\nRunning DARE Merging...\n")
+
         task_vectors = my_dare(
             task_vectors, 
             ref_model=zeroshot_model, 
@@ -245,11 +245,64 @@ def run(cfg: DictConfig) -> str:
         print("\nOrthogonalizing task vectors...\n")
         task_vectors = tv_orthogonalization(task_vectors, method='gs')
 
+
+    
+    if cfg.clipping.use_clipping:
+
+        pylogger.info("Running task vectors clipping")
+        pylogger.info(f"Clipping method: {cfg.clipping.clipping_method}")
+        pylogger.info(f"L_2 norms of TVs: {torch.norm(task_vectors, p=2, dim=1)}")
+        avg_norm = torch.mean(torch.norm(task_vectors, p=2, dim=1))
+        pylogger.info(f"Average norm of task vectors: {avg_norm}")
+
+        for tv in task_vectors:
+
+            if cfg.clipping.clipping_method == "fixed":
+                max_norm = cfg.clipping.fixed_clipping_norm
+            elif cfg.clipping.clipping_method == "avg":
+                max_norm = avg_norm
+            else:
+                raise ValueError(f"Unsupported clipping method: {cfg.clipping.clipping_method}")
+
+            pylogger.info(f"Clipping task vector with max norm: {max_norm}")
+            
+            clip_vector_norm_(
+                vector=tv, max_norm=max_norm, norm_type=2.0, error_if_nonfinite=False
+            )
+
+    if cfg.momentum.use_momentum and cfg.order > 1:
+
+        if cfg.momentum.momentum_method == "unified":
+
+            if cfg.order == 2:
+                minus_2_name = f"{cfg.nn.module.model.model_name}_pt"
+            else:
+                minus_2_name = f"{cfg.nn.module.model.model_name}_{cfg.task_vectors.merging_method}_{cfg.finetuning_method}_unified_momentum_{cfg.epochs}Eps{cfg.order - 2}{num_to_th[cfg.order - 2]}OrderUnifiedModel_{cfg.seed_index}"
+            
+
+            minus_1_name = f"{cfg.nn.module.model.model_name}_{cfg.task_vectors.merging_method}_{cfg.finetuning_method}_unified_momentum_{cfg.epochs}Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_{cfg.seed_index}" 
+            
+            minus_1_model = load_model_from_artifact(artifact_path=f"{minus_1_name}:latest", run=logger.experiment)
+            minus_2_model = load_model_from_artifact(artifact_path=f"{minus_2_name}:latest", run=logger.experiment)
+
+            previous_task_vector = TaskVector.from_models(
+                pretrained_model=minus_2_model, 
+                finetuned_model=minus_1_model
+            )
+        
+
     print_pairwise_cos_sim(task_vectors)
 
     if cfg.task_vectors.merging_method != "ties":
         task_vector_aggregator = instantiate(cfg.task_vectors.aggregator)
         multi_task_vector = task_vector_aggregator(task_vectors)
+
+    if cfg.momentum.use_momentum and cfg.order > 1:
+        pylogger.info("Applying momentum to multi task vector")
+        
+        multi_task_vector = (
+            1 - cfg.momentum.momentum_coeff
+        ) * multi_task_vector + cfg.momentum.momentum_coeff * previous_task_vector
 
     delta_model = copy.deepcopy(zeroshot_model)
     vector_to_parameters(multi_task_vector, delta_model.parameters())
@@ -317,6 +370,11 @@ def run(cfg: DictConfig) -> str:
             callbacks=callbacks,
             **cfg.train.trainer,
         )
+
+        print("\n\n")
+        pylogger.info("len(dataset.train_loader.dataset): {}".format(len(dataset.train_loader.dataset)))
+        pylogger.info("len(dataset.test_loader.dataset): {}".format(len(dataset.test_loader.dataset)))
+        print("\n\n")
 
         # Evaluation
         if cfg.eval_on_train:

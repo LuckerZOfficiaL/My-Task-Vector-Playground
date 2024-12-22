@@ -15,8 +15,8 @@ import matplotlib.pyplot as plt
 plt.rcParams["font.family"] = "serif"
 plt.rcParams["text.usetex"] = True
 
-plt.rc('xtick', labelsize=16) 
-plt.rc('ytick', labelsize=16) 
+plt.rc('xtick', labelsize=20)
+plt.rc('ytick', labelsize=20)
 
 wandb.login()
 
@@ -56,7 +56,11 @@ def run():
     bc_unified_names = ["ViT-B-16_Breadcrumbs10Eps1stOrderUnifiedModel_0"]
     hota_unified_names = ["ViT-B-16_OneNoneEps"+str(order)+num_to_th[order]+"OrderUnifiedModel_0" for order in range(1, 11)]
 
-    run = wandb.init(project="task-vectors-playground", job_type="artifact")
+    run = wandb.init(
+        project="task-vectors-playground", 
+        entity="dansolombrinoandfriends", 
+        job_type="artifact"
+    )
     pt_ckpt = {}
     tva_ckpts = {}
     ties_ckpts = {}
@@ -64,31 +68,31 @@ def run():
     hota_ckpts = {}
 
     for name in pt_name:
-        artifact = run.use_artifact(name+":latest", type='checkpoint')  # Change type if needed
+        artifact = run.use_artifact(name+":v0", type='checkpoint')  # Change type if needed
         artifact_dir = artifact.download()
         ckpt_path = os.path.join(artifact_dir, 'trained.ckpt')  # Update with the correct filename
         pt_ckpt[name] = torch.load(ckpt_path)
 
     for name in tva_unified_names:
-        artifact = run.use_artifact(name+":latest", type='checkpoint')  # Change type if needed
+        artifact = run.use_artifact(name+":v0", type='checkpoint')  # Change type if needed
         artifact_dir = artifact.download()
         ckpt_path = os.path.join(artifact_dir, 'trained.ckpt')
         tva_ckpts[name] = torch.load(ckpt_path)
 
     for name in ties_unified_names:
-        artifact = run.use_artifact(name+":latest", type='checkpoint')  # Change type if needed
+        artifact = run.use_artifact(name+":v0", type='checkpoint')  # Change type if needed
         artifact_dir = artifact.download()
         ckpt_path = os.path.join(artifact_dir, 'trained.ckpt')
         ties_ckpts[name] = torch.load(ckpt_path)
 
     for name in bc_unified_names:
-        artifact = run.use_artifact(name+":latest", type='checkpoint')  # Change type if needed
+        artifact = run.use_artifact(name+":v0", type='checkpoint')  # Change type if needed
         artifact_dir = artifact.download()
         ckpt_path = os.path.join(artifact_dir, 'trained.ckpt')
         bc_ckpts[name] = torch.load(ckpt_path)
 
     for name in hota_unified_names:
-        artifact = run.use_artifact(name+":latest", type='checkpoint')  # Change type if needed
+        artifact = run.use_artifact(name+":v0", type='checkpoint')  # Change type if needed
         artifact_dir = artifact.download()
         ckpt_path = os.path.join(artifact_dir, 'trained.ckpt')
         hota_ckpts[name] = torch.load(ckpt_path)
@@ -122,10 +126,16 @@ def run():
     labels = ['', '', '', ''] + [f'{i+1}{num_to_th[i+1]}' for i in range(hota_arr.shape[0])]
 
     # Grouping information (assign a group ID to each array)
-    group_ids = ['Pretrained'] * pt_arr.shape[0] + ['Task Arithmetic'] * tva_arr.shape[0] + ['TIES'] * ties_arr.shape[0] + ['Breadcrumbs'] * bc_arr.shape[0] + ['HOTA'] * hota_arr.shape[0]
+    group_ids = ['Pretrained'] * pt_arr.shape[0] + ['Task Arithmetic'] * tva_arr.shape[0] + ['TIES'] * ties_arr.shape[0] + ['Breadcrumbs'] * bc_arr.shape[0] + ['ATM'] * hota_arr.shape[0]
 
     # Assign colors to each group
-    colors = {'Pretrained': 'black', 'Task Arithmetic': 'green', 'TIES': 'blue', 'Breadcrumbs': 'orange', 'HOTA': 'red'}
+    colors = {
+        'Pretrained': 'black', 
+        'Task Arithmetic': '#ffd166', 
+        'TIES': '#118ab2', 
+        'Breadcrumbs': '#06d6a0', 
+        'ATM': '#ef476f'
+    }
 
     pca = PCA(n_components=2)
     data_2d = pca.fit_transform(collective_arr)
@@ -145,7 +155,7 @@ def run():
     #plt.xlabel('PC1', fontsize=11)
     #plt.ylabel('PC2', fontsize=11)
     plt.grid(True)
-    plt.legend(prop={'size': 12})
+    plt.legend(loc='lower center', prop={'size': 14})
     plt.show()
 
 
@@ -154,7 +164,7 @@ def run():
     plt.close()
 
     # Initialize a wandb run
-    wandb.init(project='task-vectors-playground', entity='gladia')
+    wandb.init(project='task-vectors-playground', entity='dansolombrinoandfriends')
     artifact = wandb.Artifact(plot_filename, type='figure')
     artifact.add_file(plot_filename)
     wandb.log_artifact(artifact)

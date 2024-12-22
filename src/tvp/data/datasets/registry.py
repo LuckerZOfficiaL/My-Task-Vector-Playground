@@ -36,6 +36,8 @@ class GenericDataset(object):
     def __init__(self):
         self.train_dataset = None
         self.train_loader = None
+        self.val_dataset = None
+        self.val_loader = None
         self.test_dataset = None
         self.test_loader = None
         self.classnames = None
@@ -44,6 +46,7 @@ class GenericDataset(object):
 def split_train_into_train_val(
     dataset, new_dataset_class_name, batch_size, num_workers, val_fraction, max_val_samples=None, seed=0
 ):
+
     assert val_fraction > 0.0 and val_fraction < 1.0
     total_size = len(dataset.train_dataset)
     val_size = int(total_size * val_fraction)
@@ -73,9 +76,33 @@ def split_train_into_train_val(
         num_workers=num_workers,
     )
 
+    """
+       This may not make any sense, BUT it is necessarily due to how the original
+       code of Task Arithmetic handles the data splits.
+
+       Specifically, they start from the TorchVision datasets, which come with a 
+       train and a test split.
+       One would expect to get the Val split from the train split, but they do not do that.
+       Rather, they discard the test split given by TorchVision and replace 
+       the test split with a subset of the train split.
+
+       Basically, what one would assume to be a val split is actually a test split.
+       For this reason, we are going to
+       - get the TorchVision test set and assign it to the val split.
+         since this data has not been used for training nor testing, it is a good candidate for a val split.
+       - use the newly-computed split (from the training split) as a test set, 
+         as per Task Arithmetic original code.
+    """
+    new_dataset.val_dataset = dataset.test_dataset
+    new_dataset.val_loader = torch.utils.data.DataLoader(
+        new_dataset.val_dataset, batch_size=batch_size, num_workers=num_workers,
+        shuffle=False
+    )
+
     new_dataset.test_dataset = valset
     new_dataset.test_loader = torch.utils.data.DataLoader(
-        new_dataset.test_dataset, batch_size=batch_size, num_workers=num_workers
+        new_dataset.test_dataset, batch_size=batch_size, num_workers=num_workers,
+        shuffle=False
     )
 
     new_dataset.classnames = copy.copy(dataset.classnames)

@@ -147,3 +147,46 @@ def build_callbacks(cfg: ListConfig, *args: Callback) -> List[Callback]:
         callbacks.append(hydra.utils.instantiate(callback, _recursive_=False))
 
     return callbacks
+
+import torch
+
+def clip_vector_norm_(vector: torch.Tensor, max_norm: float, norm_type: float = 2.0, error_if_nonfinite: bool = False) -> torch.Tensor:
+    """
+    Clip the norm of a 1D tensor (vector) to the specified max_norm.
+
+    Args:
+        vector (Tensor): the 1D tensor that will have its norm clipped.
+        max_norm (float): max norm of the vector.
+        norm_type (float): type of the used p-norm. Can be 'inf' for infinity norm.
+        error_if_nonfinite (bool): if True, an error is thrown if the norm of the vector
+                                   is nan, inf, or -inf. Default: False.
+
+    Returns:
+        Total norm of the original vector before clipping.
+    """
+    if not isinstance(vector, torch.Tensor):
+        raise ValueError("The input `vector` must be a torch.Tensor.")
+    if vector.dim() != 1:
+        raise ValueError("The input `vector` must be a 1D tensor.")
+
+    max_norm = float(max_norm)
+    norm_type = float(norm_type)
+
+    # Compute the norm of the vector
+    total_norm = torch.linalg.vector_norm(vector, norm_type)
+
+    # Check if the norm is non-finite (nan, inf, -inf)
+    if error_if_nonfinite and torch.logical_or(total_norm.isnan(), total_norm.isinf()):
+        raise RuntimeError(
+            f'The norm of order {norm_type} for the input `vector` is non-finite, so it cannot be clipped. '
+            'To disable this error and scale the vector by the non-finite norm anyway, '
+            'set `error_if_nonfinite=False`.')
+
+    # Compute the clip coefficient
+    clip_coef = max_norm / (total_norm + 1e-6)
+    clip_coef_clamped = torch.clamp(clip_coef, max=1.0)
+
+    # Scale the vector in place
+    vector.mul_(clip_coef_clamped)
+
+    return total_norm

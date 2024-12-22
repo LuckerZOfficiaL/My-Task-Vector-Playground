@@ -17,6 +17,9 @@ from tvp.data.datamodule import MetaData
 from tvp.data.datasets.common import maybe_dictionarize
 from tvp.utils.utils import torch_load, torch_save
 
+import wandb
+import os
+
 pylogger = logging.getLogger(__name__)
 
 
@@ -45,6 +48,17 @@ class ImageClassifier(pl.LightningModule):
         self.classification_head = classifier
         self.encoder.create_tv_mask() # call this to create the TV sparsity mask in the encoder, the mask is applied to the gradient to prevent pruned weights from updating
 
+        self.batch_gradient_norms = []  # Store gradient norms for each batch
+        self.epoch_gradient_norms = []  # Store average gradient norms per epoch
+
+        self.stage = None
+
+        self.save_grad_norms = kwargs.get("save_grad_norms", False)
+
+        self.save_grads_dir = kwargs.get("save_grads_dir", None)
+        self.saved_grads = torch.zeros((86192640)).to(self.device)
+    
+    
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Method for the forward pass.
 
@@ -59,6 +73,126 @@ class ImageClassifier(pl.LightningModule):
         logits = self.classification_head(embeddings)
 
         return logits
+    
+    def on_val_epoch_start(self):
+        self.stage = "val"
+    
+    def on_test_epoch_start(self):
+        self.stage = "test"
+    
+    def on_train_epoch_start(self):
+        self.stage = "train"
+
+        if self.save_grad_norms:
+            # Clear batch gradient norms at the start of each epoch
+            self.batch_gradient_norms.clear()
+
+
+    def _save_grad_norms_batch(self):
+        # Calculate and store gradient norms for the current batch
+        total_norm = 0
+        
+        with torch.no_grad():
+            # Loop through parameters in encoder and classification head
+            for component in [self.encoder, self.classification_head]:
+                for p in component.parameters():
+                    if p.grad is not None:
+                        param_norm = p.grad.data.norm(2)  # Calculate L2 norm of gradients
+                        total_norm += param_norm.item() ** 2
+                    
+        total_norm = total_norm ** 0.5
+        # Store batch-level gradient norm
+        self.batch_gradient_norms.append(total_norm)
+        
+        # Log the batch-level gradient norm
+        self.log('grad_norm_batch', total_norm, on_step=True, on_epoch=False, prog_bar=False)
+
+
+    def _get_all_grads(self):
+        
+        all_grads = []
+
+        with torch.no_grad():
+            # Get gradients from self.encoder, even if it's an external object or custom module
+            for param in getattr(self.encoder, 'parameters', lambda: [])():
+                if param.grad is not None:
+                    all_grads.append(param.grad.view(-1))  # Flatten and store the gradient
+
+            # Get gradients from self.classification_head, even if it's an external object or custom module
+            for param in getattr(self.classification_head, 'parameters', lambda: [])():
+                if param.grad is not None:
+                    all_grads.append(param.grad.view(-1))  # Flatten and store the gradient
+
+            # Handle any additional external parameters (if they are tensors directly and not modules)
+            for param in getattr(self.encoder, 'extra_params', []):
+                if isinstance(param, torch.Tensor) and param.grad is not None:
+                    all_grads.append(param.grad.view(-1))  # Flatten and store the gradient
+
+            for param in getattr(self.classification_head, 'extra_params', []):
+                if isinstance(param, torch.Tensor) and param.grad is not None:
+                    all_grads.append(param.grad.view(-1))  # Flatten and store the gradient
+        
+        return torch.cat(all_grads) if all_grads else None
+
+    def _accumulate_grads(self):
+        # Accumulate gradients for the entire epoch
+        all_grads = self._get_all_grads()
+        all_grads = all_grads.to(self.device)
+        
+        with torch.no_grad():
+            if all_grads is not None:
+                self.saved_grads = self.saved_grads.to(self.device)
+                self.saved_grads += all_grads
+    
+    def on_after_backward(self):
+
+        if self.stage != "train":
+            return
+
+        if self.save_grad_norms:
+            self._save_grad_norms_batch()
+
+        if self.save_grads_dir is not None:
+            self._accumulate_grads()
+
+    
+    def _save_grad_norms_epoch(self):
+        
+        pylogger.info(f"\n\nEpoch {self.current_epoch}: Batch gradient norms: {self.batch_gradient_norms}\n\n")
+        
+        # Calculate the average gradient norm for the entire epoch
+        if len(self.batch_gradient_norms) > 0:
+            average_gradient_norm = sum(self.batch_gradient_norms) / len(self.batch_gradient_norms)
+            self.epoch_gradient_norms.append(average_gradient_norm)
+            
+            # Log the average gradient norm for the epoch
+            self.log('grad_norm_epoch', average_gradient_norm, on_epoch=True, prog_bar=False)
+
+            pylogger.info(f"\n\nEpoch {self.current_epoch}: Average gradient norm: {average_gradient_norm}")
+            pylogger.info(f"Epoch {self.current_epoch}: {self.epoch_gradient_norms}\n\n")
+
+
+    def on_train_epoch_end(self):
+
+        if self.save_grad_norms:
+            self._save_grad_norms_epoch()
+
+        if self.save_grads_dir is not None:    
+            # Save the combined tensor to disk
+            epoch_str = f"{self.current_epoch:02d}"
+            save_path = os.path.join(self.save_grads_dir, f"model_grads_epoch_{epoch_str}.pt")
+            
+            torch.save(self.saved_grads, save_path)
+            
+            print(f"Saved combined gradients to {save_path}")
+            print(f"\n\nCombined gradients tensor shape: {self.saved_grads.shape}\n\n")
+
+            # Reset the saved gradients tensor for the next epoch
+            self.saved_grads = torch.zeros_like(self.saved_grads)
+
+
+        
+        
 
     def _step(self, batch: Dict[str, torch.Tensor], split: str) -> Mapping[str, Any]:
         batch = maybe_dictionarize(batch, self.hparams.x_key, self.hparams.y_key)
