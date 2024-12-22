@@ -30,6 +30,15 @@ def load_model_from_artifact(run, artifact_path):
 
     return model
 
+def export_model_to_disk(model, model_name: str, model_path: str):
+
+    # make directory if it doesn't exist
+    Path(model_path).parent.mkdir(parents=True, exist_ok=True)
+    
+    pylogger.info(f"Exporting {model_name} to {model_path}")
+
+    torch.save(model.state_dict(), model_path)
+
 
 def get_class(model):
     return model.__class__.__module__ + "." + model.__class__.__qualname__

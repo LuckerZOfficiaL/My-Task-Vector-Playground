@@ -29,7 +29,7 @@ from tvp.data.datamodule import MetaData
 from tvp.data.datasets.registry import get_dataset
 from tvp.task_vectors.task_vectors import TaskVector
 from tvp.utils.io_utils import load_model_from_artifact
-from tvp.utils.utils import build_callbacks, clip_vector_norm_
+from tvp.utils.utils import build_callbacks
 from torch.nn.utils import vector_to_parameters
 from torch.nn.utils import parameters_to_vector
 from hydra.utils import instantiate
@@ -42,33 +42,69 @@ from tvp.competitors.my_breadcrumbs import model_breadcrumbs
 from tvp.competitors.their_ties import *
 from tvp.competitors.my_dare import *
 
+import json
+
 
 pylogger = logging.getLogger(__name__)
 
 torch.set_float32_matmul_precision("high")
 
 DATASET_NAME_TO_TA_FT_EPOCHS = {
-        "Cars": 35,
-        "DTD": 76,
-        "EuroSAT": 12,
-        "GTSRB": 11,
-        "MNIST": 5,
-        "RESISC45": 15,
-        "SUN397": 14,
-        "SVHN": 4,
-        "CIFAR10": 6,
-        "CIFAR100": 6,
-        "STL10": 60,
-        "Food101": 4,
-        "Flowers102": 147,
-        "FER2013": 10,
-        "PCAM": 1,
-        "OxfordIIITPet": 82,
-        "RenderedSST2": 39,
-        "EMNIST": 2,
-        "FashionMNIST": 5,
-        "KMNIST": 5,
-    }
+    "Cars": 35,
+    "DTD": 76,
+    "EuroSAT": 12,
+    "GTSRB": 11,
+    "MNIST": 5,
+    "RESISC45": 15,
+    "SUN397": 14,
+    "SVHN": 4,
+    "CIFAR10": 6,
+    "CIFAR100": 6,
+    "STL10": 60,
+    "Food101": 4,
+    "Flowers102": 147,
+    "FER2013": 10,
+    "PCAM": 1,
+    "OxfordIIITPet": 82,
+    "RenderedSST2": 39,
+    "EMNIST": 2,
+    "FashionMNIST": 5,
+    "KMNIST": 5,
+}
+
+TASK_SPECIFIC_ACCS = {
+    "Cars": 0.8661857843399048,
+    "DTD": 0.7597517967224121,
+    "EuroSAT": 0.9927314519882202,
+    "GTSRB": 0.9870942234992981,
+    "MNIST": 0.9934999942779541,
+    "RESISC45": 0.9371428489685059,
+    "SUN397": 0.7319899201393127,
+    "SVHN": 0.9676936268806458,
+    "CIFAR10": 0.9642999768257141,
+    "CIFAR100": 0.8623999953269958,
+    "STL10": 0.9641249775886536,
+    "Food101": 0.8809900879859924,
+    "Flowers102": 0.9461700916290283,
+    "FER2013": 0.7180272936820984,
+    "PCAM": 0.87713623046875,
+    "OxfordIIITPet": 0.8648133277893066,
+    "RenderedSST2": 0.7649642825126648,
+    "EMNIST": 0.9957000017166138,
+    "FashionMNIST": 0.9336000084877014,
+    "KMNIST": 0.9757999777793884,
+}
+
+import psutil
+
+def get_memory_usage():
+    """Returns the memory usage of the current process in MB and GB."""
+    process = psutil.Process(os.getpid())
+    memory_info = process.memory_info()
+    memory_in_mb = memory_info.rss / (1024 ** 2)  # Convert bytes to MB
+    memory_in_gb = memory_info.rss / (1024 ** 3)  # Convert bytes to GB
+    return memory_in_mb, memory_in_gb
+
 
 def apply_task_vector(model, task_vector, scaling_coef=1):
     #model.load_state_dict({k: v + task_vector[k] for k, v in model.state_dict().items()})
@@ -107,12 +143,14 @@ def generate_orthogonal_directions_for_tv(state_dict, num_directions): # returns
         orthogonal_directions[key] = torch.tensor(q, dtype=torch.float32).view(*shape, num_directions)
     return orthogonal_directions
 
+
 def project_onto_direction(tensor, direction):
     flat_tensor = tensor.view(-1)
     flat_direction = direction.view(-1)
     projection = torch.matmul(flat_tensor, flat_direction) / torch.norm(flat_direction, dim=0)**2
     projected_tensor = (flat_direction*projection).view(tensor.shape)
     return projected_tensor
+
 
 def project_tv(tv, orthogonal_directions, task_id):
     projected_state_dict = {}
@@ -160,12 +198,20 @@ def run(cfg: DictConfig) -> str:
     
     seed_index_everything(cfg)
 
+    
     cfg.core.tags = enforce_tags(cfg.core.get("tags", None))
 
+    
     template_core: NNTemplateCore = NNTemplateCore(
         restore_cfg=cfg.train.get("restore", None),
     )
-    logger: NNLogger = NNLogger(logging_cfg=cfg.train.logging, cfg=cfg, resume_id=template_core.resume_id)
+    
+    
+    logger: NNLogger = NNLogger(
+        logging_cfg=cfg.train.logging, 
+        cfg=cfg, 
+        resume_id=template_core.resume_id
+    )
 
 
     if cfg.order == 1:
@@ -173,182 +219,53 @@ def run(cfg: DictConfig) -> str:
     else:
         raise NotImplementedError("Only order 1 is supported for now")
     
-    zeroshot_model = load_model_from_artifact(artifact_path=f"{zeroshot_identifier}:latest", run=logger.experiment)
-
-    finetuned_id_fn = lambda dataset: (
+    zeroshot_model_atm = load_model_from_artifact(
+        artifact_path=f"{zeroshot_identifier}:latest", 
+        run=logger.experiment
+    )
+    
+    zeroshot_model_ta = load_model_from_artifact(
+        artifact_path=f"{zeroshot_identifier}:latest", run=logger.experiment
+    )
+  
+    
+    task_equipped_model_atm = copy.deepcopy(zeroshot_model_atm)
+    model_name_atm = (
         f"{cfg.nn.module.model.model_name}_"
-        f"{dataset}_"
+        f"applied_TVs_{'_'.join(cfg.task_vectors.to_apply)}_"
         f"{cfg.seed_index}_"
-        f"epochs_{DATASET_NAME_TO_TA_FT_EPOCHS[dataset]}_"
-        f"order_{cfg.order}"
-        f":latest"
+        f"epochs_1_"
+        f"order_1"
     )
-
-    finetuned_models = {
-        dataset: load_model_from_artifact(
-            artifact_path=finetuned_id_fn(dataset), 
-            run=logger.experiment
-        ) for dataset in cfg.task_vectors.to_apply
-    }
-
-    # Task vectors
-    flatten = lambda model: parameters_to_vector(model.parameters())
-
-    zeroshot_vec = flatten(zeroshot_model)
+    model_path_atm = f"{cfg.core.storage_dir}/{model_name_atm}.ckpt"
+    task_equipped_model_atm.load_state_dict(torch.load(model_path_atm))
     
-    task_vectors = [
-        TaskVector.from_models(
-            pretrained_model=zeroshot_model, 
-            finetuned_model=finetuned_models[dataset]
-        ) for dataset in cfg.task_vectors.to_apply
-    ]
-
-    with torch.no_grad():
-        task_vectors = torch.stack(
-            [
-                flatten(finetuned_models[dataset]) - zeroshot_vec for dataset in cfg.task_vectors.to_apply
-            ]
-        )
-    
-    if cfg.task_vectors.merging_method == "ties":
-        print("\nRunning TIES...\n")
-        #task_vectors = ties_merging(task_vectors, cfg.task_vectors.ties_topk)
-        multi_task_vector = their_ties_merging(
-            reset_type="topk",
-            flat_task_checks=task_vectors, 
-            reset_thresh=cfg.task_vectors.ties_topk,
-            resolve_method="none",
-            merge_func="mean"
-        )
-    
-    elif cfg.task_vectors.merging_method == "breadcrumbs":
-        print("\nRunning Model Breadcrumbs...\n")
-        task_vectors = model_breadcrumbs(
-            task_vectors,
-            beta=cfg.task_vectors.breadcrumbs_beta,
-            gamma=cfg.task_vectors.breadcrumbs_gamma
-        )
-    
-    elif cfg.task_vectors.merging_method == "dare":
-        print("\nRunning DARE Merging...\n")
-
-        task_vectors = my_dare(
-            task_vectors, 
-            ref_model=zeroshot_model, 
-            p=cfg.task_vectors.dare_rate
-        )
-    
-    else: 
-        print("\nRunning vanilla merging...\n")
-    
-    if cfg.task_vectors.orthogonalize:
-        print("\nOrthogonalizing task vectors...\n")
-        task_vectors = tv_orthogonalization(task_vectors, method='gs')
-
-
-    
-    if cfg.clipping.use_clipping:
-
-        pylogger.info("Running task vectors clipping")
-        pylogger.info(f"Clipping method: {cfg.clipping.clipping_method}")
-        pylogger.info(f"L_2 norms of TVs: {torch.norm(task_vectors, p=2, dim=1)}")
-        avg_norm = torch.mean(torch.norm(task_vectors, p=2, dim=1))
-        pylogger.info(f"Average norm of task vectors: {avg_norm}")
-
-        for tv in task_vectors:
-
-            if cfg.clipping.clipping_method == "fixed":
-                max_norm = cfg.clipping.fixed_clipping_norm
-            elif cfg.clipping.clipping_method == "avg":
-                max_norm = avg_norm
-            else:
-                raise ValueError(f"Unsupported clipping method: {cfg.clipping.clipping_method}")
-
-            pylogger.info(f"Clipping task vector with max norm: {max_norm}")
-            
-            clip_vector_norm_(
-                vector=tv, max_norm=max_norm, norm_type=2.0, error_if_nonfinite=False
-            )
-
-    if cfg.momentum.use_momentum and cfg.order > 1:
-
-        if cfg.momentum.momentum_method == "unified":
-
-            if cfg.order == 2:
-                minus_2_name = f"{cfg.nn.module.model.model_name}_pt"
-            else:
-                minus_2_name = f"{cfg.nn.module.model.model_name}_{cfg.task_vectors.merging_method}_{cfg.finetuning_method}_unified_momentum_{cfg.epochs}Eps{cfg.order - 2}{num_to_th[cfg.order - 2]}OrderUnifiedModel_{cfg.seed_index}"
-            
-
-            minus_1_name = f"{cfg.nn.module.model.model_name}_{cfg.task_vectors.merging_method}_{cfg.finetuning_method}_unified_momentum_{cfg.epochs}Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_{cfg.seed_index}" 
-            
-            minus_1_model = load_model_from_artifact(artifact_path=f"{minus_1_name}:latest", run=logger.experiment)
-            minus_2_model = load_model_from_artifact(artifact_path=f"{minus_2_name}:latest", run=logger.experiment)
-
-            previous_task_vector = TaskVector.from_models(
-                pretrained_model=minus_2_model, 
-                finetuned_model=minus_1_model
-            )
-        
-
-    print_pairwise_cos_sim(task_vectors)
-
-    if cfg.task_vectors.merging_method != "ties":
-        task_vector_aggregator = instantiate(cfg.task_vectors.aggregator)
-        multi_task_vector = task_vector_aggregator(task_vectors)
-
-    if cfg.momentum.use_momentum and cfg.order > 1:
-        pylogger.info("Applying momentum to multi task vector")
-        
-        multi_task_vector = (
-            1 - cfg.momentum.momentum_coeff
-        ) * multi_task_vector + cfg.momentum.momentum_coeff * previous_task_vector
-
-    delta_model = copy.deepcopy(zeroshot_model)
-    vector_to_parameters(multi_task_vector, delta_model.parameters())
-    
-    task_equipped_model = copy.deepcopy(zeroshot_model)
-    apply_task_vector(
-        model=task_equipped_model, 
-        task_vector=delta_model.state_dict(), 
-        scaling_coef=cfg.task_vectors.scaling_coefficient
-    )
-
-
-    # Save the unified model as artifact
-    artifact_name = (
+    task_equipped_model_ta = copy.deepcopy(zeroshot_model_ta)
+    model_name_ta = (
         f"{cfg.nn.module.model.model_name}_"
-        f"Merged_"
+        f"applied_TVs_{'_'.join(cfg.task_vectors.to_apply)}_"
         f"{cfg.seed_index}_"
         f"epochs_max_"
         f"order_{cfg.order}"
     )
-    metadata = {
-        "model_name": f"{cfg.nn.module.model.model_name}", 
-        "model_class": "tvp.modules.encoder.ImageEncoder",
-        "cfg": cfg
-    }
-    upload_model_to_wandb(
-        task_equipped_model, 
-        artifact_name, 
-        logger.experiment, 
-        cfg, 
-        metadata
-    )
+    model_path_ta = f"{cfg.core.storage_dir}/{model_name_ta}.ckpt"
+    task_equipped_model_ta.load_state_dict(torch.load(model_path_ta))
+
 
     seed_index_everything(cfg)
 
-    results = {}
+    results_atm = {}
 
     for dataset_name in cfg.eval_datasets:
 
         classification_head_identifier = f"{cfg.nn.module.model.model_name}_{dataset_name}_head"
         classification_head = load_model_from_artifact(
+            #artifact_path=f"{classification_head_identifier}:v0", run=logger.experiment
             artifact_path=f"{classification_head_identifier}:latest", run=logger.experiment
         )
 
         model = hydra.utils.instantiate(
-            cfg.nn.module, encoder=task_equipped_model, classifier=classification_head, _recursive_=False
+            cfg.nn.module, encoder=task_equipped_model_atm, classifier=classification_head, _recursive_=False
         )
 
         dataset = get_dataset(
@@ -371,10 +288,58 @@ def run(cfg: DictConfig) -> str:
             **cfg.train.trainer,
         )
 
-        print("\n\n")
-        pylogger.info("len(dataset.train_loader.dataset): {}".format(len(dataset.train_loader.dataset)))
-        pylogger.info("len(dataset.test_loader.dataset): {}".format(len(dataset.test_loader.dataset)))
-        print("\n\n")
+        # Evaluation
+        if cfg.eval_on_train:
+            pylogger.info("Evaluating on the training set")
+            trainer.test(model=model, dataloaders=dataset.train_loader)
+
+        pylogger.info("Evaluating on the test set!")
+        test_results = trainer.test(model=model, dataloaders=dataset.test_loader)
+
+        test_results[0]["acc/test/normalized"] = test_results[0]["acc/test"] / TASK_SPECIFIC_ACCS[dataset_name]
+
+        results_atm[dataset_name] = test_results
+
+    # print(f"\nResults ATM: {results_atm}\n")
+
+    avg_acc_normalized_atm = sum([results_atm[dataset_name][0]["acc/test/normalized"] for dataset_name in results_atm.keys()]) / len(results_atm.keys())
+    avg_acc_atm            = sum([results_atm[dataset_name][0]["acc/test"]            for dataset_name in results_atm.keys()]) / len(results_atm.keys())
+
+    seed_index_everything(cfg)
+    
+    results_ta = {}
+
+    for dataset_name in cfg.eval_datasets:
+
+        classification_head_identifier = f"{cfg.nn.module.model.model_name}_{dataset_name}_head"
+        classification_head = load_model_from_artifact(
+            #artifact_path=f"{classification_head_identifier}:v0", run=logger.experiment
+            artifact_path=f"{classification_head_identifier}:latest", run=logger.experiment
+        )
+
+        model = hydra.utils.instantiate(
+            cfg.nn.module, encoder=task_equipped_model_ta, classifier=classification_head, _recursive_=False
+        )
+
+        dataset = get_dataset(
+            dataset_name,
+            preprocess_fn=model.encoder.train_preprocess,
+            location=cfg.nn.data.data_path,
+            batch_size=cfg.nn.data.batch_size.train,
+        )
+
+        callbacks: List[Callback] = build_callbacks(cfg.train.callbacks, template_core)
+
+        storage_dir: str = cfg.core.storage_dir
+
+        pylogger.info("Instantiating the <Trainer>")
+        trainer = pl.Trainer(
+            default_root_dir=storage_dir,
+            plugins=[NNCheckpointIO(jailing_dir=logger.run_dir)],
+            logger=False,
+            callbacks=callbacks,
+            **cfg.train.trainer,
+        )
 
         # Evaluation
         if cfg.eval_on_train:
@@ -384,9 +349,46 @@ def run(cfg: DictConfig) -> str:
         pylogger.info("Evaluating on the test set!")
         test_results = trainer.test(model=model, dataloaders=dataset.test_loader)
 
-        results[dataset_name] = test_results
+        test_results[0]["acc/test/normalized"] = test_results[0]["acc/test"] / TASK_SPECIFIC_ACCS[dataset_name]
 
-    print(results)
+        results_ta[dataset_name] = test_results
+
+    # print(f"\nResults TA: {results_ta}\n")
+
+    avg_acc_normalized_ta = sum([results_ta[dataset_name][0]["acc/test/normalized"] for dataset_name in results_ta.keys()]) / len(results_ta.keys())
+    avg_acc_ta            = sum([results_ta[dataset_name][0]["acc/test"]            for dataset_name in results_ta.keys()]) / len(results_ta.keys())
+    
+    model_name_cos_sim = (
+        f"{cfg.nn.module.model.model_name}_"
+        f"applied_TVs_{'_'.join(cfg.task_vectors.to_apply)}_"
+        f"{cfg.seed_index}_"
+        f"atm_vs_ta_cos_sim"
+    )
+    model_path_cos_sim = f"{cfg.core.storage_dir}/{model_name_cos_sim}.json"
+    pylogger.info(f"\nLoading cosine similarity from {model_path_cos_sim}\n")
+
+    with open(model_path_cos_sim, "r") as f:
+        cos_sim_data = json.load(f)
+        cos_sim_atm_ta = cos_sim_data["cos_sim_atm_ta"]
+
+
+    results = {
+        "applied_task_vectors": cfg.task_vectors.to_apply,
+        "avg_acc_normalized_atm": avg_acc_normalized_atm,
+        "avg_acc_atm": avg_acc_atm,
+        "results_atm": results_atm,
+        "avg_acc_normalized_ta": avg_acc_normalized_ta,
+        "avg_acc_ta": avg_acc_ta,
+        "results_ta": results_ta,
+        "cos_sim_atm_ta": cos_sim_atm_ta,
+    }
+
+    print(f"Removing model file: {model_path_atm}")
+    os.remove(model_path_atm)
+    print(f"Removing model file: {model_path_ta}")
+    os.remove(model_path_ta)
+
+    print(f"\n\n\n\nResults ATM and TA: {results}\n\n\n\n")
 
 
 @hydra.main(config_path=str(PROJECT_ROOT / "conf"), config_name="task_vectors.yaml")

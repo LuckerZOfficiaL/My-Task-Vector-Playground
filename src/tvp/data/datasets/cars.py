@@ -37,7 +37,7 @@ class PytorchStanfordCars(VisionDataset):
         split: str = "train",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
-        download: bool = False,
+        download: bool = True,
     ) -> None:
         try:
             import scipy.io as sio

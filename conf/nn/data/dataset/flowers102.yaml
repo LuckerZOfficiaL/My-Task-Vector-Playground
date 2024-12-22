@@ -1,0 +1,3 @@
+dataset_name: Flowers102
+ft_epochs: 147
+num_classes: 102

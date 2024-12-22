@@ -1,0 +1,58 @@
+{
+    "CIFAR100": [
+        {
+            "acc/test": 0.7293999791145325,
+            "loss/test": 0.9789637923240662,
+            "sparsity/test": 77.10027313232422,
+            "sparsity percentile": 0.10000026226043701
+        }
+    ],
+    "DTD": [
+        {
+            "acc/test": 0.4964539110660553,
+            "loss/test": 1.8352912664413452,
+            "sparsity/test": 77.10055541992188,
+            "sparsity percentile": 0.09999997168779373
+        }
+    ],
+    "EuroSAT": [
+        {
+            "acc/test": 0.7954166531562805,
+            "loss/test": 0.6872203350067139,
+            "sparsity/test": 77.10063934326172,
+            "sparsity percentile": 0.0999993234872818
+        }
+    ],
+    "GTSRB": [
+        {
+            "acc/test": 0.5973079800605774,
+            "loss/test": 1.2927730083465576,
+            "sparsity/test": 77.10013580322266,
+            "sparsity percentile": 0.09999991953372955
+        }
+    ],
+    "MNIST": [
+        {
+            "acc/test": 0.9577999711036682,
+            "loss/test": 0.2901436388492584,
+            "sparsity/test": 77.10027313232422,
+            "sparsity percentile": 0.10000026226043701
+        }
+    ],
+    "RESISC45": [
+        {
+            "acc/test": 0.7117460370063782,
+            "loss/test": 0.8903498649597168,
+            "sparsity/test": 77.10057830810547,
+            "sparsity percentile": 0.10000019520521164
+        }
+    ],
+    "SVHN": [
+        {
+            "acc/test": 0.7960970997810364,
+            "loss/test": 0.7498787641525269,
+            "sparsity/test": 77.10079193115234,
+            "sparsity percentile": 0.09999918192625046
+        }
+    ]
+}

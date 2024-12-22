@@ -29,7 +29,7 @@ from tvp.data.datamodule import MetaData
 from tvp.data.datasets.registry import get_dataset
 from tvp.task_vectors.task_vectors import TaskVector
 from tvp.utils.io_utils import load_model_from_artifact
-from tvp.utils.utils import build_callbacks, clip_vector_norm_
+from tvp.utils.utils import build_callbacks
 from torch.nn.utils import vector_to_parameters
 from torch.nn.utils import parameters_to_vector
 from hydra.utils import instantiate
@@ -69,6 +69,7 @@ DATASET_NAME_TO_TA_FT_EPOCHS = {
         "FashionMNIST": 5,
         "KMNIST": 5,
     }
+
 
 def apply_task_vector(model, task_vector, scaling_coef=1):
     #model.load_state_dict({k: v + task_vector[k] for k, v in model.state_dict().items()})
@@ -192,149 +193,95 @@ def run(cfg: DictConfig) -> str:
     }
 
     # Task vectors
-    flatten = lambda model: parameters_to_vector(model.parameters())
+    # flatten = lambda model: parameters_to_vector(model.parameters())
 
-    zeroshot_vec = flatten(zeroshot_model)
+    # zeroshot_vec = flatten(zeroshot_model)
     
-    task_vectors = [
-        TaskVector.from_models(
-            pretrained_model=zeroshot_model, 
-            finetuned_model=finetuned_models[dataset]
-        ) for dataset in cfg.task_vectors.to_apply
-    ]
+    # task_vectors = [
+    #     TaskVector.from_models(
+    #         pretrained_model=zeroshot_model, 
+    #         finetuned_model=finetuned_models[dataset]
+    #     ) for dataset in cfg.task_vectors.to_apply
+    # ]
 
-    with torch.no_grad():
-        task_vectors = torch.stack(
-            [
-                flatten(finetuned_models[dataset]) - zeroshot_vec for dataset in cfg.task_vectors.to_apply
-            ]
-        )
+    # with torch.no_grad():
+    #     task_vectors = torch.stack(
+    #         [
+    #             flatten(finetuned_models[dataset]) - zeroshot_vec for dataset in cfg.task_vectors.to_apply
+    #         ]
+    #     )
     
-    if cfg.task_vectors.merging_method == "ties":
-        print("\nRunning TIES...\n")
-        #task_vectors = ties_merging(task_vectors, cfg.task_vectors.ties_topk)
-        multi_task_vector = their_ties_merging(
-            reset_type="topk",
-            flat_task_checks=task_vectors, 
-            reset_thresh=cfg.task_vectors.ties_topk,
-            resolve_method="none",
-            merge_func="mean"
-        )
+    # if cfg.task_vectors.merging_method == "ties":
+    #     print("\nRunning TIES...\n")
+    #     #task_vectors = ties_merging(task_vectors, cfg.task_vectors.ties_topk)
+    #     multi_task_vector = their_ties_merging(
+    #         reset_type="topk",
+    #         flat_task_checks=task_vectors, 
+    #         reset_thresh=cfg.task_vectors.ties_topk,
+    #         resolve_method="none",
+    #         merge_func="mean"
+    #     )
     
-    elif cfg.task_vectors.merging_method == "breadcrumbs":
-        print("\nRunning Model Breadcrumbs...\n")
-        task_vectors = model_breadcrumbs(
-            task_vectors,
-            beta=cfg.task_vectors.breadcrumbs_beta,
-            gamma=cfg.task_vectors.breadcrumbs_gamma
-        )
+    # elif cfg.task_vectors.merging_method == "breadcrumbs":
+    #     print("\nRunning Model Breadcrumbs...\n")
+    #     task_vectors = model_breadcrumbs(
+    #         task_vectors,
+    #         beta=cfg.task_vectors.breadcrumbs_beta,
+    #         gamma=cfg.task_vectors.breadcrumbs_gamma
+    #     )
     
-    elif cfg.task_vectors.merging_method == "dare":
-        print("\nRunning DARE Merging...\n")
-
-        task_vectors = my_dare(
-            task_vectors, 
-            ref_model=zeroshot_model, 
-            p=cfg.task_vectors.dare_rate
-        )
+    # elif cfg.task_vectors.merging_method == "dare":
+    #     print("\nRunning DARE Merging...\n")
+    #     task_vectors = my_dare(
+    #         task_vectors, 
+    #         ref_model=zeroshot_model, 
+    #         p=cfg.task_vectors.dare_rate
+    #     )
     
-    else: 
-        print("\nRunning vanilla merging...\n")
+    # else: 
+    #     print("\nRunning vanilla merging...\n")
     
-    if cfg.task_vectors.orthogonalize:
-        print("\nOrthogonalizing task vectors...\n")
-        task_vectors = tv_orthogonalization(task_vectors, method='gs')
+    # if cfg.task_vectors.orthogonalize:
+    #     print("\nOrthogonalizing task vectors...\n")
+    #     task_vectors = tv_orthogonalization(task_vectors, method='gs')
 
+    # print_pairwise_cos_sim(task_vectors)
 
+    # if cfg.task_vectors.merging_method != "ties":
+    #     task_vector_aggregator = instantiate(cfg.task_vectors.aggregator)
+    #     multi_task_vector = task_vector_aggregator(task_vectors)
+
+    # delta_model = copy.deepcopy(zeroshot_model)
+    # vector_to_parameters(multi_task_vector, delta_model.parameters())
     
-    if cfg.clipping.use_clipping:
-
-        pylogger.info("Running task vectors clipping")
-        pylogger.info(f"Clipping method: {cfg.clipping.clipping_method}")
-        pylogger.info(f"L_2 norms of TVs: {torch.norm(task_vectors, p=2, dim=1)}")
-        avg_norm = torch.mean(torch.norm(task_vectors, p=2, dim=1))
-        pylogger.info(f"Average norm of task vectors: {avg_norm}")
-
-        for tv in task_vectors:
-
-            if cfg.clipping.clipping_method == "fixed":
-                max_norm = cfg.clipping.fixed_clipping_norm
-            elif cfg.clipping.clipping_method == "avg":
-                max_norm = avg_norm
-            else:
-                raise ValueError(f"Unsupported clipping method: {cfg.clipping.clipping_method}")
-
-            pylogger.info(f"Clipping task vector with max norm: {max_norm}")
-            
-            clip_vector_norm_(
-                vector=tv, max_norm=max_norm, norm_type=2.0, error_if_nonfinite=False
-            )
-
-    if cfg.momentum.use_momentum and cfg.order > 1:
-
-        if cfg.momentum.momentum_method == "unified":
-
-            if cfg.order == 2:
-                minus_2_name = f"{cfg.nn.module.model.model_name}_pt"
-            else:
-                minus_2_name = f"{cfg.nn.module.model.model_name}_{cfg.task_vectors.merging_method}_{cfg.finetuning_method}_unified_momentum_{cfg.epochs}Eps{cfg.order - 2}{num_to_th[cfg.order - 2]}OrderUnifiedModel_{cfg.seed_index}"
-            
-
-            minus_1_name = f"{cfg.nn.module.model.model_name}_{cfg.task_vectors.merging_method}_{cfg.finetuning_method}_unified_momentum_{cfg.epochs}Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_{cfg.seed_index}" 
-            
-            minus_1_model = load_model_from_artifact(artifact_path=f"{minus_1_name}:latest", run=logger.experiment)
-            minus_2_model = load_model_from_artifact(artifact_path=f"{minus_2_name}:latest", run=logger.experiment)
-
-            previous_task_vector = TaskVector.from_models(
-                pretrained_model=minus_2_model, 
-                finetuned_model=minus_1_model
-            )
-        
-
-    print_pairwise_cos_sim(task_vectors)
-
-    if cfg.task_vectors.merging_method != "ties":
-        task_vector_aggregator = instantiate(cfg.task_vectors.aggregator)
-        multi_task_vector = task_vector_aggregator(task_vectors)
-
-    if cfg.momentum.use_momentum and cfg.order > 1:
-        pylogger.info("Applying momentum to multi task vector")
-        
-        multi_task_vector = (
-            1 - cfg.momentum.momentum_coeff
-        ) * multi_task_vector + cfg.momentum.momentum_coeff * previous_task_vector
-
-    delta_model = copy.deepcopy(zeroshot_model)
-    vector_to_parameters(multi_task_vector, delta_model.parameters())
-    
-    task_equipped_model = copy.deepcopy(zeroshot_model)
-    apply_task_vector(
-        model=task_equipped_model, 
-        task_vector=delta_model.state_dict(), 
-        scaling_coef=cfg.task_vectors.scaling_coefficient
-    )
+    # task_equipped_model = copy.deepcopy(zeroshot_model)
+    # apply_task_vector(
+    #     model=task_equipped_model, 
+    #     task_vector=delta_model.state_dict(), 
+    #     scaling_coef=cfg.task_vectors.scaling_coefficient
+    # )
 
 
     # Save the unified model as artifact
-    artifact_name = (
-        f"{cfg.nn.module.model.model_name}_"
-        f"Merged_"
-        f"{cfg.seed_index}_"
-        f"epochs_max_"
-        f"order_{cfg.order}"
-    )
-    metadata = {
-        "model_name": f"{cfg.nn.module.model.model_name}", 
-        "model_class": "tvp.modules.encoder.ImageEncoder",
-        "cfg": cfg
-    }
-    upload_model_to_wandb(
-        task_equipped_model, 
-        artifact_name, 
-        logger.experiment, 
-        cfg, 
-        metadata
-    )
+    # artifact_name = (
+    #     f"{cfg.nn.module.model.model_name}_"
+    #     f"Merged_"
+    #     f"{cfg.seed_index}_"
+    #     f"epochs_max_"
+    #     f"order_{cfg.order}"
+    # )
+    # metadata = {
+    #     "model_name": f"{cfg.nn.module.model.model_name}", 
+    #     "model_class": "tvp.modules.encoder.ImageEncoder",
+    #     "cfg": cfg
+    # }
+    # upload_model_to_wandb(
+    #     task_equipped_model, 
+    #     artifact_name, 
+    #     logger.experiment, 
+    #     cfg, 
+    #     metadata
+    # )
 
     seed_index_everything(cfg)
 
@@ -348,7 +295,10 @@ def run(cfg: DictConfig) -> str:
         )
 
         model = hydra.utils.instantiate(
-            cfg.nn.module, encoder=task_equipped_model, classifier=classification_head, _recursive_=False
+            cfg.nn.module, 
+            encoder=finetuned_models[dataset_name], 
+            classifier=classification_head, 
+            _recursive_=False
         )
 
         dataset = get_dataset(
@@ -370,11 +320,6 @@ def run(cfg: DictConfig) -> str:
             callbacks=callbacks,
             **cfg.train.trainer,
         )
-
-        print("\n\n")
-        pylogger.info("len(dataset.train_loader.dataset): {}".format(len(dataset.train_loader.dataset)))
-        pylogger.info("len(dataset.test_loader.dataset): {}".format(len(dataset.test_loader.dataset)))
-        print("\n\n")
 
         # Evaluation
         if cfg.eval_on_train:

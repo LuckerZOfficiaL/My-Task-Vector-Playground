@@ -31,44 +31,6 @@ from math import ceil
 pylogger = logging.getLogger(__name__)
 torch.set_float32_matmul_precision("high")
 
-num_to_th = {
-    1: "st",
-    2: "nd",
-    3: "rd",
-    4: "th",
-    5: "th",
-    6: "th",
-    7: "th",
-    8: "th",
-    9: "th",
-    10:"th",
-    11:"th",
-    12:"th",
-    13:"th",
-    14:"th",
-    15:"th",
-    16:"th",
-    17:"th",
-    18:"th",
-    19:"th",
-    20:"th",
-    21:"th",
-    22:"th",
-    23:"th",
-    24:"th",
-    25:"th",
-    26:"th",
-    27:"th",
-    28:"th",
-    29:"th",
-    30:"th",
-    31:"th",
-    32:"th",
-    33:"th",
-    34:"th",
-    35:"th",
-}
-
 
 def run(cfg: DictConfig):
     seed_index_everything(cfg)
@@ -79,17 +41,10 @@ def run(cfg: DictConfig):
 
     logger: NNLogger = NNLogger(logging_cfg=cfg.train.logging, cfg=cfg, resume_id=template_core.resume_id)
 
-    #zeroshot_identifier = f"{cfg.nn.module.model.model_name}_pt" # pretrained checkpoint
-    #zeroshot_identifier = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_0__PosthocClipping0.1" # for additional fine-tuning
     if cfg.order == 1:
         zeroshot_identifier = f"{cfg.nn.module.model.model_name}_pt" 
     else:
-        #zeroshot_identifier = f"{cfg.nn.module.model.model_name}_{cfg.epochs}Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_0" 
-        # zeroshot_identifier = f"{cfg.nn.module.model.model_name}_{cfg.merging_method}_{cfg.finetuning_method}_{cfg.epochs}Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_0"  
-        # zeroshot_identifier = f"{cfg.nn.module.model.model_name}_{cfg.merging_method}_{cfg.finetuning_method}_avg_clipping_{cfg.epochs}Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_0"  
-        # zeroshot_identifier = f"{cfg.nn.module.model.model_name}_{cfg.merging_method}_{cfg.finetuning_method}_unified_momentum_{cfg.epochs}Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_0"  
-        zeroshot_identifier = f"{cfg.nn.module.model.model_name}_{cfg.merging_method}_{cfg.finetuning_method}_acc_grad_batches_{cfg.epochs}Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_0"  
-
+        raise NotImplementedError("Only order 1 is supported for now")
 
     classification_head_identifier = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_head"
 
@@ -172,47 +127,31 @@ def run(cfg: DictConfig):
     trainer = pl.Trainer(
         default_root_dir=storage_dir,
         plugins=[NNCheckpointIO(jailing_dir=logger.run_dir)],
-        #max_epochs=int(cfg.nn.data.dataset.ft_epochs/cfg.epoch_divisor),
-        # max_epochs=cfg.epochs,
-        max_epochs=cfg.nn.data.dataset.ft_epochs,
+        # max_epochs=cfg.nn.data.dataset.ft_epochs,
+        max_epochs=1,
         logger=logger,
         callbacks=callbacks,
         accumulate_grad_batches=accumulate_grad_batches,
         **cfg.train.trainer,
     )
 
-    pylogger.info(f"Starting fine-tuning on {cfg.ft_on_data_split} data split!")
-    if cfg.ft_on_data_split == "train":
-        ft_dataloader = dataset.train_loader
-    elif cfg.ft_on_data_split == "val":
-        ft_dataloader = dataset.test_loader
-    else:
-        raise ValueError(f"Unknown data split to fine-tune on: {cfg.ft_on_data_split}. Possible values: \"train\" or \"val\"")
-    
-    print("\n\n")
-    pylogger.info("Finetuning on {} data split!".format(cfg.ft_on_data_split))
-    pylogger.info("len(dataset.train_loader.dataset): {}".format(len(dataset.train_loader.dataset)))
-    pylogger.info("len(dataset.test_loader.dataset): {}".format(len(dataset.test_loader.dataset)))
-    trainer.fit(model=model, train_dataloaders=ft_dataloader, ckpt_path=template_core.trainer_ckpt_path)
-    print("\n\n")
+    pylogger.info(f"Starting training for {trainer.max_epochs} epochs!")
+    trainer.fit(model=model, train_dataloaders=dataset.train_loader, ckpt_path=template_core.trainer_ckpt_path)
 
     pylogger.info("Starting testing!")
     trainer.test(model=model, dataloaders=dataset.test_loader)
 
-    #artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_10Eps1Order"
-    #artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_One{cfg.epoch_divisor}Eps{cfg.order}{num_to_th[cfg.order]}Order"
-    #artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_sparseClipping{str(model.sparsity_percentile)}"
-    #artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_2ndOrder" #2nd order means that the model is trained on the 1st order unified model
-    #artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_7Eps1stOrder"
-    #artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_10Eps{cfg.order}{num_to_th[cfg.order]}Order"
-    # artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_{cfg.merging_method}_{cfg.finetuning_method}_{cfg.epochs}Eps{cfg.order}{num_to_th[cfg.order]}Order"
-    # artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_{cfg.merging_method}_{cfg.finetuning_method}_avg_clipping_{cfg.epochs}Eps{cfg.order}{num_to_th[cfg.order]}Order"
-    # artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_{cfg.merging_method}_{cfg.finetuning_method}_unified_momentum_{cfg.epochs}Eps{cfg.order}{num_to_th[cfg.order]}Order"
-    artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_{cfg.merging_method}_{cfg.finetuning_method}_acc_grad_batches_{cfg.epochs}Eps{cfg.order}{num_to_th[cfg.order]}Order"
+    artifact_name = (
+        f"{cfg.nn.module.model.model_name}_"
+        f"{cfg.nn.data.dataset.dataset_name}_"
+        f"{cfg.seed_index}_"
+        # f"epochs_{cfg.nn.data.dataset.ft_epochs}_"
+        f"epochs_1_"
+        f"order_{cfg.order}"
+    )
 
     model_class = get_class(image_encoder)
     
-    #metadata = {"model_name": cfg.nn.module.model.model_name, "model_class": model_class, "strategy: ": "sparseClipping"}
     metadata = {"model_name": cfg.nn.module.model.model_name, "model_class": model_class}
     upload_model_to_wandb(model.encoder, artifact_name, logger.experiment, cfg, metadata)
 
