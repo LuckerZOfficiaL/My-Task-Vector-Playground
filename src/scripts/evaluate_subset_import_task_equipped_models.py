@@ -383,6 +383,11 @@ def run(cfg: DictConfig) -> str:
         "cos_sim_atm_ta": cos_sim_atm_ta,
     }
 
+    print(f"Removing model file: {model_path_atm}")
+    os.remove(model_path_atm)
+    print(f"Removing model file: {model_path_ta}")
+    os.remove(model_path_ta)
+
     print(f"\n\n\n\nResults ATM and TA: {results}\n\n\n\n")
 
 
