@@ -9,7 +9,7 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import wandb
-from omegaconf import DictConfig, ListConfig
+from omegaconf import DictConfig, ListConfig, OmegaConf
 from pytorch_lightning import Callback, LightningModule
 from tqdm import tqdm
 
@@ -27,6 +27,12 @@ from tvp.utils.io_utils import get_class, load_model_from_artifact
 from tvp.utils.utils import LabelSmoothing, build_callbacks
 
 from rich.pretty import pprint
+from rich import print
+import json
+
+from tvp.utils.io_utils import load_yaml
+
+from tvp.data.constants import DATASET_NAME_TO_NUM_BATCHES_UPPERCASE
 
 pylogger = logging.getLogger(__name__)
 torch.set_float32_matmul_precision("high")
@@ -34,7 +40,21 @@ torch.set_float32_matmul_precision("high")
 
 def run(cfg: DictConfig):
 
-    print(cfg)
+    print(f"cfg before edits")
+    print(json.dumps(OmegaConf.to_container(cfg, resolve=True), indent=2))
+
+    # to handle the dataset, probably the best solution is to get the dataset param from the cli
+    # then load its yaml config and change it in the cfg object.
+    # all other approaches fail because of how yaml merges file and stuff, PD:
+    if cfg.dataset_name:
+        cfg.nn.data.dataset = load_yaml(f"conf/nn/data/dataset/{cfg.dataset_name}.yaml")
+
+    if cfg.accumulate_grad_batches:
+        # cfg.nn.module.optimizer.lr /= DATASET_NAME_TO_NUM_BATCHES_UPPERCASE[cfg.nn.data.dataset.dataset_name]
+        cfg.nn.module.optimizer.lr /= 1
+
+    print(f"cfg after edits")
+    print(json.dumps(OmegaConf.to_container(cfg, resolve=True), indent=2))
 
     seed_index_everything(cfg)
 
@@ -132,15 +152,15 @@ def run(cfg: DictConfig):
     print(f"artifact name: {artifact_name}")
 
     pylogger.info(f"Starting training for {trainer.max_epochs} epochs/{trainer.max_steps} steps!")
-    trainer.fit(model=model, train_dataloaders=dataset.train_loader, ckpt_path=template_core.trainer_ckpt_path)
+    # trainer.fit(model=model, train_dataloaders=dataset.train_loader, ckpt_path=template_core.trainer_ckpt_path)
 
     pylogger.info("Starting testing!")
-    trainer.test(model=model, dataloaders=dataset.test_loader)
+    # trainer.test(model=model, dataloaders=dataset.test_loader)
 
     model_class = get_class(image_encoder)
     
     metadata = {"model_name": cfg.nn.module.model.model_name, "model_class": model_class}
-    upload_model_to_wandb(model.encoder, artifact_name, logger.experiment, cfg, metadata)
+    # upload_model_to_wandb(model.encoder, artifact_name, logger.experiment, cfg, metadata)
 
     if logger is not None:
         logger.experiment.finish()

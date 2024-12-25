@@ -1,3 +1,4 @@
+accumulate_grad_batches: false
 conventions:
   x_key: x
   y_key: y
@@ -14,6 +15,7 @@ defaults:
 - train: default
 - _self_
 epoch_divisor: None
+max_epochs: 1
 misc:
   cache_dir: null
   ckpt_path: ${oc.env:PROJECT_ROOT}/checkpoints/${nn.module.model.model_name}

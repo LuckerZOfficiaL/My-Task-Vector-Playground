@@ -27,6 +27,7 @@ from nn_core.serialization import NNCheckpointIO
 import tvp  # noqa
 from tvp.data.datamodule import MetaData
 from tvp.data.datasets.registry import get_dataset
+from tvp.data.constants import DATASET_NAME_TO_TA_FT_EPOCHS_UPPERCASE, DATASET_NAME_TO_NUM_BATCHES_UPPERCASE
 from tvp.task_vectors.task_vectors import TaskVector
 from tvp.utils.io_utils import load_model_from_artifact
 from tvp.utils.utils import build_callbacks
@@ -44,41 +45,7 @@ from tvp.competitors.my_dare import *
 
 
 pylogger = logging.getLogger(__name__)
-
 torch.set_float32_matmul_precision("high")
-
-DATASET_NAME_TO_TA_FT_EPOCHS = {
-        "Cars": 35,
-        "DTD": 76,
-        "EuroSAT": 12,
-        "GTSRB": 11,
-        "MNIST": 5,
-        "RESISC45": 15,
-        "SUN397": 14,
-        "SVHN": 4,
-        "CIFAR10": 6,
-        "CIFAR100": 6,
-        "STL10": 60,
-        "Food101": 4,
-        "Flowers102": 147,
-        "FER2013": 10,
-        "PCAM": 1,
-        "OxfordIIITPet": 82,
-        "RenderedSST2": 39,
-        "EMNIST": 2,
-        "FashionMNIST": 5,
-        "KMNIST": 5,
-    }
-
-DATASET_NAME_TO_NUM_BATCHES = {
-    "CIFAR100": 1407,
-    "DTD": 127,
-    "EuroSAT": 675,
-    "GTSRB": 750,
-    "MNIST": 1719,
-    "RESISC45": 532,
-    "SVHN": 2134,
-}
 
 
 def apply_task_vector(model, task_vector, scaling_coef=1):
@@ -168,6 +135,8 @@ def upload_model_to_wandb(
 
 
 def run(cfg: DictConfig) -> str:
+
+    print(cfg)
     
     seed_index_everything(cfg)
 
@@ -189,11 +158,11 @@ def run(cfg: DictConfig) -> str:
 
     finetuned_id_fn = lambda dataset: (
         f"{cfg.nn.module.model.model_name}_"
-        f"{cfg.nn.data.dataset.dataset_name}_"
+        f"{dataset}_"
         f"{cfg.seed_index}_"
-        f"acc_grad_batches_{DATASET_NAME_TO_NUM_BATCHES[dataset] if cfg.accumulate_grad_batches else 1}_"
-        f"epochs_{cfg.max_epochs}_"
-        f"optim_{cfg.nn.module.optimizer._target_.split(".")[-1]}_"
+        f"acc_grad_batches_{DATASET_NAME_TO_NUM_BATCHES_UPPERCASE[dataset] if cfg.accumulate_grad_batches else 1}_"
+        f"epochs_{DATASET_NAME_TO_TA_FT_EPOCHS_UPPERCASE[dataset] if cfg.max_epochs is None else cfg.max_epochs}_"
+        f"optim_{cfg.nn.module.optimizer._target_.split('.')[-1]}_"
         f"order_{cfg.order}"
         f":latest"
     )

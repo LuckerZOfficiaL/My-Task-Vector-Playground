@@ -8,6 +8,9 @@ from nn_core.serialization import load_model
 
 from tvp.modules.encoder import ClassificationHead, ImageEncoder
 
+import yaml
+from typing import Dict
+
 pylogger = logging.getLogger(__name__)
 
 
@@ -38,6 +41,14 @@ def export_model_to_disk(model, model_name: str, model_path: str):
     pylogger.info(f"Exporting {model_name} to {model_path}")
 
     torch.save(model.state_dict(), model_path)
+
+def load_yaml(path: str) -> Dict:
+    try:
+        with open(path, "r") as file:
+            return yaml.safe_load(file)
+    except Exception as e:
+        pylogger.error(f"Error loading yaml file: {e}")
+        return None
 
 
 def get_class(model):
