@@ -43,7 +43,7 @@ class ImageClassifier(pl.LightningModule):
 
         self.encoder = encoder
         self.classification_head = classifier
-        self.encoder.create_tv_mask() # call this to create the TV sparsity mask in the encoder, the mask is applied to the gradient to prevent pruned weights from updating
+        # self.encoder.create_tv_mask() # call this to create the TV sparsity mask in the encoder, the mask is applied to the gradient to prevent pruned weights from updating
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Method for the forward pass.
@@ -77,8 +77,8 @@ class ImageClassifier(pl.LightningModule):
             {
                 f"acc/{split}": metrics,
                 f"loss/{split}": loss,
-                f"sparsity/{split}": self.encoder.get_tv_sparsity(),
-                f"sparsity percentile": self.sparsity_percentile,
+                # f"sparsity/{split}": self.encoder.get_tv_sparsity(),
+                # f"sparsity percentile": self.sparsity_percentile,
             },
             on_epoch=True,
         )

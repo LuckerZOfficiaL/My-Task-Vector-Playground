@@ -70,6 +70,16 @@ DATASET_NAME_TO_TA_FT_EPOCHS = {
         "KMNIST": 5,
     }
 
+DATASET_NAME_TO_NUM_BATCHES = {
+    "CIFAR100": 1407,
+    "DTD": 127,
+    "EuroSAT": 675,
+    "GTSRB": 750,
+    "MNIST": 1719,
+    "RESISC45": 532,
+    "SVHN": 2134,
+}
+
 
 def apply_task_vector(model, task_vector, scaling_coef=1):
     #model.load_state_dict({k: v + task_vector[k] for k, v in model.state_dict().items()})
@@ -176,11 +186,14 @@ def run(cfg: DictConfig) -> str:
     
     zeroshot_model = load_model_from_artifact(artifact_path=f"{zeroshot_identifier}:latest", run=logger.experiment)
 
+
     finetuned_id_fn = lambda dataset: (
         f"{cfg.nn.module.model.model_name}_"
-        f"{dataset}_"
+        f"{cfg.nn.data.dataset.dataset_name}_"
         f"{cfg.seed_index}_"
-        f"epochs_{DATASET_NAME_TO_TA_FT_EPOCHS[dataset]}_"
+        f"acc_grad_batches_{DATASET_NAME_TO_NUM_BATCHES[dataset] if cfg.accumulate_grad_batches else 1}_"
+        f"epochs_{cfg.max_epochs}_"
+        f"optim_{cfg.nn.module.optimizer._target_.split(".")[-1]}_"
         f"order_{cfg.order}"
         f":latest"
     )
