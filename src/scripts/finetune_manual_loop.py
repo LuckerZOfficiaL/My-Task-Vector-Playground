@@ -11,7 +11,7 @@ import torch.nn as nn
 from torch.optim import Optimizer
 import torch.nn.functional as F
 import wandb
-from omegaconf import DictConfig, ListConfig
+from omegaconf import DictConfig, ListConfig, OmegaConf
 from pytorch_lightning import Callback, LightningModule
 from tqdm import tqdm
 
@@ -25,17 +25,33 @@ from tvp.data.datasets.registry import get_dataset
 from tvp.modules.encoder import ImageEncoder
 from tvp.modules.heads import get_classification_head
 from tvp.pl_module.image_classifier import ImageClassifier
-from tvp.utils.io_utils import get_class, load_model_from_artifact
+from tvp.utils.io_utils import get_class, load_model_from_artifact, load_yaml
 from tvp.utils.utils import LabelSmoothing, build_callbacks
 
 from rich.pretty import pprint
+
+import json
 
 pylogger = logging.getLogger(__name__)
 torch.set_float32_matmul_precision("high")
 
 
 def run(cfg: DictConfig):
-    print(cfg)
+    print(f"cfg before edits")
+    print(json.dumps(OmegaConf.to_container(cfg, resolve=True), indent=2))
+
+    # to handle the dataset, probably the best solution is to get the dataset param from the cli
+    # then load its yaml config and change it in the cfg object.
+    # all other approaches fail because of how yaml merges file and stuff, PD:
+    if cfg.dataset_name:
+        cfg.nn.data.dataset = load_yaml(f"conf/nn/data/dataset/{cfg.dataset_name}.yaml")
+
+    if cfg.accumulate_grad_batches:
+        # cfg.nn.module.optimizer.lr /= DATASET_NAME_TO_NUM_BATCHES_UPPERCASE[cfg.nn.data.dataset.dataset_name]
+        cfg.nn.module.optimizer.lr /= 1
+
+    print(f"cfg after edits")
+    print(json.dumps(OmegaConf.to_container(cfg, resolve=True), indent=2))
 
     seed_index_everything(cfg)
 
@@ -97,6 +113,7 @@ def run(cfg: DictConfig):
         classifier=classification_head, 
         _recursive_=False
     )
+    model = model.half()
 
     # Prepare dataset
     dataset = get_dataset(
@@ -113,7 +130,6 @@ def run(cfg: DictConfig):
     callbacks: List[Callback] = build_callbacks(cfg.train.callbacks, template_core)
 
     storage_dir: str = cfg.core.storage_dir
-    accumulate_grad_batches = len(dataset.train_loader) if cfg.accumulate_grad_batches else 1
     optim_name = cfg.nn.module.optimizer._target_.split(".")[-1]
 
     # ----------------
@@ -136,7 +152,9 @@ def run(cfg: DictConfig):
         f"{cfg.nn.module.model.model_name}_"
         f"{cfg.nn.data.dataset.dataset_name}_"
         f"{cfg.seed_index}_"
-        f"acc_grad_batches_{accumulate_grad_batches}_"
+        f"batch_size_{cfg.nn.data.batch_size.train}_"
+        f"lim_train_batches_{cfg.limit_train_batches}_"
+        f"acc_grad_batches_{cfg.accumulate_grad_batches}_"
         f"epochs_{cfg.max_epochs}_"
         f"optim_{optim_name}_"
         f"order_{cfg.order}"
@@ -145,19 +163,8 @@ def run(cfg: DictConfig):
     pylogger.info(f"Starting training for {cfg.max_epochs} epochs (manual loop)!")
 
     # For checkpointing, you can do whatever logic you want here:
-    ckpt_path = template_core.trainer_ckpt_path
     current_epoch = 0
     global_step = 0
-    best_val_loss = float("inf")
-
-    # If resuming from checkpoint, you'd load here:
-    # if ckpt_path:
-    #     checkpoint = torch.load(ckpt_path)
-    #     model.load_state_dict(checkpoint["model_state_dict"])
-    #     optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-    #     current_epoch = checkpoint["epoch"]
-    #     global_step = checkpoint["global_step"]
-    #     best_val_loss = checkpoint["best_val_loss"]
 
     # ---------------------
     # TRAINING LOOP W/ TQDM
@@ -174,7 +181,11 @@ def run(cfg: DictConfig):
         )
 
         for batch_idx, (images, labels) in enumerate(train_dataloader_tqdm):
-            images = images.to(device, non_blocking=True)
+
+            if batch_idx >= cfg.limit_train_batches:
+                break
+
+            images = images.half().to(device, non_blocking=True)
             labels = labels.to(device, non_blocking=True)
 
             # Forward pass
@@ -185,7 +196,7 @@ def run(cfg: DictConfig):
             loss.backward()
 
             # Gradient accumulation
-            if (batch_idx + 1) % accumulate_grad_batches == 0:
+            if (batch_idx + 1) % cfg.accumulate_grad_batches == 0:
                 optimizer.step()
                 optimizer.zero_grad()
 
@@ -205,10 +216,6 @@ def run(cfg: DictConfig):
         epoch_loss = running_loss / len(dataset.train_loader)
         pylogger.info(f"[Epoch {epoch+1}/{cfg.max_epochs}] Training Loss: {epoch_loss:.4f}")
 
-        # (Optional) Additional callbacks/logging
-        # for cb in callbacks:
-        #     cb.on_epoch_end(model, epoch=epoch)
-
     # ---------------------
     # TEST LOOP W/ TQDM
     # ---------------------
@@ -220,7 +227,7 @@ def run(cfg: DictConfig):
     test_dataloader_tqdm = tqdm(dataset.test_loader, desc="Testing", leave=True)
     with torch.no_grad():
         for images, labels in test_dataloader_tqdm:
-            images = images.to(device, non_blocking=True)
+            images = images.half().to(device, non_blocking=True)
             labels = labels.to(device, non_blocking=True)
 
             logits = model(images)
@@ -242,6 +249,17 @@ def run(cfg: DictConfig):
     model_class = get_class(image_encoder)
     metadata = {"model_name": cfg.nn.module.model.model_name, "model_class": model_class}
     # upload_model_to_wandb(model.encoder, artifact_name, logger.experiment, cfg, metadata)
+
+    print("\n\n")
+    for name, parameter in model.named_parameters():
+        if parameter.grad is not None:  # Check if the gradient exists
+            # Flatten the gradient if needed
+            gradient_flattened = parameter.grad.flatten()
+            print(f"Gradients for {name}: {gradient_flattened}")
+    print("\n\n")
+
+    if cfg.save_grads:
+        model.save_grads(filename=os.path.join(cfg.save_grads_dir, f"{artifact_name}.pt"))
 
     if logger is not None:
         logger.experiment.finish()

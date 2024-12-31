@@ -6,10 +6,11 @@ trainer:
   fast_dev_run: False
   accelerator: 'gpu'
   devices: 1
-  precision: 32
+  precision: 16
   max_steps: -1
   num_sanity_val_steps: 2
-  gradient_clip_val: 10.0
+  gradient_clip_val: 10.0 # no idea how it ended up this way...
+  # gradient_clip_val: 1.0 # this is the value that ilharco 2023 uses
   val_check_interval: 1.0
   deterministic: ${train.deterministic}
 

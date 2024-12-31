@@ -32,7 +32,7 @@ import json
 
 from tvp.utils.io_utils import load_yaml
 
-from tvp.data.constants import DATASET_NAME_TO_NUM_BATCHES_UPPERCASE
+from tvp.data.constants import DATASET_NAME_TO_NUM_BATCHES_LOWERCASE
 
 pylogger = logging.getLogger(__name__)
 torch.set_float32_matmul_precision("high")
@@ -119,6 +119,8 @@ def run(cfg: DictConfig):
         location=cfg.nn.data.data_path,
         batch_size=cfg.nn.data.batch_size.train,
     )
+    pylogger.info(f"number of data sample in training set: {len(dataset.train_loader.dataset)} ({len(dataset.train_loader)} batches)")
+    pylogger.info(f"number of data sample in testing set: {len(dataset.test_loader.dataset)} ({len(dataset.test_loader)} batches)")
 
     model.freeze_head()
 
@@ -126,7 +128,6 @@ def run(cfg: DictConfig):
 
     storage_dir: str = cfg.core.storage_dir
 
-    accumulate_grad_batches = len(dataset.train_loader) if cfg.accumulate_grad_batches else 1
     optim_name = cfg.nn.module.optimizer._target_.split(".")[-1]
 
     pylogger.info("Instantiating the <Trainer>")
@@ -136,7 +137,8 @@ def run(cfg: DictConfig):
         max_epochs=cfg.max_epochs,
         logger=logger,
         callbacks=callbacks,
-        accumulate_grad_batches=accumulate_grad_batches,
+        accumulate_grad_batches=cfg.accumulate_grad_batches,
+        limit_train_batches=cfg.limit_train_batches,
         **cfg.train.trainer,
     )
 
@@ -144,15 +146,28 @@ def run(cfg: DictConfig):
         f"{cfg.nn.module.model.model_name}_"
         f"{cfg.nn.data.dataset.dataset_name}_"
         f"{cfg.seed_index}_"
-        f"acc_grad_batches_{accumulate_grad_batches}_"
+        f"batch_size_{cfg.nn.data.batch_size.train}_"
+        f"lim_train_batches_{cfg.limit_train_batches}_"
+        f"acc_grad_batches_{cfg.accumulate_grad_batches}_"
         f"epochs_{cfg.max_epochs}_"
         f"optim_{optim_name}_"
         f"order_{cfg.order}"
     )
-    print(f"artifact name: {artifact_name}")
+    pylogger.info(f"artifact name: {artifact_name}")
 
     pylogger.info(f"Starting training for {trainer.max_epochs} epochs/{trainer.max_steps} steps!")
     trainer.fit(model=model, train_dataloaders=dataset.train_loader, ckpt_path=template_core.trainer_ckpt_path)
+
+    if cfg.save_grads:
+        model.save_grads(filename=os.path.join(cfg.save_grads_dir, f"{artifact_name}.pt"))
+
+    print("\n\n")
+    for name, parameter in model.named_parameters():
+        if parameter.grad is not None:  # Check if the gradient exists
+            # Flatten the gradient if needed
+            gradient_flattened = parameter.grad.flatten()
+            print(f"Gradients for {name}: {gradient_flattened}")
+    print("\n\n")
 
     pylogger.info("Starting testing!")
     trainer.test(model=model, dataloaders=dataset.test_loader)
@@ -160,7 +175,7 @@ def run(cfg: DictConfig):
     model_class = get_class(image_encoder)
     
     metadata = {"model_name": cfg.nn.module.model.model_name, "model_class": model_class}
-    upload_model_to_wandb(model.encoder, artifact_name, logger.experiment, cfg, metadata)
+    # upload_model_to_wandb(model.encoder, artifact_name, logger.experiment, cfg, metadata)
 
     if logger is not None:
         logger.experiment.finish()
