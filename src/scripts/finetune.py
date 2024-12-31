@@ -158,24 +158,13 @@ def run(cfg: DictConfig):
     pylogger.info(f"Starting training for {trainer.max_epochs} epochs/{trainer.max_steps} steps!")
     trainer.fit(model=model, train_dataloaders=dataset.train_loader, ckpt_path=template_core.trainer_ckpt_path)
 
-    if cfg.save_grads:
-        model.save_grads(filename=os.path.join(cfg.save_grads_dir, f"{artifact_name}.pt"))
-
-    print("\n\n")
-    for name, parameter in model.named_parameters():
-        if parameter.grad is not None:  # Check if the gradient exists
-            # Flatten the gradient if needed
-            gradient_flattened = parameter.grad.flatten()
-            print(f"Gradients for {name}: {gradient_flattened}")
-    print("\n\n")
-
     pylogger.info("Starting testing!")
     trainer.test(model=model, dataloaders=dataset.test_loader)
 
     model_class = get_class(image_encoder)
     
     metadata = {"model_name": cfg.nn.module.model.model_name, "model_class": model_class}
-    # upload_model_to_wandb(model.encoder, artifact_name, logger.experiment, cfg, metadata)
+    upload_model_to_wandb(model.encoder, artifact_name, logger.experiment, cfg, metadata)
 
     if logger is not None:
         logger.experiment.finish()
