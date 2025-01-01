@@ -8,7 +8,7 @@ defaults:
 - dataset: cars
 - _self_
 num_workers:
-  test: 0
-  train: 4
-  val: 2
+  test: 8
+  train: 8
+  val: 8
 train_dataset: ${nn.data.dataset.dataset_name}Val
