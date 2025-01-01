@@ -30,7 +30,7 @@ from rich.pretty import pprint
 from rich import print
 import json
 
-from tvp.utils.io_utils import load_yaml
+from tvp.utils.io_utils import load_yaml, export_run_data_to_disk
 
 pylogger = logging.getLogger(__name__)
 torch.set_float32_matmul_precision("high")
@@ -182,6 +182,12 @@ def run(cfg: DictConfig):
 
     if logger is not None:
         logger.experiment.finish()
+
+    if cfg.run_data.export_run_data:
+        export_run_data_to_disk(
+            cfg=cfg, logger=logger, 
+            export_dir=cfg.run_data.export_run_data_dir, file_base_name=artifact_name
+        )
 
 
 def upload_model_to_wandb(

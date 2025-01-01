@@ -22,7 +22,8 @@ def tqdm_print(*args, **kwargs):
 # Override the built-in print globally
 builtins.print = tqdm_print
 
-PRINT_ACC_PER_EPOCH = True
+EXPORT_RUN_DATA = True
+EXPORT_RUN_DATA_DIR = "./run_data"
 
 SGD = "torch.optim.SGD"
 ADAM = "torch.optim.Adam"
@@ -111,7 +112,8 @@ for order in range(1, DESIRED_ORDERS+1):
                 f"+limit_test_batches={limit_test_batches}",
                 f"nn.data.batch_size.train={batch_size}",
                 f"+strategy={repr(STRATEGY)}",
-                f"+print_acc_per_epoch={PRINT_ACC_PER_EPOCH}",
+                f"+run_data.export_run_data={EXPORT_RUN_DATA}",
+                f"+run_data.export_run_data_dir={EXPORT_RUN_DATA_DIR}",
             ], 
             check=True
         )
