@@ -168,7 +168,7 @@ def run(cfg: DictConfig):
     trainer.fit(
         model=model, 
         train_dataloaders=dataset.train_loader, 
-        val_dataloaders=dataset.val_loader,
+        val_dataloaders=dataset.test_loader,
         ckpt_path=template_core.trainer_ckpt_path
     )
 
