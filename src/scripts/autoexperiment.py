@@ -11,6 +11,7 @@ from tvp.data.constants import DATASET_NAME_TO_TA_FT_EPOCHS_LOWERCASE
 from tvp.data.constants import DATASET_NAME_TO_NUM_TRAIN_BATCHES_LOWERCASE
 from tvp.data.constants import DATASET_NAME_TO_NUM_VAL_BATCHES_LOWERCASE
 from tvp.data.constants import DATASET_NAME_TO_NUM_TEST_BATCHES_LOWERCASE
+from tvp.data.constants import DATASETS_07, DATASETS_20
 
 import os
 
@@ -34,21 +35,13 @@ DESIRED_ORDERS = 1
 STRATEGY = "sgd, all samples"
 
 # ATM
-MAX_EPOCHS = 1
+# MAX_EPOCHS = 1
 # TA
-# MAX_EPOCHS = None
+MAX_EPOCHS = None
 
 SAVE_GRADS = True
 SAVE_GRADS_DIR = "./grads_manual_loop"
 os.makedirs(SAVE_GRADS_DIR, exist_ok=True)
-
-DATASETS_07 = ["cifar100", "dtd", "eurosat", "gtsrb", "mnist", "resisc45", "svhn"]
-DATASETS_20 = [
-    "cars", "dtd", "eurosat", "gtsrb", "mnist", "resisc45", "sun397", 
-    "svhn", "cifar10", "cifar100", "stl10", "flowers102", "food101", 
-    "fer2013", "pcam", "oxfordiiitpet", "renderedsst2", "emnist", 
-    "fashionmnist", "kmnist"
-]
 
 datasets = DATASETS_07
 

@@ -1,3 +1,11 @@
+DATASETS_07 = ["cifar100", "dtd", "eurosat", "gtsrb", "mnist", "resisc45", "svhn"]
+DATASETS_20 = [
+    "cars", "dtd", "eurosat", "gtsrb", "mnist", "resisc45", "sun397", 
+    "svhn", "cifar10", "cifar100", "stl10", "flowers102", "food101", 
+    "fer2013", "pcam", "oxfordiiitpet", "renderedsst2", "emnist", 
+    "fashionmnist", "kmnist"
+]
+
 ###### BEGIN Ilharco et al. arzigogolato method + put the unused test split into the val split ######
 
 DATASET_NAME_TO_NUM_TRAIN_BATCHES_UPPERCASE = {
@@ -136,4 +144,8 @@ DATASET_NAME_TO_TA_FT_EPOCHS_UPPERCASE = {
 }
 DATASET_NAME_TO_TA_FT_EPOCHS_LOWERCASE = {
     k.lower(): v for k, v in DATASET_NAME_TO_TA_FT_EPOCHS_UPPERCASE.items()
+}
+
+DATASET_NAME_TO_ATM_TEST_ACC = {
+    "CIFAR100": 0.8105999827384949,
 }
