@@ -7,7 +7,10 @@ import subprocess
 import builtins
 import tqdm
 
-from tvp.data.constants import DATASET_NAME_TO_TA_FT_EPOCHS_LOWERCASE, DATASET_NAME_TO_NUM_BATCHES_LOWERCASE
+from tvp.data.constants import DATASET_NAME_TO_TA_FT_EPOCHS_LOWERCASE
+from tvp.data.constants import DATASET_NAME_TO_NUM_TRAIN_BATCHES_LOWERCASE
+from tvp.data.constants import DATASET_NAME_TO_NUM_VAL_BATCHES_LOWERCASE
+from tvp.data.constants import DATASET_NAME_TO_NUM_TEST_BATCHES_LOWERCASE
 
 import os
 
@@ -19,13 +22,15 @@ def tqdm_print(*args, **kwargs):
 # Override the built-in print globally
 builtins.print = tqdm_print
 
+PRINT_ACC_PER_EPOCH = True
+
 SGD = "torch.optim.SGD"
 ADAM = "torch.optim.Adam"
 
 EPOCH_DIVISOR = "None"
 DESIRED_ORDERS = 1
 
-STRATEGY = "gd, all samples"
+STRATEGY = "sgd, all samples"
 
 # ATM
 MAX_EPOCHS = 1
@@ -43,7 +48,7 @@ DATASETS_20 = [
     "fer2013", "pcam", "oxfordiiitpet", "renderedsst2", "emnist", 
     "fashionmnist", "kmnist"
 ]
-# datasets = DATASETS_07
+
 datasets = DATASETS_07
 
 for order in range(1, DESIRED_ORDERS+1):
@@ -54,12 +59,14 @@ for order in range(1, DESIRED_ORDERS+1):
 
         if STRATEGY == "sgd, all samples":
             accumulate_grad_batches = 1
-            limit_train_batches = DATASET_NAME_TO_NUM_BATCHES_LOWERCASE[dataset]
+            limit_train_batches = DATASET_NAME_TO_NUM_TRAIN_BATCHES_LOWERCASE[dataset]
+            limit_val_batches = DATASET_NAME_TO_NUM_VAL_BATCHES_LOWERCASE[dataset]
+            limit_test_batches = DATASET_NAME_TO_NUM_TEST_BATCHES_LOWERCASE[dataset]
             batch_size = 32
             lr = 1e-5
         elif STRATEGY == "gd, all samples":
-            accumulate_grad_batches = DATASET_NAME_TO_NUM_BATCHES_LOWERCASE[dataset]
-            limit_train_batches = DATASET_NAME_TO_NUM_BATCHES_LOWERCASE[dataset]
+            accumulate_grad_batches = DATASET_NAME_TO_NUM_TRAIN_BATCHES_LOWERCASE[dataset]
+            limit_train_batches = DATASET_NAME_TO_NUM_TRAIN_BATCHES_LOWERCASE[dataset]
             batch_size = 32
             lr = 1e-5
         elif STRATEGY == "sgd, limited number of samples":
@@ -86,9 +93,9 @@ for order in range(1, DESIRED_ORDERS+1):
         subprocess.run(
             [
                 "python3", 
-                # "src/scripts/finetune.py",
+                "src/scripts/finetune.py",
                 # "src/scripts/finetune_manual_loop.py",
-                "src/scripts/finetune_manual_loop_manual_optim.py",
+                # "src/scripts/finetune_manual_loop_manual_optim.py",
                 f"order={order}",
                 f"epoch_divisor={EPOCH_DIVISOR}",
                 f"accumulate_grad_batches={accumulate_grad_batches}",
@@ -100,24 +107,27 @@ for order in range(1, DESIRED_ORDERS+1):
                 f"+save_grads={SAVE_GRADS}",
                 f"+save_grads_dir={SAVE_GRADS_DIR}",
                 f"+limit_train_batches={limit_train_batches}",
+                f"+limit_val_batches={limit_val_batches}",
+                f"+limit_test_batches={limit_test_batches}",
                 f"nn.data.batch_size.train={batch_size}",
                 f"+strategy={repr(STRATEGY)}",
+                f"+print_acc_per_epoch={PRINT_ACC_PER_EPOCH}",
             ], 
             check=True
         )
 
-    subprocess.run(
-        [
-            "python", 
-            "src/scripts/evaluate.py",
-            f"order={order}",
-            f"epoch_divisor={EPOCH_DIVISOR}",
-            f"+accumulate_grad_batches={accumulate_grad_batches}",
-            f"+max_epochs={MAX_EPOCHS}",
-            # f"nn.module.optimizer._target_={SGD if accumulate_grad_batches else ADAM}",
-            f"nn.module.optimizer._target_={SGD if accumulate_grad_batches else SGD}",
+    # subprocess.run(
+    #     [
+    #         "python", 
+    #         "src/scripts/evaluate.py",
+    #         f"order={order}",
+    #         f"epoch_divisor={EPOCH_DIVISOR}",
+    #         f"+accumulate_grad_batches={accumulate_grad_batches}",
+    #         f"+max_epochs={MAX_EPOCHS}",
+    #         # f"nn.module.optimizer._target_={SGD if accumulate_grad_batches else ADAM}",
+    #         f"nn.module.optimizer._target_={SGD if accumulate_grad_batches else SGD}",
 
-        ], 
-        check=True
-    )
+    #     ], 
+    #     check=True
+    # )
     

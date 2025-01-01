@@ -73,6 +73,22 @@ def split_train_into_train_val(
         num_workers=num_workers,
     )
 
+    # NOTE
+    # Ilharco does this in the original code...
+    # 
+    # When "Val" is appended to the dataset name:
+    # dataset.train_loader --> 90% of train split 
+    # dataset.test_loader  --> 10% of train split
+    # 
+    # the original test split is lost, probably intended to be used as validation...
+    # 
+    # For this reason, before assigning the 10% train split to the test split,
+    # we copy the original test split to the val split.
+    new_dataset.val_dataset = copy.deepcopy(dataset.test_dataset)
+    new_dataset.val_loader = torch.utils.data.DataLoader(
+        new_dataset.val_dataset, batch_size=batch_size, num_workers=num_workers
+    )
+
     new_dataset.test_dataset = valset
     new_dataset.test_loader = torch.utils.data.DataLoader(
         new_dataset.test_dataset, batch_size=batch_size, num_workers=num_workers
@@ -97,10 +113,13 @@ def get_dataset(
                 base_dataset, dataset_name, batch_size, num_workers, val_fraction, max_val_samples
             )
             return dataset
+    
     else:
         assert (
             dataset_name in registry
         ), f"Unsupported dataset: {dataset_name}. Supported datasets: {list(registry.keys())}"
         dataset_class = registry[dataset_name]
+    
     dataset = dataset_class(preprocess_fn, location=location, batch_size=batch_size, num_workers=num_workers)
+    
     return dataset

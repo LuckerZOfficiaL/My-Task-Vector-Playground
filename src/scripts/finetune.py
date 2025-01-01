@@ -32,8 +32,6 @@ import json
 
 from tvp.utils.io_utils import load_yaml
 
-from tvp.data.constants import DATASET_NAME_TO_NUM_BATCHES_LOWERCASE
-
 pylogger = logging.getLogger(__name__)
 torch.set_float32_matmul_precision("high")
 
@@ -48,10 +46,6 @@ def run(cfg: DictConfig):
     # all other approaches fail because of how yaml merges file and stuff, PD:
     if cfg.dataset_name:
         cfg.nn.data.dataset = load_yaml(f"conf/nn/data/dataset/{cfg.dataset_name}.yaml")
-
-    if cfg.accumulate_grad_batches:
-        # cfg.nn.module.optimizer.lr /= DATASET_NAME_TO_NUM_BATCHES_UPPERCASE[cfg.nn.data.dataset.dataset_name]
-        cfg.nn.module.optimizer.lr /= 1
 
     print(f"cfg after edits")
     print(json.dumps(OmegaConf.to_container(cfg, resolve=True), indent=2))
@@ -113,6 +107,17 @@ def run(cfg: DictConfig):
         cfg.nn.module, encoder=image_encoder, classifier=classification_head, _recursive_=False
     )
 
+    # NOTE
+    # Ilharco does this in the original code...
+    # 
+    # When "Val" is appended to the dataset name:
+    # dataset.train_loader --> 90% of train split 
+    # dataset.test_loader  --> 10% of train split
+    # 
+    # the original test split is lost, probably intended to be used as validation...
+    # 
+    # For this reason, inside the get_dataset method, before assigning the 10% train split to the test split,
+    # the original test split is copied inside the val split, in order to be used to do val.
     dataset = get_dataset(
         cfg.nn.data.train_dataset,
         preprocess_fn=model.encoder.train_preprocess,
@@ -120,6 +125,7 @@ def run(cfg: DictConfig):
         batch_size=cfg.nn.data.batch_size.train,
     )
     pylogger.info(f"number of data sample in training set: {len(dataset.train_loader.dataset)} ({len(dataset.train_loader)} batches)")
+    pylogger.info(f"number of data sample in validation set: {len(dataset.val_loader.dataset)} ({len(dataset.val_loader)} batches)")
     pylogger.info(f"number of data sample in testing set: {len(dataset.test_loader.dataset)} ({len(dataset.test_loader)} batches)")
 
     model.freeze_head()
@@ -139,6 +145,9 @@ def run(cfg: DictConfig):
         callbacks=callbacks,
         accumulate_grad_batches=cfg.accumulate_grad_batches,
         limit_train_batches=cfg.limit_train_batches,
+        limit_val_batches=cfg.limit_val_batches,
+        limit_test_batches=cfg.limit_test_batches,
+        log_every_n_steps=min(50, cfg.limit_train_batches),
         **cfg.train.trainer,
     )
 
