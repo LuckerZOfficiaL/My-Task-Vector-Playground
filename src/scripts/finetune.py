@@ -165,7 +165,12 @@ def run(cfg: DictConfig):
     pylogger.info(f"artifact name: {artifact_name}")
 
     pylogger.info(f"Starting training for {trainer.max_epochs} epochs/{trainer.max_steps} steps!")
-    trainer.fit(model=model, train_dataloaders=dataset.train_loader, ckpt_path=template_core.trainer_ckpt_path)
+    trainer.fit(
+        model=model, 
+        train_dataloaders=dataset.train_loader, 
+        val_dataloaders=dataset.val_loader,
+        ckpt_path=template_core.trainer_ckpt_path
+    )
 
     pylogger.info("Starting testing!")
     trainer.test(model=model, dataloaders=dataset.test_loader)
