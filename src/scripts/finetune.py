@@ -178,7 +178,8 @@ def run(cfg: DictConfig):
     model_class = get_class(image_encoder)
     
     metadata = {"model_name": cfg.nn.module.model.model_name, "model_class": model_class}
-    upload_model_to_wandb(model.encoder, artifact_name, logger.experiment, cfg, metadata)
+    if cfg.upload_artifacts:
+        upload_model_to_wandb(model.encoder, artifact_name, logger.experiment, cfg, metadata)
 
     if logger is not None:
         logger.experiment.finish()

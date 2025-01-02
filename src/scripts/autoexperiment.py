@@ -23,6 +23,8 @@ def tqdm_print(*args, **kwargs):
 # Override the built-in print globally
 builtins.print = tqdm_print
 
+UPLOAD_ARTIFACTS = True
+
 EXPORT_RUN_DATA = True
 EXPORT_RUN_DATA_DIR = "./run_data"
 
@@ -107,6 +109,7 @@ for order in range(1, DESIRED_ORDERS+1):
                 f"+strategy={repr(STRATEGY)}",
                 f"+run_data.export_run_data={EXPORT_RUN_DATA}",
                 f"+run_data.export_run_data_dir={EXPORT_RUN_DATA_DIR}",
+                f"+upload_artifacts={UPLOAD_ARTIFACTS}"
             ], 
             check=True
         )
