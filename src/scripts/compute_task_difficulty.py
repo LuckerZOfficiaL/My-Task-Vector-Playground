@@ -53,7 +53,7 @@ def main():
 
     EPOCH_NAN_PLACEHOLDER_VALUE = -6969
 
-    DATASETS_TO_SKIP = ["cifar10"]
+    DATASETS_TO_SKIP = []
 
     rows = []
 
