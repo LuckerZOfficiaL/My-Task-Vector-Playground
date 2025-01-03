@@ -233,6 +233,7 @@ artifacts_downloaded_from_wandb/
 
 grads*/
 
-run_data/
+run_data/plots/
+run_data/plots_unsorted/
 
 run_terminal_logs/
