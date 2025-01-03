@@ -147,3 +147,13 @@ def build_callbacks(cfg: ListConfig, *args: Callback) -> List[Callback]:
         callbacks.append(hydra.utils.instantiate(callback, _recursive_=False))
 
     return callbacks
+
+
+def list_of_strings_to_string(input_list: List[str]) -> str:
+    print(input_list)
+    # Convert each element to a string and join with commas
+    list_string = ",".join(input_list)
+    print(list_string)
+    
+    # Surround the result with square brackets
+    return f"[{list_string}]"

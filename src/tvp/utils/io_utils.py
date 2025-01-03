@@ -98,6 +98,24 @@ def export_run_data_to_disk(
     pylogger.info(f"History DataFrame exported to: {csv_file_path}")
 
 
+def export_dict_to_json(
+    data: dict, 
+    filename: str,
+    export_description: str="dictionary"
+):
+    """
+    Export a dictionary to a JSON file.
+
+    :param data: The dictionary to export
+    :param filename: The name of the JSON file to create
+    """
+    try:
+        with open(filename, 'w') as json_file:
+            json.dump(data, json_file, indent=4)
+        pylogger.info(f"{export_description} successfully exported to {filename}")
+    except Exception as e:
+        pylogger.error(f"An error occurred while exporting the {export_description}: {e}")
+
 
 
 

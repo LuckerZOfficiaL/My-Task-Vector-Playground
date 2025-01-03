@@ -11,7 +11,7 @@ from tqdm import tqdm
 import torch
 import torch.nn as nn
 from lightning.pytorch import Callback
-from omegaconf import DictConfig, ListConfig
+from omegaconf import DictConfig, ListConfig, OmegaConf
 import copy
 import torch.nn.functional as F
 import numpy as np
@@ -27,9 +27,12 @@ from nn_core.serialization import NNCheckpointIO
 import tvp  # noqa
 from tvp.data.datamodule import MetaData
 from tvp.data.datasets.registry import get_dataset
-from tvp.data.constants import DATASET_NAME_TO_TA_FT_EPOCHS_UPPERCASE, DATASET_NAME_TO_NUM_BATCHES_UPPERCASE
+from tvp.data.constants import DATASET_NAME_TO_TA_FT_EPOCHS_LOWERCASE
+from tvp.data.constants import DATASET_NAME_TO_TA_FT_EPOCHS_UPPERCASE
+from tvp.data.constants import DATASET_NAME_TO_NUM_TRAIN_BATCHES_LOWERCASE
+from tvp.data.constants import DATASET_NAME_TO_NUM_TRAIN_BATCHES_UPPERCASE
 from tvp.task_vectors.task_vectors import TaskVector
-from tvp.utils.io_utils import load_model_from_artifact
+from tvp.utils.io_utils import load_model_from_artifact, export_dict_to_json
 from tvp.utils.utils import build_callbacks
 from torch.nn.utils import vector_to_parameters
 from torch.nn.utils import parameters_to_vector
@@ -42,6 +45,8 @@ from tvp.competitors.my_ties import ties_merging
 from tvp.competitors.my_breadcrumbs import model_breadcrumbs
 from tvp.competitors.their_ties import *
 from tvp.competitors.my_dare import *
+
+from rich.pretty import pprint
 
 
 pylogger = logging.getLogger(__name__)
@@ -136,7 +141,7 @@ def upload_model_to_wandb(
 
 def run(cfg: DictConfig) -> str:
 
-    print(cfg)
+    pprint(OmegaConf.to_container(cfg, resolve=True))
     
     seed_index_everything(cfg)
 
@@ -154,25 +159,31 @@ def run(cfg: DictConfig) -> str:
         raise NotImplementedError("Only order 1 is supported for now")
     
     zeroshot_model = load_model_from_artifact(artifact_path=f"{zeroshot_identifier}:latest", run=logger.experiment)
-
+    
+    optim_name = cfg.nn.module.optimizer._target_.split(".")[-1]
 
     finetuned_id_fn = lambda dataset: (
         f"{cfg.nn.module.model.model_name}_"
         f"{dataset}_"
         f"{cfg.seed_index}_"
-        f"acc_grad_batches_{DATASET_NAME_TO_NUM_BATCHES_UPPERCASE[dataset] if cfg.accumulate_grad_batches else 1}_"
-        f"epochs_{DATASET_NAME_TO_TA_FT_EPOCHS_UPPERCASE[dataset] if cfg.max_epochs is None else cfg.max_epochs}_"
-        f"optim_{cfg.nn.module.optimizer._target_.split('.')[-1]}_"
+        f"batch_size_{cfg.nn.data.batch_size.train}_"
+        f"lim_train_batches_{cfg.limit_train_batches if cfg.limit_train_batches is not None else DATASET_NAME_TO_NUM_TRAIN_BATCHES_UPPERCASE[dataset]}_"
+        f"acc_grad_batches_{cfg.accumulate_grad_batches}_"
+        f"epochs_{cfg.max_epochs if cfg.max_epochs is not None else DATASET_NAME_TO_TA_FT_EPOCHS_UPPERCASE[dataset]}_"
+        f"optim_{optim_name}_"
         f"order_{cfg.order}"
         f":latest"
     )
 
-    finetuned_models = {
-        dataset: load_model_from_artifact(
+    finetuned_models = {}
+
+    for dataset in cfg.task_vectors.to_apply:
+        pylogger.info(f"Loading finetuned model for {dataset}: {finetuned_id_fn(dataset)}")
+        
+        finetuned_models[dataset] = load_model_from_artifact(
             artifact_path=finetuned_id_fn(dataset), 
             run=logger.experiment
-        ) for dataset in cfg.task_vectors.to_apply
-    }
+        )
 
     # Task vectors
     flatten = lambda model: parameters_to_vector(model.parameters())
@@ -245,25 +256,33 @@ def run(cfg: DictConfig) -> str:
 
 
     # Save the unified model as artifact
-    artifact_name = (
-        f"{cfg.nn.module.model.model_name}_"
-        f"Merged_"
-        f"{cfg.seed_index}_"
-        f"epochs_max_"
-        f"order_{cfg.order}"
-    )
-    metadata = {
-        "model_name": f"{cfg.nn.module.model.model_name}", 
-        "model_class": "tvp.modules.encoder.ImageEncoder",
-        "cfg": cfg
-    }
-    upload_model_to_wandb(
-        task_equipped_model, 
-        artifact_name, 
-        logger.experiment, 
-        cfg, 
-        metadata
-    )
+    if cfg.upload_artifacts:
+        
+        artifact_name = (
+            f"{cfg.nn.module.model.model_name}_"
+            f"applied_task_vectors_{'-'.join(cfg.task_vectors.to_apply)}_"
+            f"{cfg.seed_index}_"
+            f"acc_grad_batches_{cfg.accumulate_grad_batches}_"
+            f"epochs_{cfg.max_epochs if cfg.max_epochs is not None else 'TA'}_"
+            f"optim_{optim_name}_"
+            f"order_{cfg.order}"
+        )
+
+        metadata = {
+            "model_name": f"{cfg.nn.module.model.model_name}", 
+            "model_class": "tvp.modules.encoder.ImageEncoder",
+            "cfg": cfg
+        }
+        upload_model_to_wandb(
+            task_equipped_model, 
+            artifact_name, 
+            logger.experiment, 
+            cfg, 
+            metadata
+        )
+    
+    else:
+        pylogger.info("cfg.upload_arficats = False, artifacts NOT uploaded.")
 
     seed_index_everything(cfg)
 
@@ -280,8 +299,25 @@ def run(cfg: DictConfig) -> str:
             cfg.nn.module, encoder=task_equipped_model, classifier=classification_head, _recursive_=False
         )
 
+        # NOTE
+        # Ilharco does this in the original code...
+        # 
+        # When "Val" is appended to the dataset name:
+        # dataset.train_loader --> 90% of train split 
+        # dataset.test_loader  --> 10% of train split
+        # 
+        # the original test split is lost, probably intended to be used as validation...
+        # 
+        # For this reason, inside the get_dataset method, before assigning the 10% train split to the test split,
+        # the original test split is copied inside the val split, in order to be used to do val.
+        
+        # NOTE so...
+        # this is needed to ensure consistency in the split used for testing.
+        # by appending the "Val" suffix, we trigger the code that tests on the 0.1 train split
+        # instead of the original test split, which can then be used for validation
         dataset = get_dataset(
-            dataset_name,
+            # dataset_name,
+            f"{dataset_name}Val",
             preprocess_fn=model.encoder.train_preprocess,
             location=cfg.nn.data.data_path,
             batch_size=cfg.nn.data.batch_size.train,
@@ -310,8 +346,19 @@ def run(cfg: DictConfig) -> str:
 
         results[dataset_name] = test_results
 
+    results["evaluation_cfg"] = OmegaConf.to_container(cfg, resolve=True)
     print(results)
 
+    if cfg.timestamp is not None:
+        results_export_dir = "./evaluations/evaulate"
+        os.makedirs(results_export_dir, exist_ok=True)
+        export_dict_to_json(
+            data=results, 
+            filename=os.path.join(results_export_dir, f"results_{cfg.timestamp}.json"),
+            export_description="evaluation results"
+        )
+    else:
+        pylogger.info("No timestamp provided. Results NOT exported.")
 
 @hydra.main(config_path=str(PROJECT_ROOT / "conf"), config_name="task_vectors.yaml")
 def main(cfg: omegaconf.DictConfig):

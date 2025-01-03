@@ -1,0 +1,321 @@
+{
+    "CIFAR100": [
+        {
+            "acc/test": 0.6988000273704529,
+            "loss/test": 1.1344327926635742
+        }
+    ],
+    "DTD": [
+        {
+            "acc/test": 0.5121951103210449,
+            "loss/test": 1.8881211280822754
+        }
+    ],
+    "EuroSAT": [
+        {
+            "acc/test": 0.5968981385231018,
+            "loss/test": 1.2199209928512573
+        }
+    ],
+    "GTSRB": [
+        {
+            "acc/test": 0.44819819927215576,
+            "loss/test": 1.984689474105835
+        }
+    ],
+    "MNIST": [
+        {
+            "acc/test": 0.569599986076355,
+            "loss/test": 1.6885145902633667
+        }
+    ],
+    "RESISC45": [
+        {
+            "acc/test": 0.682539701461792,
+            "loss/test": 1.0047237873077393
+        }
+    ],
+    "SVHN": [
+        {
+            "acc/test": 0.490200012922287,
+            "loss/test": 1.6947461366653442
+        }
+    ],
+    "Cars": [
+        {
+            "acc/test": 0.6253071427345276,
+            "loss/test": 1.0372897386550903
+        }
+    ],
+    "CIFAR10": [
+        {
+            "acc/test": 0.9150000214576721,
+            "loss/test": 0.2798522114753723
+        }
+    ],
+    "EMNIST": [
+        {
+            "acc/test": 0.19920000433921814,
+            "loss/test": 2.2775518894195557
+        }
+    ],
+    "FashionMNIST": [
+        {
+            "acc/test": 0.6636000275611877,
+            "loss/test": 0.9852263927459717
+        }
+    ],
+    "FER2013": [
+        {
+            "acc/test": 0.3874564468860626,
+            "loss/test": 1.8779990673065186
+        }
+    ],
+    "Flowers102": [
+        {
+            "acc/test": 0.656862735748291,
+            "loss/test": 1.2831751108169556
+        }
+    ],
+    "Food101": [
+        {
+            "acc/test": 0.8411999940872192,
+            "loss/test": 0.5730031728744507
+        }
+    ],
+    "KMNIST": [
+        {
+            "acc/test": 0.10100000351667404,
+            "loss/test": 2.449453115463257
+        }
+    ],
+    "OxfordIIITPet": [
+        {
+            "acc/test": 0.85326087474823,
+            "loss/test": 0.4544297158718109
+        }
+    ],
+    "PCAM": [
+        {
+            "acc/test": 0.5315999984741211,
+            "loss/test": 0.7684592008590698
+        }
+    ],
+    "RenderedSST2": [
+        {
+            "acc/test": 0.6083815097808838,
+            "loss/test": 0.6583446264266968
+        }
+    ],
+    "STL10": [
+        {
+            "acc/test": 0.9779999852180481,
+            "loss/test": 0.09830033779144287
+        }
+    ],
+    "SUN397": [
+        {
+            "acc/test": 0.6569269299507141,
+            "loss/test": 1.1921204328536987
+        }
+    ],
+    "evaluation_cfg": {
+        "nn": {
+            "data": {
+                "dataset": {
+                    "dataset_name": "Cars",
+                    "ft_epochs": 35,
+                    "posthoc_epochs": 10,
+                    "num_classes": 196
+                },
+                "accelerator": "gpu",
+                "batch_size": {
+                    "test": 16,
+                    "train": 32,
+                    "val": 32
+                },
+                "data_path": "/mnt/KS_2TB/PARA/Projects/ATM/Higher-Order-Task-Vector-Playground/data",
+                "num_workers": {
+                    "test": 8,
+                    "train": 8,
+                    "val": 8
+                },
+                "train_dataset": "CarsVal"
+            },
+            "module": {
+                "_target_": "tvp.pl_module.image_classifier.ImageClassifier",
+                "x_key": "x",
+                "y_key": "y",
+                "encoder": "??",
+                "classifier": "??",
+                "optimizer": {
+                    "_target_": "torch.optim.SGD",
+                    "lr": 1e-05
+                },
+                "model": {
+                    "_target_": "tvp.modules.encoder.ImageEncoder",
+                    "model_name": "ViT-B-16",
+                    "openclip_cachedir": "/mnt/KS_2TB/PARA/Projects/ATM/Higher-Order-Task-Vector-Playground/checkpoints/openclip_cache",
+                    "cache_dir": null,
+                    "keep_lang": "??"
+                }
+            }
+        },
+        "train": {
+            "seed_index": 0,
+            "deterministic": false,
+            "trainer": {
+                "fast_dev_run": false,
+                "accelerator": "gpu",
+                "devices": 1,
+                "precision": 32,
+                "max_steps": -1,
+                "num_sanity_val_steps": 2,
+                "gradient_clip_val": 10.0,
+                "val_check_interval": 1.0,
+                "deterministic": false
+            },
+            "restore": {
+                "ckpt_or_run_path": null,
+                "mode": null
+            },
+            "monitor": {
+                "metric": "loss/train",
+                "mode": "min"
+            },
+            "callbacks": [
+                {
+                    "_target_": "pytorch_lightning.callbacks.EarlyStopping",
+                    "patience": 42,
+                    "verbose": false,
+                    "monitor": "loss/train",
+                    "mode": "min"
+                },
+                {
+                    "_target_": "pytorch_lightning.callbacks.ModelCheckpoint",
+                    "save_top_k": 1,
+                    "verbose": false,
+                    "monitor": "loss/train",
+                    "mode": "min"
+                },
+                {
+                    "_target_": "pytorch_lightning.callbacks.LearningRateMonitor",
+                    "logging_interval": "step",
+                    "log_momentum": false
+                },
+                {
+                    "_target_": "pytorch_lightning.callbacks.progress.tqdm_progress.TQDMProgressBar",
+                    "refresh_rate": 1
+                }
+            ],
+            "logging": {
+                "upload": {
+                    "run_files": false,
+                    "source": true
+                },
+                "logger": {
+                    "_target_": "lightning.pytorch.loggers.WandbLogger",
+                    "project": "task-vectors-playground",
+                    "entity": "dansolombrinoandfriends",
+                    "log_model": false,
+                    "mode": "online",
+                    "tags": [
+                        "dev"
+                    ]
+                },
+                "wandb_watch": {
+                    "log": null,
+                    "log_freq": 100,
+                    "log_graph": false
+                }
+            }
+        },
+        "conventions": {
+            "x_key": "x",
+            "y_key": "y"
+        },
+        "core": {
+            "entity": "dansolombrinoandfriends",
+            "project_name": "task-vectors-playground",
+            "storage_dir": "/mnt/KS_2TB/PARA/Projects/ATM/Higher-Order-Task-Vector-Playground/storage",
+            "tags": [
+                "dev"
+            ],
+            "version": "0.0.1"
+        },
+        "epoch_divisor": "None",
+        "eval_datasets": [
+            "CIFAR100",
+            "DTD",
+            "EuroSAT",
+            "GTSRB",
+            "MNIST",
+            "RESISC45",
+            "SVHN",
+            "Cars",
+            "CIFAR10",
+            "EMNIST",
+            "FashionMNIST",
+            "FER2013",
+            "Flowers102",
+            "Food101",
+            "KMNIST",
+            "OxfordIIITPet",
+            "PCAM",
+            "RenderedSST2",
+            "STL10",
+            "SUN397"
+        ],
+        "eval_on_train": false,
+        "misc": {
+            "cache_dir": null,
+            "ckpt_path": "/mnt/KS_2TB/PARA/Projects/ATM/Higher-Order-Task-Vector-Playground/checkpoints/ViT-B-16",
+            "openclip_cachedir": "/mnt/KS_2TB/PARA/Projects/ATM/Higher-Order-Task-Vector-Playground/checkpoints/openclip_cache",
+            "pretrained_checkpoint": "/mnt/KS_2TB/PARA/Projects/ATM/Higher-Order-Task-Vector-Playground/checkpoints/ViT-B-16/zeroshot.pt"
+        },
+        "order": 1,
+        "seed_index": 0,
+        "task_vectors": {
+            "aggregator": {
+                "_target_": "tvp.task_vectors.aggregator.SumAggregator",
+                "mean": true
+            },
+            "breadcrumbs_beta": 0.85,
+            "breadcrumbs_gamma": 0.993,
+            "dare_rate": 0.9,
+            "merging_method": "normal",
+            "num_task_vectors": 8,
+            "orthogonalize": false,
+            "scaling_coefficient": 1,
+            "ties_lambda": 1,
+            "ties_topk": 0.15,
+            "to_apply": [
+                "CIFAR100",
+                "DTD",
+                "EuroSAT",
+                "GTSRB",
+                "MNIST",
+                "RESISC45",
+                "SVHN",
+                "Cars",
+                "CIFAR10",
+                "EMNIST",
+                "FashionMNIST",
+                "FER2013",
+                "Flowers102",
+                "Food101",
+                "KMNIST",
+                "OxfordIIITPet",
+                "PCAM",
+                "RenderedSST2",
+                "STL10",
+                "SUN397"
+            ]
+        },
+        "accumulate_grad_batches": 1,
+        "max_epochs": null,
+        "limit_train_batches": null,
+        "upload_artifacts": true,
+        "timestamp": "2025_01_03_at_15_08_11"
+    }
+}
