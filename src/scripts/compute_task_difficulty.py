@@ -53,9 +53,14 @@ def main():
 
     EPOCH_NAN_PLACEHOLDER_VALUE = -6969
 
+    DATASETS_TO_SKIP = ["cifar10"]
+
     rows = []
 
     for dataset in DATASETS_20:
+
+        if dataset in DATASETS_TO_SKIP:
+            continue
 
         print(f"dataset: {dataset}")
         print("\n\n", f"*"*50, "\n\n")
@@ -115,7 +120,7 @@ def main():
             'loss_gap': loss_first_epoch - loss_last_epoch,
 
             # Loss Gap: Proportionate decrease in loss during fine-tuning
-            # - Higher values --> fine-tuning significantly improves the model
+            # - Higher values --> fine-tuning significantly i   mproves the model
             # - Lower values --> little to no improvement from fine-tuning
             'normalized_loss_gap': (loss_first_epoch - loss_last_epoch) / loss_first_epoch,
         }
@@ -159,12 +164,25 @@ def main():
     OUTPUT_DIR = f"{RUN_DATA_DIR}/plots"
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    # Generate a bar plot for each metric
+    # Generate a bar plot for each metric, sorting by the appropriate order
     for metric, (title, ylabel) in metrics.items():
+        # Decide sorting order based on the metric
+        if metric in ['acc_gap', 'loss_gap', 'normalized_loss_gap']:
+            sort_ascending = False  # Higher values are more challenging
+        elif metric == 'acc_ratio':
+            sort_ascending = True  # Closer to 1 means easier task
+
+        # Sort the DataFrame by the current metric
+        sorted_difficulty_df = difficulty_df.sort_values(by=metric, ascending=sort_ascending)
+
+        # Extract the sorted dataset names and corresponding metric values
+        sorted_dataset_names = sorted_difficulty_df['dataset_name']
+        sorted_metric_values = sorted_difficulty_df[metric]
+
         plot_or_save_metric(
             metric_name=metric,
-            metric_values=difficulty_df[metric],
-            dataset_names=dataset_names,
+            metric_values=sorted_metric_values,
+            dataset_names=sorted_dataset_names,
             title=title,
             ylabel=ylabel,
             save_to_disk=SAVE_PLOTS_TO_DISK,
