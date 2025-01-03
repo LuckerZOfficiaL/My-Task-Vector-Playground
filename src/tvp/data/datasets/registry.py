@@ -84,7 +84,20 @@ def split_train_into_train_val(
     # 
     # For this reason, before assigning the 10% train split to the test split,
     # we copy the original test split to the val split.
-    new_dataset.val_dataset = copy.deepcopy(dataset.test_dataset)
+
+    # PCam needs some special processing, as it has some attributes that cannot be copy.deepcopy'd
+    if "pcam" in new_dataset_class_name.lower():
+        pcam_dataset = PCAM(
+            preprocess=dataset.test_dataset.transform, 
+            location=dataset.location, 
+            batch_size=batch_size, 
+            num_workers=num_workers
+        )
+        new_dataset.val_dataset = pcam_dataset.test_dataset
+    
+    else:
+        new_dataset.val_dataset = copy.deepcopy(dataset.test_dataset)
+    
     new_dataset.val_loader = torch.utils.data.DataLoader(
         new_dataset.val_dataset, batch_size=batch_size, num_workers=num_workers
     )

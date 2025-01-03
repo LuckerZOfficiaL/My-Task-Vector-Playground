@@ -2,3 +2,4 @@ lightning
 rich
 hydra-core
 nn-template-core
+gdown

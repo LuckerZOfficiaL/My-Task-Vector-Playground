@@ -2,7 +2,7 @@ DATASETS_07 = ["cifar100", "dtd", "eurosat", "gtsrb", "mnist", "resisc45", "svhn
 DATASETS_20 = DATASETS_07 + [
     "cars", "cifar10", "emnist", "fashionmnist", "fer2013", "flowers102", 
     "food101", "kmnist", "oxfordiiitpet", 
-    # "pcam", 
+    "pcam", 
     "renderedsst2", "stl10", "sun397"
 ]
 
@@ -48,7 +48,7 @@ DATASET_NAME_TO_NUM_TRAIN_BATCHES_UPPERCASE = {
     "Food101": 2211,
     "KMNIST": 1719,
     "OxfordIIITPet": 104,
-    # "PCam": 
+    "PCam": 8036,
     "RenderedSST2": 195,
     "STL10": 141,
     "SUN397": 559,
@@ -71,7 +71,7 @@ DATASET_NAME_TO_NUM_VAL_BATCHES_UPPERCASE = {
     "Food101": 790,
     "KMNIST": 313,
     "OxfordIIITPet": 115,
-    # "PCam":
+    "PCam": 1024,
     "RenderedSST2": 57,
     "STL10": 250,
     "SUN397": 621,
@@ -94,7 +94,7 @@ DATASET_NAME_TO_NUM_TEST_BATCHES_UPPERCASE = {
     "Food101": 157,
     "KMNIST": 157,
     "OxfordIIITPet": 12,
-    # "PCam":
+    "PCam": 157,
     "RenderedSST2": 22,
     "STL10": 16,
     "SUN397": 63,
