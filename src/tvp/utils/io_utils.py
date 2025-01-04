@@ -114,6 +114,25 @@ def export_dict_to_json(
         pylogger.error(f"An error occurred while exporting the {export_description}: {e}")
 
 
+def load_dict_from_json(
+    filename: str,
+    import_description: str="dictionary"
+) -> Dict:
+    """
+    Load a dictionary from a JSON file.
+
+    :param filename: The name of the JSON file to load
+    :return: The dictionary
+    """
+    try:
+        with open(filename, 'r') as json_file:
+            data = json.load(json_file)
+        return data
+    except Exception as e:
+        pylogger.error(f"An error occurred while importing the {import_description}: {e}")
+        return None
+
+
 def export_list_of_strings_to_file(
     data: List[str], 
     filename: str,
@@ -151,6 +170,10 @@ def load_list_of_strings_from_file(
     except Exception as e:
         pylogger.error(f"An error occurred while importing the {import_description}: {e}")
         return None
+
+
+def get_all_files_in_dir(dir_path: str) -> List[str]:
+    return [file for file in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, file))]
 
 
 def get_class(model):
