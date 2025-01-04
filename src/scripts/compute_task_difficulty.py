@@ -49,13 +49,15 @@ def main():
 
     ACC_GRAD_BATCHES = 1
 
-    OEp_1IM = "SGD"
+    OPTIM = "SGD"
 
     EPOCH_NAN_PLACEHOLDER_VALUE = -6969
 
     DATASETS_TO_SKIP = []
 
     rows = []
+
+    TASK_DIFFICULTY_DIR = "./task_difficulty"
 
     for dataset in DATASETS_20:
 
@@ -74,7 +76,7 @@ def main():
             f"lim_train_batches_{DATASET_NAME_TO_NUM_TRAIN_BATCHES_LOWERCASE[dataset]}_"
             f"acc_grad_batches_{ACC_GRAD_BATCHES}_"
             f"epochs_{DATASET_NAME_TO_TA_FT_EPOCHS_LOWERCASE[dataset]}_"
-            f"optim_{OEp_1IM}_"
+            f"optim_{OPTIM}_"
             f"order_1_"
             f"history.csv"
         )
@@ -135,7 +137,7 @@ def main():
 
     # Save the DataFrame to a CSV file
     difficulty_df_file_path = (
-        f"{RUN_DATA_DIR}/"
+        f"{TASK_DIFFICULTY_DIR}/"
         f"ViT-B-16_"
         f"DATASET-20_"
         f"0_"
@@ -143,7 +145,7 @@ def main():
         f"lim_train_batches_ALL-BATCHES_"
         f"acc_grad_batches_{ACC_GRAD_BATCHES}_"
         f"epochs_TA_"
-        f"optim_{OEp_1IM}_"
+        f"optim_{OPTIM}_"
         f"order_1_"
         f"difficulties.csv"
     )
@@ -161,7 +163,7 @@ def main():
 
     # Flag to decide whether to plot or save
     SAVE_PLOTS_TO_DISK = True  # Set to False to display plots instead
-    OUTPUT_DIR = f"{RUN_DATA_DIR}/plots"
+    OUTPUT_DIR = f"./plots/task_difficulty"
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     # Generate a bar plot for each metric, sorting by the appropriate order
