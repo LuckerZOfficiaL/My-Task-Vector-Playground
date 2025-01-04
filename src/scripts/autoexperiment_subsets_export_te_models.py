@@ -30,7 +30,7 @@ def tqdm_print(*args, **kwargs):
     tqdm.write(" ".join(map(str, args)), **kwargs)
 
 # Override the built-in print globally
-# builtins.print = tqdm_print
+builtins.print = tqdm_print
 
 
 def _verify_args(args):
@@ -85,7 +85,10 @@ MAX_EPOCHS = None
 
 SEED = 421337
 
+DATASETS_TO_EXCLUDE = "pcam"
+
 datasets = DATASETS_20
+datasets = [dataset for dataset in datasets if DATASETS_TO_EXCLUDE not in dataset]
 datasets = [DATASET_NAME_TO_STYLED_NAME[dataset] for dataset in datasets]
 
 if args["subset_length"] > len(datasets):
@@ -114,7 +117,7 @@ task_equipped_model_export_path_list = []
 
 for order in range(1, DESIRED_ORDERS+1):
 
-    for dataset_subset_id, dataset_subset in enumerate(dataset_random_subsets):
+    for dataset_subset_id, dataset_subset in tqdm(enumerate(dataset_random_subsets)):
 
         print(f"Dataset subset: {dataset_subset}, {dataset_subset_id + 1}/{len(dataset_random_subsets)}")
 

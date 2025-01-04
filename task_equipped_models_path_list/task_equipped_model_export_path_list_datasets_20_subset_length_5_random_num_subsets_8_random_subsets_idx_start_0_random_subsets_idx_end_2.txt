@@ -1,2 +1,0 @@
-./task_equipped_models/ViT-B-16_applied_task_vectors_EMNIST-EuroSAT-FER2013-GTSRB-RESISC45_0_acc_grad_batches_1_epochs_TA_optim_SGD_order_1.ckpt
-./task_equipped_models/ViT-B-16_applied_task_vectors_CIFAR100-Flowers102-GTSRB-RESISC45-RenderedSST2_0_acc_grad_batches_1_epochs_TA_optim_SGD_order_1.ckpt
