@@ -9,7 +9,7 @@ from nn_core.serialization import load_model
 from tvp.modules.encoder import ClassificationHead, ImageEncoder
 
 import yaml
-from typing import Dict
+from typing import Dict, List
 
 from nn_core.model_logging import NNLogger
 import wandb
@@ -37,12 +37,9 @@ def load_model_from_artifact(run, artifact_path):
 
     return model
 
-def export_model_to_disk(model, model_name: str, model_path: str):
-
-    # make directory if it doesn't exist
-    Path(model_path).parent.mkdir(parents=True, exist_ok=True)
+def export_model_to_disk(model, model_path: str):
     
-    pylogger.info(f"Exporting {model_name} to {model_path}")
+    pylogger.info(f"Saving model to {model_path}")
 
     torch.save(model.state_dict(), model_path)
 
@@ -117,7 +114,43 @@ def export_dict_to_json(
         pylogger.error(f"An error occurred while exporting the {export_description}: {e}")
 
 
+def export_list_of_strings_to_file(
+    data: List[str], 
+    filename: str,
+    export_description: str="list of strings"
+):
+    """
+    Export a list of strings to a text file.
 
+    :param data: The list of strings to export
+    :param filename: The name of the text file to create
+    """
+    try:
+        with open(filename, 'w') as file:
+            for item in data:
+                file.write(f"{item}\n")
+        pylogger.info(f"{export_description} successfully exported to {filename}")
+    except Exception as e:
+        pylogger.error(f"An error occurred while exporting the {export_description}: {e}")
+
+
+def load_list_of_strings_from_file(
+    filename: str,
+    import_description: str="list of strings"
+) -> List[str]:
+    """
+    Load a list of strings from a text file.
+
+    :param filename: The name of the text file to load
+    :return: The list of strings
+    """
+    try:
+        with open(filename, 'r') as file:
+            data = file.readlines()
+        return [item.strip() for item in data]
+    except Exception as e:
+        pylogger.error(f"An error occurred while importing the {import_description}: {e}")
+        return None
 
 
 def get_class(model):

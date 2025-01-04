@@ -1,0 +1,2 @@
+./task_equipped_models/ViT-B-16_applied_task_vectors_FER2013-GTSRB-RenderedSST2_0_acc_grad_batches_1_epochs_TA_optim_SGD_order_1.ckpt
+./task_equipped_models/ViT-B-16_applied_task_vectors_EuroSAT-FashionMNIST-OxfordIIITPet_0_acc_grad_batches_1_epochs_TA_optim_SGD_order_1.ckpt
