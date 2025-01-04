@@ -117,7 +117,7 @@ task_equipped_model_export_path_list = []
 
 for order in range(1, DESIRED_ORDERS+1):
 
-    for dataset_subset_id, dataset_subset in tqdm(enumerate(dataset_random_subsets)):
+    for dataset_subset_id, dataset_subset in enumerate(dataset_random_subsets):
 
         print(f"Dataset subset: {dataset_subset}, {dataset_subset_id + 1}/{len(dataset_random_subsets)}")
 

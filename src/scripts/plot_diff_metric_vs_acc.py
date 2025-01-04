@@ -208,61 +208,116 @@ def _populate_metrics_for_task_equipped_models(
     return task_equipped_models_metrics
 
 
+# def plot_or_export(
+#     avg_merged_accs: list, 
+#     avg_metric: list, 
+#     metric_name: str,
+#     metric_y_axis_label: str,
+#     plot_title: str,
+#     export_path: str
+# ):
+#     # Define colors for easy modification
+#     acc_color = 'darkviolet'
+#     metric_color = 'dodgerblue'
+
+#     x_values = range(len(avg_merged_accs))  # Common x values (index of the lists)
+
+#     fig, ax1 = plt.subplots()  # Create the figure and the first y-axis
+
+#     # Plot avg_merged_accs on the left y-axis
+#     ax1.scatter(x_values, avg_merged_accs, color=acc_color, label='avg merged accs', alpha=0.7)
+#     ax1.set_xlabel('Merged task subsets')
+#     ax1.set_ylabel('avg accs merged accs (higher is better)', color=acc_color)
+#     ax1.tick_params(axis='y', labelcolor=acc_color)
+
+#     # Add regression line for avg_merged_accs
+#     acc_fit = np.polyfit(x_values, avg_merged_accs, 1)
+#     acc_fit_line = np.polyval(acc_fit, x_values)
+#     ax1.plot(x_values, acc_fit_line, color=acc_color, label='avg accs trend')
+
+#     # Create a second y-axis for the metric
+#     ax2 = ax1.twinx()
+#     ax2.scatter(x_values, avg_metric, color=metric_color, label=metric_name, alpha=0.7)
+#     ax2.set_ylabel(metric_y_axis_label, color=metric_color)
+#     ax2.tick_params(axis='y', labelcolor=metric_color)
+
+#     # Add regression line for avg_metric
+#     metric_fit = np.polyfit(x_values, avg_metric, 1)
+#     metric_fit_line = np.polyval(metric_fit, x_values)
+#     ax2.plot(x_values, metric_fit_line, color=metric_color, label=f'{metric_name} trend')
+
+#     # Set custom x-axis labels for the first, middle, and last values
+#     ax1.set_xticks([0, len(x_values)//2, len(x_values)-1])
+#     ax1.set_xticklabels([0, len(x_values)//2, len(x_values)-1])
+
+#     # Remove grid
+#     ax1.grid(False)
+
+#     # Add title
+#     plt.title(plot_title)
+
+#     # Check if an export path is given
+#     if export_path:
+#         plt.savefig(export_path, dpi=300)  # Save the plot to the specified file
+#         plt.close()  # Close the plot to avoid displaying it
+#         print(f"Plot exported to: {export_path}")
+#     else:
+#         plt.show()  # Show the plot if no export path is given
+
+
 def plot_or_export(
-    avg_merged_accs: list, 
-    avg_metric: list, 
+    avg_merged_accs: list,
+    avg_metric: list,
     metric_name: str,
     metric_y_axis_label: str,
     plot_title: str,
     export_path: str
 ):
-    # Define colors for easy modification
-    acc_color = 'blue'
-    metric_color = 'red'
+    """
+    Creates a scatter plot with acc on the x-axis and metric on the y-axis.
+    Adds a correlation line between x and y.
+    Allows exporting the plot to a file.
 
-    x_values = range(len(avg_merged_accs))  # Common x values (index of the lists)
+    Parameters:
+        avg_merged_accs (list): Average accuracies for each subset.
+        avg_metric (list): Average metric values for each subset.
+        metric_name (str): Name of the metric being plotted.
+        metric_y_axis_label (str): Label for the y-axis.
+        plot_title (str): Title of the plot.
+        export_path (str): File path to save the plot image.
+    """
+    # Check if lengths match
+    if len(avg_merged_accs) != len(avg_metric):
+        raise ValueError("The lengths of avg_merged_accs and avg_metric must match.")
 
-    fig, ax1 = plt.subplots()  # Create the figure and the first y-axis
+    # Create the scatter plot
+    plt.figure(figsize=(8, 6))
+    plt.scatter(y=avg_merged_accs, x=avg_metric, color='blue', alpha=0.7)
 
-    # Plot avg_merged_accs on the left y-axis
-    ax1.scatter(x_values, avg_merged_accs, color=acc_color, label='avg merged accs', alpha=0.7)
-    ax1.set_xlabel('Merged task subsets')
-    ax1.set_ylabel('avg accs merged accs (higher is better)', color=acc_color)
-    ax1.tick_params(axis='y', labelcolor=acc_color)
+    # Calculate the trendline (correlation line)
+    coefficients = np.polyfit(y=avg_merged_accs, x=avg_metric, deg=1)  # Linear fit (degree=1)
+    trendline = np.poly1d(coefficients)  # Create the trendline function
+    trendline_values = trendline(avg_merged_accs)  # Compute y values for the trendline
 
-    # Add regression line for avg_merged_accs
-    acc_fit = np.polyfit(x_values, avg_merged_accs, 1)
-    acc_fit_line = np.polyval(acc_fit, x_values)
-    ax1.plot(x_values, acc_fit_line, color=acc_color, label='avg accs trend')
+    # Plot the trendline
+    plt.plot(avg_merged_accs, trendline_values, color='black', linestyle='-')
 
-    # Create a second y-axis for the metric
-    ax2 = ax1.twinx()
-    ax2.scatter(x_values, avg_metric, color=metric_color, label=metric_name, alpha=0.7)
-    ax2.set_ylabel(metric_y_axis_label, color=metric_color)
-    ax2.tick_params(axis='y', labelcolor=metric_color)
+    # Labels and title
+    plt.xlabel(metric_y_axis_label, fontsize=12)
+    plt.ylabel('Normalized Merged Accuracy (higher is better)', fontsize=12)
+    plt.title(plot_title, fontsize=14)
+    plt.legend()
 
-    # Add regression line for avg_metric
-    metric_fit = np.polyfit(x_values, avg_metric, 1)
-    metric_fit_line = np.polyval(metric_fit, x_values)
-    ax2.plot(x_values, metric_fit_line, color=metric_color, label=f'{metric_name} trend')
-
-    # Set custom x-axis labels for the first, middle, and last values
-    ax1.set_xticks([0, len(x_values)//2, len(x_values)-1])
-    ax1.set_xticklabels([0, len(x_values)//2, len(x_values)-1])
-
-    # Remove grid
-    ax1.grid(False)
-
-    # Add title
-    plt.title(plot_title)
-
-    # Check if an export path is given
+    # Save the plot to the export path
     if export_path:
-        plt.savefig(export_path, dpi=300)  # Save the plot to the specified file
-        plt.close()  # Close the plot to avoid displaying it
-        print(f"Plot exported to: {export_path}")
+        plt.savefig(export_path, format='png', dpi=300)
+        print(f"Plot exported to {export_path}")
     else:
-        plt.show()  # Show the plot if no export path is given
+        print("No export path provided; displaying the plot instead.")
+        plt.show()
+    
+    # Clear the plot to free up memory
+    plt.clf()
 
 
 
@@ -274,11 +329,11 @@ def _plot_correlation(
     plot_title: str,
     export_path: str
 ):
-    print(f"normalized merged accs")
-    pprint(normalized_merged_accs)
+    # print(f"normalized merged accs")
+    # pprint(normalized_merged_accs)
 
-    print(f"metric")
-    pprint(metric)
+    # print(f"metric")
+    # pprint(metric)
 
     if len(normalized_merged_accs) != len(metric):
         raise ValueError(
@@ -290,16 +345,16 @@ def _plot_correlation(
     for subset_name, merged_acc_dict in normalized_merged_accs.items():
         avg_merged_accs[subset_name] = sum(merged_acc_dict.values()) / len(merged_acc_dict)
 
-    print(f"avg merged accs")
-    pprint(avg_merged_accs)
+    # print(f"avg merged accs")
+    # pprint(avg_merged_accs)
     
     avg_metric = {}
 
     for subset_name, metric in metric.items():
         avg_metric[subset_name] = sum(metric.values()) / len(metric)
 
-    print(f"avg metric")
-    pprint(avg_metric)
+    # print(f"avg metric")
+    # pprint(avg_metric)
 
     plot_or_export(
         avg_merged_accs=list(avg_merged_accs.values()),
@@ -318,11 +373,11 @@ def _plot_correlations(
 
     normalized_merged_accs = {
         model: task_equipped_metrics[model]["normalized_merged_accs"]
-        for model in list(task_equipped_metrics.keys())[:5]
+        for model in list(task_equipped_metrics.keys())
     }
     acc_gaps = {
         model: task_equipped_metrics[model]["acc_gap"]
-        for model in list(task_equipped_metrics.keys())[:5]
+        for model in list(task_equipped_metrics.keys())
     }
 
     export_path = os.path.join(export_dir, "acc_gap.png")
@@ -337,7 +392,7 @@ def _plot_correlations(
     
     acc_ratios = {
         model: task_equipped_metrics[model]["acc_ratio"]
-        for model in list(task_equipped_metrics.keys())[:5]
+        for model in list(task_equipped_metrics.keys())
     }
 
     export_path = os.path.join(export_dir, "acc_ratio.png")
@@ -352,7 +407,7 @@ def _plot_correlations(
     
     loss_gaps = {
         model: task_equipped_metrics[model]["loss_gap"]
-        for model in list(task_equipped_metrics.keys())[:5]
+        for model in list(task_equipped_metrics.keys())
     }
 
     export_path = os.path.join(export_dir, "loss_gap.png")
@@ -367,7 +422,7 @@ def _plot_correlations(
     
     normalized_loss_gaps = {
         model: task_equipped_metrics[model]["normalized_loss_gap"]
-        for model in list(task_equipped_metrics.keys())[:5]
+        for model in list(task_equipped_metrics.keys())
     }
 
     export_path = os.path.join(export_dir, "normalized_loss_gap.png")
