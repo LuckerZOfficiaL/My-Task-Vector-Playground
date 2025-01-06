@@ -288,12 +288,12 @@ def plot_or_export(
     avg_merged_accs: list,
     avg_metric: list,
     metric_name: str,
-    metric_y_axis_label: str,
+    metric_x_axis_label: str,
     plot_title: str,
     export_path: str
 ):
     """
-    Creates a scatter plot with acc on the x-axis and metric on the y-axis.
+    Creates a scatter plot with metric on the x-axis and accuracy on the y-axis.
     Adds a correlation line between x and y.
     Allows exporting the plot to a file.
 
@@ -301,7 +301,7 @@ def plot_or_export(
         avg_merged_accs (list): Average accuracies for each subset.
         avg_metric (list): Average metric values for each subset.
         metric_name (str): Name of the metric being plotted.
-        metric_y_axis_label (str): Label for the y-axis.
+        metric_x_axis_label (str): Label for the x-axis.
         plot_title (str): Title of the plot.
         export_path (str): File path to save the plot image.
     """
@@ -311,25 +311,25 @@ def plot_or_export(
 
     # Create the scatter plot
     plt.figure(figsize=(8, 6))
-    plt.scatter(x=avg_merged_accs, y=avg_metric, color='blue', alpha=0.7)
+    plt.scatter(x=avg_metric, y=avg_merged_accs, color='blue', alpha=0.7)
 
     # Calculate the trendline (correlation line)
-    coefficients = np.polyfit(x=avg_merged_accs, y=avg_metric, deg=1)  # Linear fit (degree=1)
+    coefficients = np.polyfit(x=avg_metric, y=avg_merged_accs, deg=1)  # Linear fit (degree=1)
     trendline = np.poly1d(coefficients)  # Create the trendline function
-    trendline_values = trendline(avg_merged_accs)  # Compute y values for the trendline
+    trendline_values = trendline(avg_metric)  # Compute y values for the trendline
 
     # Plot the trendline
-    plt.plot(avg_merged_accs, trendline_values, color='black', linestyle='-')
+    plt.plot(avg_metric, trendline_values, color='black', linestyle='-')
 
     # Labels and title
-    plt.xlabel(metric_y_axis_label, fontsize=12)
+    plt.xlabel(metric_x_axis_label, fontsize=12)
     plt.ylabel('Normalized Merged Accuracy (higher is better)', fontsize=12)
     plt.title(plot_title, fontsize=14)
     plt.legend()
 
     # Save the plot to the export path
     if export_path:
-        plt.savefig(export_path, format='png', dpi=300)
+        plt.savefig(export_path, format='png', dpi=400)
         print(f"Plot exported to {export_path}")
     else:
         print("No export path provided; displaying the plot instead.")
@@ -379,7 +379,7 @@ def _plot_correlation(
         avg_merged_accs=list(avg_merged_accs.values()),
         avg_metric=list(avg_metric.values()),
         metric_name=metric_name,
-        metric_y_axis_label=metric_y_axis_label,
+        metric_x_axis_label=metric_y_axis_label,
         plot_title=plot_title,
         export_path=export_path
     )
