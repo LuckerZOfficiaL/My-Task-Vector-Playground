@@ -79,9 +79,9 @@ EPOCH_DIVISOR = "None"
 DESIRED_ORDERS = 1
 
 # ATM
-# MAX_EPOCHS = 1
+MAX_EPOCHS = 1
 # TA
-MAX_EPOCHS = None
+# MAX_EPOCHS = None
 
 SEED = 421337
 
@@ -189,6 +189,7 @@ os.makedirs(TASK_EQUIPPED_MODEL_PATH_LIST_EXPORT_DIR, exist_ok=True)
 
 filename = (
     f"task_equipped_model_export_path_list_"
+    f"max_epochs_{'TA' if MAX_EPOCHS is None else 'ATM' if MAX_EPOCHS == 1 else MAX_EPOCHS}_"
     f"datasets_{len(datasets)}_"
     f"subset_length_{args['subset_length']}"
     f"_random_num_subsets_{args['num_subsets']}"
