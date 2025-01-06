@@ -311,10 +311,10 @@ def plot_or_export(
 
     # Create the scatter plot
     plt.figure(figsize=(8, 6))
-    plt.scatter(y=avg_merged_accs, x=avg_metric, color='blue', alpha=0.7)
+    plt.scatter(x=avg_merged_accs, y=avg_metric, color='blue', alpha=0.7)
 
     # Calculate the trendline (correlation line)
-    coefficients = np.polyfit(y=avg_merged_accs, x=avg_metric, deg=1)  # Linear fit (degree=1)
+    coefficients = np.polyfit(x=avg_merged_accs, y=avg_metric, deg=1)  # Linear fit (degree=1)
     trendline = np.poly1d(coefficients)  # Create the trendline function
     trendline_values = trendline(avg_merged_accs)  # Compute y values for the trendline
 
