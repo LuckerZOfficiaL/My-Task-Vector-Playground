@@ -1,0 +1,1 @@
+./task_equipped_models/ViT-B-16_applied_task_vectors_CIFAR100-DTD-EuroSAT-GTSRB-SVHN-RESISC45_0_acc_grad_batches_1_epochs_TA_optim_SGD_order_1.ckpt
