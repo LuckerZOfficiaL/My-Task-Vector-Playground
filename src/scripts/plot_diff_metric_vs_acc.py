@@ -46,10 +46,23 @@ DATASETS_TO_EXCLUDE = ["pcam"]
 
 DATASETS = copy.deepcopy(DATASETS_20)
 
+# TA
+MAX_EPOCHS = None
+# ATM
+# MAX_EPOCHS = 1
+
+if MAX_EPOCHS is None:
+    TA_OR_ATM = "TA"
+elif MAX_EPOCHS == 1:
+    TA_OR_ATM = "ATM"
+else:
+    raise ValueError(f"Invalid value for MAX_EPOCHS, expected None or 1, got {MAX_EPOCHS}")
+
 TASK_EQUIPPED_ACCS_DIR = "./evaluations/evaulate_import_te_models"
 NUM_TASKS = 5
 
-CORRELATION_PLOTS_EXPORT_DIR = "./plots/correlations"
+# TODO add support for differentiation between ATM and TA
+CORRELATION_PLOTS_EXPORT_DIR = f"./plots/correlations/{TA_OR_ATM}"
 os.makedirs(CORRELATION_PLOTS_EXPORT_DIR, exist_ok=True)
 
 for dataset in DATASETS_TO_EXCLUDE:
@@ -127,6 +140,12 @@ def _populate_list_of_task_equipped_models():
         if model.count("-") == num_dashes and not any(
             DATASET_NAME_TO_STYLED_NAME[dataset] in model for dataset in DATASETS_TO_EXCLUDE
         )
+    ]
+
+    list_of_task_equipped_models = [
+        model
+        for model in list_of_task_equipped_models
+        if f"_epochs_{TA_OR_ATM}_" in model
     ]
 
     return list_of_task_equipped_models
