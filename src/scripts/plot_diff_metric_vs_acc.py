@@ -47,9 +47,9 @@ DATASETS_TO_EXCLUDE = ["pcam"]
 DATASETS = copy.deepcopy(DATASETS_20)
 
 # TA
-MAX_EPOCHS = None
+# MAX_EPOCHS = None
 # ATM
-# MAX_EPOCHS = 1
+MAX_EPOCHS = 1
 
 if MAX_EPOCHS is None:
     TA_OR_ATM = "TA"
@@ -142,10 +142,17 @@ def _populate_list_of_task_equipped_models():
         )
     ]
 
+    if TA_OR_ATM == "TA":
+        atm_or_ta_str = "_epochs_TA_"
+    elif TA_OR_ATM == "ATM":
+        atm_or_ta_str = "_epochs_1_"
+    else:
+        raise ValueError(f"Invalid value for TA_OR_ATM, expected 'TA' or 'ATM', got {TA_OR_ATM}")
+    
     list_of_task_equipped_models = [
         model
         for model in list_of_task_equipped_models
-        if f"_epochs_{TA_OR_ATM}_" in model
+        if atm_or_ta_str in model
     ]
 
     return list_of_task_equipped_models
