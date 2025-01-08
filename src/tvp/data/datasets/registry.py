@@ -6,18 +6,27 @@ import sys
 import torch
 from torch.utils.data.dataset import random_split
 
-from tvp.data.datasets.cars import Cars
-from tvp.data.datasets.cifar10 import CIFAR10
-from tvp.data.datasets.cifar100 import CIFAR100
-from tvp.data.datasets.dtd import DTD
-from tvp.data.datasets.eurosat import EuroSAT, EuroSATVal
-from tvp.data.datasets.gtsrb import GTSRB
-from tvp.data.datasets.imagenet import ImageNet
-from tvp.data.datasets.mnist import MNIST
-from tvp.data.datasets.resisc45 import RESISC45
-from tvp.data.datasets.stl10 import STL10
-from tvp.data.datasets.sun397 import SUN397
-from tvp.data.datasets.svhn import SVHN
+from src.tvp.data.datasets.cars import Cars
+from src.tvp.data.datasets.cifar10 import CIFAR10
+from src.tvp.data.datasets.cifar100 import CIFAR100
+from src.tvp.data.datasets.dtd import DTD
+from src.tvp.data.datasets.emnist import EMNIST
+from src.tvp.data.datasets.eurosat import EuroSAT, EuroSATVal
+from src.tvp.data.datasets.fashionmnist import FashionMNIST
+from src.tvp.data.datasets.fer2013 import FER2013
+from src.tvp.data.datasets.flowers102 import Flowers102
+from src.tvp.data.datasets.food101 import Food101
+from src.tvp.data.datasets.gtsrb import GTSRB
+from src.tvp.data.datasets.imagenet import ImageNet
+from src.tvp.data.datasets.kmnist import KMNIST
+from src.tvp.data.datasets.mnist import MNIST
+from src.tvp.data.datasets.oxfordpets import OxfordIIITPet
+from src.tvp.data.datasets.pcam import PCAM
+from src.tvp.data.datasets.resisc45 import RESISC45
+from src.tvp.data.datasets.sst2 import RenderedSST2
+from src.tvp.data.datasets.stl10 import STL10
+from src.tvp.data.datasets.sun397 import SUN397
+from src.tvp.data.datasets.svhn import SVHN
 
 registry = {name: obj for name, obj in inspect.getmembers(sys.modules[__name__], inspect.isclass)}
 
