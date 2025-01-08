@@ -77,8 +77,8 @@ class ImageClassifier(pl.LightningModule):
             {
                 f"acc/{split}": metrics,
                 f"loss/{split}": loss,
-                f"sparsity/{split}": self.encoder.get_tv_sparsity(),
-                f"sparsity percentile": self.sparsity_percentile,
+                # f"sparsity/{split}": self.encoder.get_tv_sparsity(),
+                # f"sparsity percentile": self.sparsity_percentile,
             },
             on_epoch=True,
         )

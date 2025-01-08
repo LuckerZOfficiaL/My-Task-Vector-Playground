@@ -9,7 +9,8 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import wandb
-from omegaconf import DictConfig, ListConfig
+from omegaconf import DictConfig, ListConfig, OmegaConf
+import json
 from pytorch_lightning import Callback, LightningModule
 from tqdm import tqdm
 
@@ -23,52 +24,54 @@ from tvp.data.datasets.registry import get_dataset
 from tvp.modules.encoder import ImageEncoder
 from tvp.modules.heads import get_classification_head
 from tvp.pl_module.image_classifier import ImageClassifier
-from tvp.utils.io_utils import get_class, load_model_from_artifact
+from tvp.utils.io_utils import get_class, load_model_from_artifact, export_run_data_to_disk
 from tvp.utils.utils import LabelSmoothing, build_callbacks
+
+from rich.pretty import pprint
 
 pylogger = logging.getLogger(__name__)
 torch.set_float32_matmul_precision("high")
 
-num_to_th = {
-    1: "st",
-    2: "nd",
-    3: "rd",
-    4: "th",
-    5: "th",
-    6: "th",
-    7: "th",
-    8: "th",
-    9: "th",
-    10:"th",
-    11:"th",
-    12:"th",
-    13:"th",
-    14:"th",
-    15:"th",
-    16:"th",
-    17:"th",
-    18:"th",
-    19:"th",
-    20:"th",
-    21:"th",
-    22:"th",
-    23:"th",
-    24:"th",
-    25:"th",
-    26:"th",
-    27:"th",
-    28:"th",
-    29:"th",
-    30:"th",
-    31:"th",
-    32:"th",
-    33:"th",
-    34:"th",
-    35:"th",
-}
+
+def _replace_train_dataset(cfg: DictConfig):
+    
+    dataset_conf = OmegaConf.load(f"conf/nn/data/dataset/{cfg.task_to_finetune}.yaml")
+
+    cfg.nn.data.dataset = dataset_conf
+
+    return cfg
+
+
+def _set_max_epochs(cfg: DictConfig):
+    if cfg.ft_regime == "atm":
+        cfg.nn.data.dataset.ft_epochs = 1
+    elif cfg.ft_regime == "ta":
+        cfg.nn.data.dataset.ft_epochs = cfg.nn.data.dataset.ft_epochs
+    else:
+        raise ValueError(f"Invalid finetuning regime: {cfg.ft_regime}")
+
+    return cfg
+
+
+def _edit_cfg(cfg: DictConfig):
+    print("finetune cfg before edits")
+    pprint(OmegaConf.to_container(cfg, resolve=True))
+    print("\n\n")
+
+    cfg = _replace_train_dataset(cfg)
+    cfg = _set_max_epochs(cfg)
+
+    print("finetune cfg after edits")
+    pprint(OmegaConf.to_container(cfg, resolve=True))
+    print("\n\n")
+
+    return cfg
 
 
 def run(cfg: DictConfig):
+
+    cfg = _edit_cfg(cfg=cfg)
+
     seed_index_everything(cfg)
 
     template_core: NNTemplateCore = NNTemplateCore(
@@ -77,18 +80,14 @@ def run(cfg: DictConfig):
 
     logger: NNLogger = NNLogger(logging_cfg=cfg.train.logging, cfg=cfg, resume_id=template_core.resume_id)
 
-    #zeroshot_identifier = f"{cfg.nn.module.model.model_name}_pt" # pretrained checkpoint
-    #zeroshot_identifier = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_0__PosthocClipping0.1" # for additional fine-tuning
-    if cfg.order == 1:
-        zeroshot_identifier = f"{cfg.nn.module.model.model_name}_pt" 
-    else:
-        zeroshot_identifier = f"{cfg.nn.module.model.model_name}_One{cfg.epoch_divisor}Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_0" 
-        #zeroshot_identifier = f"{cfg.nn.module.model.model_name}_10Eps{cfg.order - 1}{num_to_th[cfg.order - 1]}OrderUnifiedModel_0" 
-
+    zeroshot_identifier = f"{cfg.nn.module.model.model_name}_pt" 
+    pylogger.info(f"zeroshot_identifier: {zeroshot_identifier}\n\n")
 
     classification_head_identifier = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_head"
+    pylogger.info(f"classification_head_identifier: {classification_head_identifier}\n\n")
 
     if cfg.reset_pretrained_model:
+        pylogger.info("Instantiating the <ImageEncoder> (triggered by cfg.reset_pretrained_model)\n\n")
         image_encoder: ImageEncoder = hydra.utils.instantiate(cfg.nn.module.model, keep_lang=False)
         model_class = get_class(image_encoder)
 
@@ -99,6 +98,7 @@ def run(cfg: DictConfig):
         image_encoder = load_model_from_artifact(artifact_path=f"{zeroshot_identifier}:latest", run=logger.experiment)
 
     if cfg.reset_classification_head:
+        pylogger.info("Instantiating the <ClassificationHead> (triggered by cfg.reset_classification_head)\n\n")
         classification_head = get_classification_head(
             cfg.nn.module.model.model_name,
             cfg.nn.data.train_dataset,
@@ -136,6 +136,9 @@ def run(cfg: DictConfig):
         location=cfg.nn.data.data_path,
         batch_size=cfg.nn.data.batch_size.train,
     )
+    pylogger.info(f"num train samples: {len(dataset.train_dataset)}, num train batches: {len(dataset.train_loader)}")
+    pylogger.info(f"num test samples: {len(dataset.test_dataset)}, num test batches: {len(dataset.test_loader)}")
+    print("\n\n")
 
     model.freeze_head()
 
@@ -153,20 +156,25 @@ def run(cfg: DictConfig):
         **cfg.train.trainer,
     )
     pylogger.info(f"max_epochs: {trainer.max_epochs}, max_steps: {trainer.max_steps}")
+    pylogger.info(f"accumulate_grad_batches: {trainer.accumulate_grad_batches}")
+    print("\n\n")
 
     pylogger.info("Starting training!")
-    trainer.fit(model=model, train_dataloaders=dataset.train_loader, ckpt_path=template_core.trainer_ckpt_path)
+    trainer.fit(model=model, train_dataloaders=dataset.train_loader, val_dataloaders=dataset.test_loader, ckpt_path=template_core.trainer_ckpt_path)
 
     pylogger.info("Starting testing!")
     trainer.test(model=model, dataloaders=dataset.test_loader)
 
-    artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_TA"
+    artifact_name = f"{cfg.nn.module.model.model_name}_{cfg.nn.data.dataset.dataset_name}_{cfg.seed_index}_{cfg.ft_regime}_{cfg.optimizer_name}"
     model_class = get_class(image_encoder)
     metadata = {"model_name": cfg.nn.module.model.model_name, "model_class": model_class}
     upload_model_to_wandb(model.encoder, artifact_name, logger.experiment, cfg, metadata)
 
     if logger is not None:
         logger.experiment.finish()
+
+    if cfg.timestamp is not None:
+        export_run_data_to_disk(cfg, logger, "./evaluations/ft", artifact_name)
 
 
 def upload_model_to_wandb(
