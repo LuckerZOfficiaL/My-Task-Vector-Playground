@@ -138,5 +138,5 @@
     "task_to_finetune": "svhn",
     "ft_regime": "atm",
     "optimizer_name": "sgd",
-    "timestamp": "2025_01_07_at_19_18_32"
+    "timestamp": "2025_01_09_at_08_20_58"
 }
