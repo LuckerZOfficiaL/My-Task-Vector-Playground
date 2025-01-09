@@ -1,1 +1,41 @@
-[]
+[
+    {
+        "trainer/global_step": 28,
+        "_step": 0,
+        "acc/val": 0.656862735748291,
+        "_runtime": 34.090743581,
+        "loss/val": 1.3793516159057617,
+        "epoch": 0,
+        "_timestamp": 1736343006.826873,
+        "acc/train_epoch": NaN,
+        "loss/train_epoch": NaN,
+        "acc/test": NaN,
+        "loss/test": NaN
+    },
+    {
+        "trainer/global_step": 28,
+        "_step": 1,
+        "acc/val": NaN,
+        "_runtime": 64.143176959,
+        "loss/val": NaN,
+        "epoch": 0,
+        "_timestamp": 1736343036.8795946,
+        "acc/train_epoch": 0.6906318068504333,
+        "loss/train_epoch": 1.282823920249939,
+        "acc/test": NaN,
+        "loss/test": NaN
+    },
+    {
+        "trainer/global_step": 29,
+        "_step": 2,
+        "acc/val": NaN,
+        "_runtime": 68.983026438,
+        "loss/val": NaN,
+        "epoch": 1,
+        "_timestamp": 1736343041.7192674,
+        "acc/train_epoch": NaN,
+        "loss/train_epoch": NaN,
+        "acc/test": 0.6666666865348816,
+        "loss/test": 1.3514312505722046
+    }
+]

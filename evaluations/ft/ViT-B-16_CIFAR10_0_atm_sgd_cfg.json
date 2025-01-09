@@ -138,5 +138,5 @@
     "task_to_finetune": "cifar10",
     "ft_regime": "atm",
     "optimizer_name": "sgd",
-    "timestamp": "None"
+    "timestamp": "2025_01_08_at_14_21_11"
 }
