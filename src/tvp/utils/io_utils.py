@@ -95,5 +95,12 @@ def export_json_to_disk(data: dict, export_dir: str, file_name: str):
     pylogger.info(f"Data exported to: {file_path}")
 
 
+def import_json_from_disk(file_path: str):
+    with open(file_path, 'r') as json_file:
+        data = json.load(json_file)
+
+    return data
+
+
 def get_class(model):
     return model.__class__.__module__ + "." + model.__class__.__qualname__

@@ -31,7 +31,7 @@ DATASET_TO_STYLED = {
     "cifar100": "CIFAR100",
     "mnist": "MNIST",
     "svhn": "SVHN",
-    "cars": "CARS",
+    "cars": "Cars",
     "sun397": "SUN397",
     "stl10": "STL10",
     "oxfordiiitpet": "OxfordIIITPet",

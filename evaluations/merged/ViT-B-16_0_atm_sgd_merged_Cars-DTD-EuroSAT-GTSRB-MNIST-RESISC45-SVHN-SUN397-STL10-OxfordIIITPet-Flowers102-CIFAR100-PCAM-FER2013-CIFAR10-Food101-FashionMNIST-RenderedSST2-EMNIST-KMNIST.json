@@ -1,0 +1,323 @@
+{
+    "results": {
+        "Cars": [
+            {
+                "acc/test": 0.6323840022087097,
+                "loss/test": 1.0790557861328125
+            }
+        ],
+        "DTD": [
+            {
+                "acc/test": 0.44946807622909546,
+                "loss/test": 2.033766269683838
+            }
+        ],
+        "EuroSAT": [
+            {
+                "acc/test": 0.5650925636291504,
+                "loss/test": 1.2970203161239624
+            }
+        ],
+        "GTSRB": [
+            {
+                "acc/test": 0.43903404474258423,
+                "loss/test": 2.085376501083374
+            }
+        ],
+        "MNIST": [
+            {
+                "acc/test": 0.5519999861717224,
+                "loss/test": 1.7471379041671753
+            }
+        ],
+        "RESISC45": [
+            {
+                "acc/test": 0.6665079593658447,
+                "loss/test": 1.0776286125183105
+            }
+        ],
+        "SVHN": [
+            {
+                "acc/test": 0.5448294281959534,
+                "loss/test": 1.7144116163253784
+            }
+        ],
+        "SUN397": [
+            {
+                "acc/test": 0.6553148627281189,
+                "loss/test": 1.2128193378448486
+            }
+        ],
+        "STL10": [
+            {
+                "acc/test": 0.9819999933242798,
+                "loss/test": 0.07985945045948029
+            }
+        ],
+        "OxfordIIITPet": [
+            {
+                "acc/test": 0.875715434551239,
+                "loss/test": 0.3538466691970825
+            }
+        ],
+        "Flowers102": [
+            {
+                "acc/test": 0.7095462679862976,
+                "loss/test": 1.251426100730896
+            }
+        ],
+        "CIFAR100": [
+            {
+                "acc/test": 0.6747999787330627,
+                "loss/test": 1.2653270959854126
+            }
+        ],
+        "PCAM": [
+            {
+                "acc/test": 0.555145263671875,
+                "loss/test": 0.7422653436660767
+            }
+        ],
+        "FER2013": [
+            {
+                "acc/test": 0.37071606516838074,
+                "loss/test": 1.896255373954773
+            }
+        ],
+        "CIFAR10": [
+            {
+                "acc/test": 0.9107999801635742,
+                "loss/test": 0.30104273557662964
+            }
+        ],
+        "Food101": [
+            {
+                "acc/test": 0.8745346665382385,
+                "loss/test": 0.43671098351478577
+            }
+        ],
+        "FashionMNIST": [
+            {
+                "acc/test": 0.6575000286102295,
+                "loss/test": 1.022614598274231
+            }
+        ],
+        "RenderedSST2": [
+            {
+                "acc/test": 0.6029654145240784,
+                "loss/test": 0.660274863243103
+            }
+        ],
+        "EMNIST": [
+            {
+                "acc/test": 0.20264999568462372,
+                "loss/test": 2.2806429862976074
+            }
+        ],
+        "KMNIST": [
+            {
+                "acc/test": 0.10109999775886536,
+                "loss/test": 2.4550840854644775
+            }
+        ],
+        "average_of_tasks": 0.6011052004992962
+    },
+    "cfg": {
+        "nn": {
+            "data": {
+                "dataset": {
+                    "dataset_name": "CIFAR100",
+                    "ft_epochs": 6,
+                    "posthoc_epochs": 2,
+                    "finegrained_epochs": 1,
+                    "num_classes": 100
+                },
+                "accelerator": "gpu",
+                "batch_size": {
+                    "test": 16,
+                    "train": 32,
+                    "val": 32
+                },
+                "data_path": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/data",
+                "num_workers": {
+                    "test": 0,
+                    "train": 4,
+                    "val": 2
+                },
+                "train_dataset": "CIFAR100Val"
+            },
+            "module": {
+                "_target_": "tvp.pl_module.image_classifier.ImageClassifier",
+                "x_key": "x",
+                "y_key": "y",
+                "encoder": "??",
+                "classifier": "??",
+                "optimizer": {
+                    "_target_": "torch.optim.SGD",
+                    "lr": 1e-05
+                },
+                "model": {
+                    "_target_": "tvp.modules.encoder.ImageEncoder",
+                    "model_name": "ViT-B-16",
+                    "openclip_cachedir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
+                    "cache_dir": null,
+                    "keep_lang": "??"
+                }
+            }
+        },
+        "train": {
+            "seed_index": 0,
+            "deterministic": false,
+            "trainer": {
+                "fast_dev_run": false,
+                "accelerator": "gpu",
+                "devices": 1,
+                "precision": 32,
+                "max_steps": -1,
+                "num_sanity_val_steps": 2,
+                "gradient_clip_val": 10.0,
+                "val_check_interval": 1.0,
+                "deterministic": false
+            },
+            "restore": {
+                "ckpt_or_run_path": null,
+                "mode": null
+            },
+            "monitor": {
+                "metric": "loss/train",
+                "mode": "min"
+            },
+            "callbacks": [
+                {
+                    "_target_": "pytorch_lightning.callbacks.EarlyStopping",
+                    "patience": 424242,
+                    "verbose": false,
+                    "monitor": "loss/train",
+                    "mode": "min"
+                },
+                {
+                    "_target_": "pytorch_lightning.callbacks.ModelCheckpoint",
+                    "save_top_k": 1,
+                    "verbose": false,
+                    "monitor": "loss/train",
+                    "mode": "min"
+                },
+                {
+                    "_target_": "pytorch_lightning.callbacks.LearningRateMonitor",
+                    "logging_interval": "step",
+                    "log_momentum": false
+                },
+                {
+                    "_target_": "pytorch_lightning.callbacks.progress.tqdm_progress.TQDMProgressBar",
+                    "refresh_rate": 1
+                }
+            ],
+            "logging": {
+                "upload": {
+                    "run_files": false,
+                    "source": true
+                },
+                "logger": {
+                    "_target_": "lightning.pytorch.loggers.WandbLogger",
+                    "project": "task-vectors-playground",
+                    "entity": "dansolombrinoandfriends",
+                    "log_model": false,
+                    "mode": "online",
+                    "tags": [
+                        "dev"
+                    ]
+                },
+                "wandb_watch": {
+                    "log": null,
+                    "log_freq": 100,
+                    "log_graph": false
+                }
+            }
+        },
+        "conventions": {
+            "x_key": "x",
+            "y_key": "y"
+        },
+        "core": {
+            "entity": "dansolombrinoandfriends",
+            "project_name": "task-vectors-playground",
+            "storage_dir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/storage",
+            "tags": [
+                "dev"
+            ],
+            "version": "0.0.1"
+        },
+        "epoch_divisor": "None",
+        "eval_datasets": [
+            "Cars",
+            "DTD",
+            "EuroSAT",
+            "GTSRB",
+            "MNIST",
+            "RESISC45",
+            "SVHN",
+            "SUN397",
+            "STL10",
+            "OxfordIIITPet",
+            "Flowers102",
+            "CIFAR100",
+            "PCAM",
+            "FER2013",
+            "CIFAR10",
+            "Food101",
+            "FashionMNIST",
+            "RenderedSST2",
+            "EMNIST",
+            "KMNIST"
+        ],
+        "eval_on_train": false,
+        "misc": {
+            "cache_dir": null,
+            "ckpt_path": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16",
+            "openclip_cachedir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
+            "pretrained_checkpoint": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16/zeroshot.pt"
+        },
+        "order": 1,
+        "seed_index": 0,
+        "task_vectors": {
+            "aggregator": {
+                "_target_": "tvp.task_vectors.aggregator.SumAggregator",
+                "mean": true
+            },
+            "breadcrumbs_beta": 0.85,
+            "breadcrumbs_gamma": 0.993,
+            "dare_rate": 0.9,
+            "merging_method": "normal",
+            "num_task_vectors": 8,
+            "orthogonalize": false,
+            "scaling_coefficient": 1,
+            "ties_lambda": 1,
+            "ties_topk": 0.15,
+            "to_apply": [
+                "Cars",
+                "DTD",
+                "EuroSAT",
+                "GTSRB",
+                "MNIST",
+                "RESISC45",
+                "SVHN",
+                "SUN397",
+                "STL10",
+                "OxfordIIITPet",
+                "Flowers102",
+                "CIFAR100",
+                "PCAM",
+                "FER2013",
+                "CIFAR10",
+                "Food101",
+                "FashionMNIST",
+                "RenderedSST2",
+                "EMNIST",
+                "KMNIST"
+            ]
+        },
+        "ft_regime": "atm",
+        "optimizer_name": "sgd",
+        "timestamp": null
+    }
+}
