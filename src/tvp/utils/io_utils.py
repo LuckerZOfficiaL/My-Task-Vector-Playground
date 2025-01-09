@@ -102,5 +102,22 @@ def import_json_from_disk(file_path: str):
     return data
 
 
+def export_merged_model_to_disk(
+    merged_model,
+    cfg: dict,
+    export_dir: str,
+    model_name: str
+):
+    
+    os.makedirs(export_dir, exist_ok=True)
+
+    model_path = os.path.join(export_dir, f"{model_name}.pt")
+
+    torch.save(merged_model.state_dict(), model_path)
+
+    pylogger.info(f"Model exported to: {model_path}")
+
+
+
 def get_class(model):
     return model.__class__.__module__ + "." + model.__class__.__qualname__

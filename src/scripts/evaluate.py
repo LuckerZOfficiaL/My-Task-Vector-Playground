@@ -28,7 +28,7 @@ import tvp  # noqa
 from tvp.data.datamodule import MetaData
 from tvp.data.datasets.registry import get_dataset
 from tvp.task_vectors.task_vectors import TaskVector
-from tvp.utils.io_utils import load_model_from_artifact, export_json_to_disk
+from tvp.utils.io_utils import load_model_from_artifact, export_json_to_disk, export_merged_model_to_disk
 from tvp.utils.utils import build_callbacks
 from torch.nn.utils import vector_to_parameters
 from torch.nn.utils import parameters_to_vector
@@ -113,8 +113,10 @@ def run(cfg: DictConfig) -> str:
         f"{cfg.optimizer_name}_"
         f"merged_{'-'.join(cfg.task_vectors.to_apply)}"
     )
-    metadata = {"model_name": f"{cfg.nn.module.model.model_name}", "model_class": "tvp.modules.encoder.ImageEncoder"}
-    upload_model_to_wandb(task_equipped_model, artifact_name, logger.experiment, cfg, metadata)
+
+    if cfg.upload_merged_to_wandb:
+        metadata = {"model_name": f"{cfg.nn.module.model.model_name}", "model_class": "tvp.modules.encoder.ImageEncoder"}
+        upload_model_to_wandb(task_equipped_model, artifact_name, logger.experiment, cfg, metadata)
 
     seed_index_everything(cfg)
 
@@ -179,7 +181,7 @@ def run(cfg: DictConfig) -> str:
             "results": results,
             "cfg": OmegaConf.to_container(cfg, resolve=True),
         },
-        "./evaluations/merged",
+        cfg.evaluation_export_dir,
         artifact_name
     )
 
