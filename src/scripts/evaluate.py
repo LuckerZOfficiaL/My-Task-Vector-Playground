@@ -55,6 +55,23 @@ def run(cfg: DictConfig) -> str:
     print("evaluate cfg")
     pprint(OmegaConf.to_container(cfg, resolve=True))
 
+    artifact_name = (
+        f"{cfg.nn.module.model.model_name}_"
+        f"{cfg.seed_index}_"
+        f"{cfg.ft_regime}_"
+        f"{cfg.optimizer_name}_"
+        f"merged_{'-'.join(cfg.task_vectors.to_apply)}"
+    )
+
+    if cfg.eval_skip_if_exists and os.path.exists(f"{cfg.evaluation_export_dir}/{artifact_name}.json"):
+        print(f"\n\n\n")
+        pylogger.info(f"Skipping evaluation.")
+        pylogger.info(f"Artifact already exists: {cfg.evaluation_export_dir}/{artifact_name}.json")
+        pylogger.info(f"cfg.eval_skip_if_exists: {cfg.eval_skip_if_exists}")
+        print(f"\n\n\n")
+
+        return 
+
     seed_index_everything(cfg)
 
     cfg.core.tags = enforce_tags(cfg.core.get("tags", None))
@@ -103,14 +120,6 @@ def run(cfg: DictConfig) -> str:
     
     task_equipped_model = copy.deepcopy(zeroshot_model)
     apply_task_vector(task_equipped_model, delta_model.state_dict(), scaling_coef=cfg.task_vectors.scaling_coefficient)
-
-    artifact_name = (
-        f"{cfg.nn.module.model.model_name}_"
-        f"{cfg.seed_index}_"
-        f"{cfg.ft_regime}_"
-        f"{cfg.optimizer_name}_"
-        f"merged_{'-'.join(cfg.task_vectors.to_apply)}"
-    )
 
     if cfg.upload_merged_to_wandb:
         metadata = {"model_name": f"{cfg.nn.module.model.model_name}", "model_class": "tvp.modules.encoder.ImageEncoder"}

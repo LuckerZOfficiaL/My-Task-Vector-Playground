@@ -112,6 +112,7 @@ def _parse_args():
     parser.add_argument("--optim-name", type=str, required=True, help="Optimizer to use. Options: ['adam', 'sgd']")
     parser.add_argument("--perform-ft", type=str_to_bool, required=True, help="Flag to indicate if finetuning should be performed (true/false)")
     parser.add_argument("--perform-eval", type=str_to_bool, required=True, help="Flag to indicate if evaluation should be performed (true/false)")
+    parser.add_argument("--eval-skip-if-exists", type=str_to_bool, required=True, help="Flag to indicate if evaluation should be skipped if the evaluation results already exist (true/false)")
     parser.add_argument("--called-from-bash", action="store_true", help="Flag to indicate if script was called from bash")
     parser.add_argument("--upload-to-wandb", type=str_to_bool, required=True, help="Flag to indicate if merged model should be uploaded to wandb (true/false)")
     parser.add_argument("--evaluation-export-dir", type=str, required=True, help="Directory to export evaluation results")
@@ -170,6 +171,7 @@ def main():
                 f"nn.module.optimizer._target_={args['optim_class']}",
                 f"+upload_merged_to_wandb={args['upload_to_wandb']}",
                 f"+evaluation_export_dir={args['evaluation_export_dir']}",
+                f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
                 f"+timestamp={timestamp}",
             ], 
             check=True

@@ -16,6 +16,18 @@ import subprocess
 
 SEED = 421337
 
+
+def str_to_bool(value):
+    if isinstance(value, bool):
+        return value
+    if value.lower() in {"true", "t", "yes", "y", "1"}:
+        return True
+    elif value.lower() in {"false", "f", "no", "n", "0"}:
+        return False
+    else:
+        raise argparse.ArgumentTypeError(f"Invalid boolean value: {value}")
+    
+
 def _handle_task_group_name(task_group_name: str):
 
     if task_group_name.lower() == "paper-tsv-20":
@@ -74,6 +86,7 @@ def parse_args():
     parser.add_argument("--ft-regime", type=str, required=True, help="Finetuning regime. Options: ['atm', 'ta']")
     parser.add_argument("--start-idx", type=int, required=True, help="Start index of the subset list")
     parser.add_argument("--end-idx", type=int, required=True, help="End index of the subset list")
+    parser.add_argument("--eval-skip-if-exists", type=str_to_bool, required=True, help="Skip evaluation if the evaluation file already exists")
 
     args = vars(parser.parse_args())
 
@@ -112,7 +125,8 @@ def main():
                 f"--perform-ft false",
                 f"--perform-eval true",
                 f"--upload-to-wandb false",
-                f"--evaluation-export-dir evaluations/merged_subsets/{args['tvs_to_apply_group_name']}/{args['subset_size']}"
+                f"--evaluation-export-dir evaluations/merged_subsets/{args['tvs_to_apply_group_name']}/{args['subset_size']}",
+                f"--eval-skip-if-exists {args['eval_skip_if_exists']}",
             ]
         )
 
