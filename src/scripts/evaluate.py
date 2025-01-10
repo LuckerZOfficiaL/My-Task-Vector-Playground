@@ -75,8 +75,6 @@ def run(cfg: DictConfig) -> str:
         for dataset in cfg.task_vectors.to_apply
     }
 
-    zeroshot_orig_weights = copy.deepcopy(zeroshot_model.state_dict())
-
     # Task vectors
     flatten = lambda model: parameters_to_vector(model.parameters())
 
