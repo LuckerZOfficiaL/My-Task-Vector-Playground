@@ -118,6 +118,10 @@ def export_merged_model_to_disk(
     pylogger.info(f"Model exported to: {model_path}")
 
 
+def list_all_files_in_dir(dir_path: str):
+    return [f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))]
+
+
 
 def get_class(model):
     return model.__class__.__module__ + "." + model.__class__.__qualname__
