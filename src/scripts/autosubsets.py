@@ -11,6 +11,7 @@ from typing import List
 
 import random
 
+import time
 import subprocess
 
 
@@ -112,6 +113,7 @@ def main():
     for subset_idx, subset in enumerate(random_subsets):
 
         print(f"\n\nSubset {subset_idx+1}/{len(random_subsets)}\n\n")
+        start_time = time.time()
 
         subset_str = " ".join(subset)
 
@@ -132,6 +134,8 @@ def main():
             ]
         )
 
+        end_time = time.time()
+        print(f"\n\nSubset {subset_idx+1}/{len(random_subsets)} took {end_time - start_time:.2f} seconds\n\n")
 
 
 
