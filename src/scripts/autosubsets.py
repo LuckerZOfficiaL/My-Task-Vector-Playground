@@ -125,7 +125,7 @@ def main():
                 f"--perform-ft false",
                 f"--perform-eval true",
                 f"--upload-to-wandb false",
-                f"--evaluation-export-dir evaluations/merged_subsets/{args['tvs_to_apply_group_name']}/{args['subset_size']}",
+                f"--evaluation-export-dir evaluations/merged_subsets/{args['tvs_to_apply_group_name']}/subset_size_{str(args['subset_size']).zfill(2)}",
                 f"--eval-skip-if-exists {args['eval_skip_if_exists']}",
             ]
         )
