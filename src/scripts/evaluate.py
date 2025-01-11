@@ -37,11 +37,6 @@ import hydra
 from hydra import initialize, compose
 from typing import Dict, List
 
-from competitors.my_ties import ties_merging
-from competitors.my_breadcrumbs import model_breadcrumbs
-from competitors.their_ties import *
-from competitors.my_dare import *
-
 from rich.pretty import pprint
 
 
@@ -96,9 +91,9 @@ def run(cfg: DictConfig) -> str:
     flatten = lambda model: parameters_to_vector(model.parameters())
 
     zeroshot_vec = flatten(zeroshot_model)
-    task_vectors = [
-        TaskVector.from_models(zeroshot_model, finetuned_models[dataset]) for dataset in cfg.task_vectors.to_apply
-    ]
+    # task_vectors = [
+        # TaskVector.from_models(zeroshot_model, finetuned_models[dataset]) for dataset in cfg.task_vectors.to_apply
+    # ]
 
     def apply_task_vector(model, task_vector, scaling_coef=1):
         #model.load_state_dict({k: v + task_vector[k] for k, v in model.state_dict().items()})
