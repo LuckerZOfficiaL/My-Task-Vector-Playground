@@ -109,7 +109,9 @@ def main():
 
     random_subsets = random_subsets[args["start_idx"]:args["end_idx"]]
 
-    for subset in random_subsets:
+    for subset_idx, subset in enumerate(random_subsets):
+
+        print(f"\n\nSubset {subset_idx+1}/{len(random_subsets)}\n\n")
 
         subset_str = " ".join(subset)
 
