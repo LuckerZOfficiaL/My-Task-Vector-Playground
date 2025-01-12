@@ -121,6 +121,7 @@ def _parse_args():
     parser.add_argument("--eval-dataset-group-name", type=str, help="Evaluation datasets group to evaluate on. Options: ['paper-atm', 'paper-tsv-8', 'paper-tsv-14', 'paper-tsv-20']")
     parser.add_argument("--eval-dataset-names", type=str, nargs='+', help="Evaluation datasets to evaluate on.")
     parser.add_argument("--optim-name", type=str, required=True, help="Optimizer to use. Options: ['adam', 'sgd']")
+    parser.add_argument("--weight-decay", type=float, required=True, help="Weight decay to use")
     parser.add_argument("--use-lr-scheduler", type=str_to_bool, required=True, help="Flag to indicate if learning rate scheduler should be used (true/false)")
     parser.add_argument("--perform-ft", type=str_to_bool, required=True, help="Flag to indicate if finetuning should be performed (true/false)")
     parser.add_argument("--perform-eval", type=str_to_bool, required=True, help="Flag to indicate if evaluation should be performed (true/false)")
@@ -163,6 +164,7 @@ def main():
                     f"+ft_regime={args['ft_regime']}",
                     f"+optimizer_name={args['optim_name']}",
                     f"nn.module.optimizer._target_={args['optim_class']}",
+                    f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
                     f"+use_lr_scheduler={args['use_lr_scheduler']}",
                     f"+lr_scheduler_name={args['lr_scheduler_name']}",
                     f"+timestamp={timestamp}",
@@ -183,6 +185,7 @@ def main():
                 f"eval_datasets={args['eval_datasets']}",
                 f"+optimizer_name={args['optim_name']}",
                 f"nn.module.optimizer._target_={args['optim_class']}",
+                f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
                 f"+use_lr_scheduler={args['use_lr_scheduler']}",
                 f"+lr_scheduler_name={args['lr_scheduler_name']}",
                 f"+upload_merged_to_wandb={args['upload_to_wandb']}",

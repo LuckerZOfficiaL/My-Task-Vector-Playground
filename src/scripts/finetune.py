@@ -188,10 +188,12 @@ def run(cfg: DictConfig):
         f"_{cfg.seed_index}"
         f"_{cfg.ft_regime}"
         f"_{cfg.optimizer_name}"
+        f"_wd_{cfg.nn.module.optimizer.weight_decay}"
         f"{cfg.lr_scheduler_name}"
     )
 
-    print(f"artifact_name: {artifact_name}")
+    print("\n\n")
+    pylogger.info(f"artifact_name: {artifact_name}")
 
     print("\n\n")
     pylogger.info(f"optimizer(s): {model.optimizers()}")
@@ -207,7 +209,7 @@ def run(cfg: DictConfig):
 
     if cfg.timestamp is not None:
         export_run_data_to_disk(
-            data=cfg, 
+            cfg=cfg, 
             logger=logger, 
             export_dir=f"./evaluations/ft/{cfg.ft_regime}/{cfg.optimizer_name}/use_lr_scheduler_{cfg.use_lr_scheduler}", 
             file_base_name=artifact_name

@@ -55,6 +55,7 @@ def run(cfg: DictConfig) -> str:
         f"{cfg.seed_index}_"
         f"{cfg.ft_regime}_"
         f"{cfg.optimizer_name}_"
+        f"wd_{cfg.weight_decay}_"
         f"{cfg.lr_scheduler_name}_"
         f"merged_{'-'.join(cfg.task_vectors.to_apply)}"
     )
@@ -87,6 +88,7 @@ def run(cfg: DictConfig) -> str:
         f"_{cfg.seed_index}"
         f"_{cfg.ft_regime}"
         f"_{cfg.optimizer_name}"
+        f"_wd_{cfg.weight_decay}"
         f"{cfg.lr_scheduler_name}"
         f":latest"
     )
