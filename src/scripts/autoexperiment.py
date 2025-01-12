@@ -66,43 +66,53 @@ def _validate_args(args: dict):
     if args["ft_regime"].lower() not in ["atm", "ta"]:
         raise ValueError(f"Invalid finetuning regime: {args['ft_regime']}")
 
-    if args["ft_task_group_name"] is None and args["ft_task_names"] is None:
-        raise ValueError("Either --ft-task-group-name or --ft-task-names should be provided")
+    if args["perform_ft"]:
+        if args["ft_task_group_name"] is None and args["ft_task_names"] is None:
+            raise ValueError("Either --ft-task-group-name or --ft-task-names should be provided")
 
-    if args["tvs_to_apply_group_name"] is None and args["tvs_to_apply_names"] is None:
-        raise ValueError("Either --tvs-to-apply-group-name or --tvs-to-apply-names should be provided")
+        if args["ft_task_group_name"] is not None and args["ft_task_names"] is not None:
+            raise ValueError("Either --ft-task-group-name or --ft-task-names should be provided, not both")
 
-    if args["eval_dataset_group_name"] is None and args["eval_dataset_names"] is None:
-        raise ValueError("Either --eval-dataset-group-name or --eval-dataset-names should be provided")
-    
-    if args["ft_task_group_name"] is not None and args["ft_task_names"] is not None:
-        raise ValueError("Either --ft-task-group-name or --ft-task-names should be provided, not both")
+        if args["ft_task_group_name"] is not None:
+            args["ft_tasks"] = _handle_task_group_name(args["ft_task_group_name"])
+        else:
+            args["ft_tasks"] = args["ft_task_names"]
 
-    if args["tvs_to_apply_group_name"] is not None and args["tvs_to_apply_names"] is not None:
-        raise ValueError("Either --tvs-to-apply-group-name or --tvs-to-apply-names should be provided, not both")
+    if args["perform_eval"]:
+        if args["tvs_to_apply_group_name"] is None and args["tvs_to_apply_names"] is None:
+            raise ValueError("Either --tvs-to-apply-group-name or --tvs-to-apply-names should be provided")
 
-    if args["eval_dataset_group_name"] is not None and args["eval_dataset_names"] is not None:
-        raise ValueError("Either --eval-dataset-group-name or --eval-dataset-names should be provided, not both")
+        if args["tvs_to_apply_group_name"] is not None and args["tvs_to_apply_names"] is not None:
+            raise ValueError("Either --tvs-to-apply-group-name or --tvs-to-apply-names should be provided, not both")
 
+        if args["eval_dataset_group_name"] is None and args["eval_dataset_names"] is None:
+            raise ValueError("Either --eval-dataset-group-name or --eval-dataset-names should be provided")
 
-    if args["ft_task_group_name"] is not None:
-        args["ft_tasks"] = _handle_task_group_name(args["ft_task_group_name"])
-    else:
-        args["ft_tasks"] = args["ft_task_names"]
+        if args["eval_dataset_group_name"] is not None and args["eval_dataset_names"] is not None:
+            raise ValueError("Either --eval-dataset-group-name or --eval-dataset-names should be provided, not both")
 
-    if args["tvs_to_apply_group_name"] is not None:
-        args["tvs_to_apply"] = [
-            DATASET_TO_STYLED[t] for t in _handle_task_group_name(args["tvs_to_apply_group_name"])
-        ]
-    else:
-        args["tvs_to_apply"] = args["tvs_to_apply_names"]
+        if args["tvs_to_apply_group_name"] is not None:
+            args["tvs_to_apply"] = [
+                DATASET_TO_STYLED[t] for t in _handle_task_group_name(args["tvs_to_apply_group_name"])
+            ]
+        else:
+            args["tvs_to_apply"] = args["tvs_to_apply_names"]
 
-    if args["eval_dataset_group_name"] is not None:
-        args["eval_datasets"] = [
-            DATASET_TO_STYLED[t] for t in _handle_task_group_name(args["eval_dataset_group_name"])
-        ]
-    else :
-        args["eval_datasets"] = args["eval_dataset_names"]
+        if args["eval_dataset_group_name"] is not None:
+            args["eval_datasets"] = [
+                DATASET_TO_STYLED[t] for t in _handle_task_group_name(args["eval_dataset_group_name"])
+            ]
+        else :
+            args["eval_datasets"] = args["eval_dataset_names"]
+
+        if args["eval_skip_if_exists"] is None:
+            raise ValueError("--perform-eval true requires --eval-skip-if-exists to be explicitly provided")
+
+        if args["evaluation_export_dir"] is None:
+            raise ValueError("--perform-eval true requires --evaluation-export-dir to be explicitly provided")
+
+        if ["upload_merged_to_wandb"] is None:
+            raise ValueError("--perform-eval true requires --upload-merged-to-wandb to be explicitly provided")
 
     args["optim_class"] = _get_optim_class(args["optim_name"])
 
@@ -125,10 +135,10 @@ def _parse_args():
     parser.add_argument("--use-lr-scheduler", type=str_to_bool, required=True, help="Flag to indicate if learning rate scheduler should be used (true/false)")
     parser.add_argument("--perform-ft", type=str_to_bool, required=True, help="Flag to indicate if finetuning should be performed (true/false)")
     parser.add_argument("--perform-eval", type=str_to_bool, required=True, help="Flag to indicate if evaluation should be performed (true/false)")
-    parser.add_argument("--eval-skip-if-exists", type=str_to_bool, required=True, help="Flag to indicate if evaluation should be skipped if the evaluation results already exist (true/false)")
+    parser.add_argument("--eval-skip-if-exists", type=str_to_bool, help="Flag to indicate if evaluation should be skipped if the evaluation results already exist (true/false)")
+    parser.add_argument("--upload-merged-to-wandb", type=str_to_bool, help="Flag to indicate if merged model should be uploaded to wandb (true/false)")
+    parser.add_argument("--evaluation-export-dir", type=str, help="Directory to export evaluation results")
     parser.add_argument("--called-from-bash", action="store_true", help="Flag to indicate if script was called from bash")
-    parser.add_argument("--upload-to-wandb", type=str_to_bool, required=True, help="Flag to indicate if merged model should be uploaded to wandb (true/false)")
-    parser.add_argument("--evaluation-export-dir", type=str, required=True, help="Directory to export evaluation results")
     parser.add_argument("--timestamp", type=str, help="Timestamp used to identify the experiment")
     
     args = parser.parse_args()
@@ -188,7 +198,7 @@ def main():
                 f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
                 f"+use_lr_scheduler={args['use_lr_scheduler']}",
                 f"+lr_scheduler_name={args['lr_scheduler_name']}",
-                f"+upload_merged_to_wandb={args['upload_to_wandb']}",
+                f"+upload_merged_to_wandb={args['upload_merged_to_wandb']}",
                 f"+evaluation_export_dir={args['evaluation_export_dir']}",
                 f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
                 f"+timestamp={timestamp}",
