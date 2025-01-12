@@ -149,7 +149,8 @@ def run(cfg: DictConfig):
     pylogger.info("Instantiating the <Trainer>")
     trainer = pl.Trainer(
         default_root_dir=storage_dir,
-        plugins=[NNCheckpointIO(jailing_dir=logger.run_dir)],
+        # plugins=[NNCheckpointIO(jailing_dir=logger.run_dir)],
+        enable_checkpointing=False,
         max_epochs=cfg.nn.data.dataset.ft_epochs, 
         logger=logger,
         callbacks=callbacks,
