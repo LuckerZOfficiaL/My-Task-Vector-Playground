@@ -34,9 +34,9 @@ callbacks:
   #   monitor: ${train.monitor.metric}
   #   mode: ${train.monitor.mode}
 
-  - _target_: pytorch_lightning.callbacks.LearningRateMonitor
-    logging_interval: "step"
-    log_momentum: False
+  # - _target_: pytorch_lightning.callbacks.LearningRateMonitor
+  #   logging_interval: "step"
+  #   log_momentum: False
 
   - _target_: pytorch_lightning.callbacks.progress.RichProgressBar
     refresh_rate: 1
@@ -67,7 +67,7 @@ logging:
     mode: 'online'
     tags: ${core.tags}
 
-  wandb_watch:
-    log: null
-    log_freq: 100
-    log_graph: false
+  # wandb_watch:
+  #   log: null
+  #   log_freq: 1
+  #   log_graph: false

@@ -22,6 +22,8 @@ DATA_YAML_FILE = "conf/nn/data/default.yaml"
 def _get_optim_class(optim_name: str):
     if optim_name.lower() == "adam":
         return "torch.optim.Adam"
+    elif optim_name.lower() == "adamw":
+        return "torch.optim.AdamW"
     elif optim_name.lower() == "sgd":
         return "torch.optim.SGD"
     else:
@@ -64,11 +66,17 @@ def _validate_args(args: dict):
     if args["ft_regime"].lower() not in ["atm", "ta"]:
         raise ValueError(f"Invalid finetuning regime: {args['ft_regime']}")
 
+    if args["ft_task_group_name"] is None and args["ft_task_names"] is None:
+        raise ValueError("Either --ft-task-group-name or --ft-task-names should be provided")
+
     if args["tvs_to_apply_group_name"] is None and args["tvs_to_apply_names"] is None:
         raise ValueError("Either --tvs-to-apply-group-name or --tvs-to-apply-names should be provided")
 
     if args["eval_dataset_group_name"] is None and args["eval_dataset_names"] is None:
         raise ValueError("Either --eval-dataset-group-name or --eval-dataset-names should be provided")
+    
+    if args["ft_task_group_name"] is not None and args["ft_task_names"] is not None:
+        raise ValueError("Either --ft-task-group-name or --ft-task-names should be provided, not both")
 
     if args["tvs_to_apply_group_name"] is not None and args["tvs_to_apply_names"] is not None:
         raise ValueError("Either --tvs-to-apply-group-name or --tvs-to-apply-names should be provided, not both")
@@ -77,10 +85,10 @@ def _validate_args(args: dict):
         raise ValueError("Either --eval-dataset-group-name or --eval-dataset-names should be provided, not both")
 
 
-    if args["tvs_to_apply_group_name"] is not None:
+    if args["ft_task_group_name"] is not None:
         args["ft_tasks"] = _handle_task_group_name(args["ft_task_group_name"])
     else:
-        args["ft_tasks"] = args["tvs_to_apply_names"]
+        args["ft_tasks"] = args["ft_task_names"]
 
     if args["tvs_to_apply_group_name"] is not None:
         args["tvs_to_apply"] = [
@@ -98,18 +106,22 @@ def _validate_args(args: dict):
 
     args["optim_class"] = _get_optim_class(args["optim_name"])
 
+    args["lr_scheduler_name"] = "_CosineAnnealingLRScheduler" if args["use_lr_scheduler"] else ""
+
     return args
 
 
 def _parse_args():
     parser = argparse.ArgumentParser(description="Run an experiment")
-    parser.add_argument("--ft-task-group-name", type=str, required=True, help="Which task group to consider. Options: ['paper-atm', 'paper-tsv-8', 'paper-tsv-14', 'paper-tsv-20']")
+    parser.add_argument("--ft-task-group-name", type=str, help="Which task group to consider. Options: ['paper-atm', 'paper-tsv-8', 'paper-tsv-14', 'paper-tsv-20']")
+    parser.add_argument("--ft-task-names", type=str, nargs='+', help="Tasks to consider.")
     parser.add_argument("--ft-regime", type=str, required=True, help="Finetuning regime. Options: ['atm', 'ta']")
     parser.add_argument("--tvs-to-apply-group-name", type=str, help="Task vectors group to apply. Options: ['paper-atm', 'paper-tsv-8', 'paper-tsv-14', 'paper-tsv-20']")
     parser.add_argument("--tvs-to-apply-names", type=str, nargs='+', help="Task vectors group to apply.")
     parser.add_argument("--eval-dataset-group-name", type=str, help="Evaluation datasets group to evaluate on. Options: ['paper-atm', 'paper-tsv-8', 'paper-tsv-14', 'paper-tsv-20']")
     parser.add_argument("--eval-dataset-names", type=str, nargs='+', help="Evaluation datasets to evaluate on.")
     parser.add_argument("--optim-name", type=str, required=True, help="Optimizer to use. Options: ['adam', 'sgd']")
+    parser.add_argument("--use-lr-scheduler", type=str_to_bool, required=True, help="Flag to indicate if learning rate scheduler should be used (true/false)")
     parser.add_argument("--perform-ft", type=str_to_bool, required=True, help="Flag to indicate if finetuning should be performed (true/false)")
     parser.add_argument("--perform-eval", type=str_to_bool, required=True, help="Flag to indicate if evaluation should be performed (true/false)")
     parser.add_argument("--eval-skip-if-exists", type=str_to_bool, required=True, help="Flag to indicate if evaluation should be skipped if the evaluation results already exist (true/false)")
@@ -151,6 +163,8 @@ def main():
                     f"+ft_regime={args['ft_regime']}",
                     f"+optimizer_name={args['optim_name']}",
                     f"nn.module.optimizer._target_={args['optim_class']}",
+                    f"+use_lr_scheduler={args['use_lr_scheduler']}",
+                    f"+lr_scheduler_name={args['lr_scheduler_name']}",
                     f"+timestamp={timestamp}",
                 ], 
                 check=True
@@ -169,6 +183,8 @@ def main():
                 f"eval_datasets={args['eval_datasets']}",
                 f"+optimizer_name={args['optim_name']}",
                 f"nn.module.optimizer._target_={args['optim_class']}",
+                f"+use_lr_scheduler={args['use_lr_scheduler']}",
+                f"+lr_scheduler_name={args['lr_scheduler_name']}",
                 f"+upload_merged_to_wandb={args['upload_to_wandb']}",
                 f"+evaluation_export_dir={args['evaluation_export_dir']}",
                 f"+eval_skip_if_exists={args['eval_skip_if_exists']}",

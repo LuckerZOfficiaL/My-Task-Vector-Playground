@@ -15,12 +15,10 @@ optimizer:
   # _target_: torch.optim.SGD
   # lr: 0.1
   # momentum: 0.9
-  # weight_decay: 1e-4
+  weight_decay: 1e-1
 
-# lr_scheduler:
-#   _target_: pl_bolts.optimizers.lr_scheduler.LinearWarmupCosineAnnealingLR
-#   warmup_epochs: 5
-#   max_epochs: ${train.trainer.max_epochs}
-#   warmup_start_lr: 1e-6
-#   eta_min: 0.0
-#   last_epoch: -1
+lr_scheduler:
+  # NOTE in case of multiple lr schedulers, to keep compatibility with current code, cosine annealing lr scheduler should be the first one
+  _target_: tvp.modules.cosine_annealing_lr_scheduler.CosineAnnealingLRScheduler
+  warmup_length: 200
+  total_steps: -42 # this is a placeholder, it will be set by the lightning module as the number of training steps

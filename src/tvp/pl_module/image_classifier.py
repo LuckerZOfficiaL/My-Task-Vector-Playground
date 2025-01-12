@@ -17,6 +17,8 @@ from tvp.data.datamodule import MetaData
 from tvp.data.datasets.common import maybe_dictionarize
 from tvp.utils.utils import torch_load, torch_save
 
+from src.tvp.modules.cosine_annealing_lr_scheduler import CosineAnnealingLRScheduler
+
 pylogger = logging.getLogger(__name__)
 
 
@@ -45,6 +47,10 @@ class ImageClassifier(pl.LightningModule):
         self.classification_head = classifier
         # self.encoder.create_tv_mask() # call this to create the TV sparsity mask in the encoder, the mask is applied to the gradient to prevent pruned weights from updating
 
+        self.max_train_steps = None
+
+        self.elapsed_train_steps = 0
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Method for the forward pass.
 
@@ -70,18 +76,27 @@ class ImageClassifier(pl.LightningModule):
         loss = F.cross_entropy(logits, gt_y)
         preds = torch.softmax(logits, dim=-1)
 
-        metrics = getattr(self, f"{split}_acc")
+        metrics: torchmetrics.Accuracy = getattr(self, f"{split}_acc")
         metrics.update(preds, gt_y)
 
         self.log_dict(
             {
                 f"acc/{split}": metrics,
                 f"loss/{split}": loss,
-                # f"sparsity/{split}": self.encoder.get_tv_sparsity(),
-                # f"sparsity percentile": self.sparsity_percentile,
             },
             on_epoch=True,
         )
+
+        if split == "train":
+            self.elapsed_train_steps += 1
+            self.log_dict(
+                {
+                    f"elapsed_train_steps": self.elapsed_train_steps,
+                    f"epoch": self.current_epoch,
+                    f"lr": self.trainer.optimizers[0].param_groups[0]["lr"],
+                },
+                on_step=True,
+            )
 
         return {"logits": logits.detach(), "loss": loss}
 
@@ -103,7 +118,26 @@ class ImageClassifier(pl.LightningModule):
     def on_train_end(self):
         self.encoder.reset_weights_by_percentile(percentile=self.sparsity_percentile)
     """
-    
+
+    def _set_cosine_annealing_lr_scheduler_total_steps(self):
+        if "lr_scheduler" in self.hparams:
+
+            lr_schedulers = self.lr_schedulers()
+
+            if type(lr_schedulers) == list:
+                lr_scheduler = lr_schedulers[0]
+            else:
+                lr_scheduler = lr_schedulers
+
+            if lr_scheduler.__class__.__name__ == "CosineAnnealingLRScheduler":
+
+                lr_scheduler: CosineAnnealingLRScheduler = lr_scheduler
+
+                lr_scheduler.total_steps = self.max_train_steps
+
+    def on_train_start(self):
+        self._set_cosine_annealing_lr_scheduler_total_steps()
+        
     """
     def on_after_backward(self): # after backprop, we apply the binary mask element-wise to the gradient to prevent some weights from updating, maintaining TV sparsity
         if self.encoder.tv_mask is not None:
@@ -118,28 +152,25 @@ class ImageClassifier(pl.LightningModule):
     def test_step(self, batch: Any, batch_idx: int) -> Mapping[str, Any]:
         return self._step(batch=batch, split="test")
 
-    def configure_optimizers(
-        self,
-    ) -> Union[Optimizer, Tuple[Sequence[Optimizer], Sequence[Any]]]:
-        """Choose what optimizers and learning-rate schedulers to use in your optimization.
-
-        Normally you'd need one. But in the case of GANs or similar you might have multiple.
-
-        Return:
-            Any of these 6 options.
-            - Single optimizer.
-            - List or Tuple - List of optimizers.
-            - Two lists - The first list has multiple optimizers, the second a list of LR schedulers (or lr_dict).
-            - Dictionary, with an 'optimizer' key, and (optionally) a 'lr_scheduler'
-              key whose value is a single LR scheduler or lr_dict.
-            - Tuple of dictionaries as described, with an optional 'frequency' key.
-            - None - Fit will run without any optimizer.
-        """
+    def configure_optimizers(self):
         opt = hydra.utils.instantiate(self.hparams.optimizer, params=self.parameters(), _convert_="partial")
         if "lr_scheduler" not in self.hparams:
             return [opt]
-        scheduler = hydra.utils.instantiate(self.hparams.lr_scheduler, optimizer=opt)
-        return [opt], [scheduler]
+        
+        scheduler = CosineAnnealingLRScheduler(
+            optimizer=opt,
+            base_lr=self.hparams.optimizer.lr,
+            warmup_length=self.hparams.lr_scheduler.warmup_length,
+            total_steps=self.hparams.lr_scheduler.total_steps
+        )
+        scheduler_config = {
+            "scheduler": scheduler,
+            "interval": "step",
+            "frequency": 1,
+        }
+        return [opt], [scheduler_config]
+
+        
 
     def __call__(self, inputs):
         return self.forward(inputs)

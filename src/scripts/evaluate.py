@@ -55,6 +55,7 @@ def run(cfg: DictConfig) -> str:
         f"{cfg.seed_index}_"
         f"{cfg.ft_regime}_"
         f"{cfg.optimizer_name}_"
+        f"{cfg.lr_scheduler_name}_"
         f"merged_{'-'.join(cfg.task_vectors.to_apply)}"
     )
 
@@ -80,7 +81,15 @@ def run(cfg: DictConfig) -> str:
     
     zeroshot_model = load_model_from_artifact(artifact_path=f"{zeroshot_identifier}:latest", run=logger.experiment)
 
-    finetuned_id_fn = lambda dataset: f"{cfg.nn.module.model.model_name}_{dataset}_{cfg.seed_index}_{cfg.ft_regime}_{cfg.optimizer_name}:latest"
+    finetuned_id_fn = lambda dataset: (
+        f"{cfg.nn.module.model.model_name}"
+        f"_{dataset}"
+        f"_{cfg.seed_index}"
+        f"_{cfg.ft_regime}"
+        f"_{cfg.optimizer_name}"
+        f"{cfg.lr_scheduler_name}"
+        f":latest"
+    )
 
     finetuned_models = {
         dataset: load_model_from_artifact(artifact_path=finetuned_id_fn(dataset), run=logger.experiment)
