@@ -1,8 +1,8 @@
 accelerator: ${train.trainer.accelerator}
 batch_size:
-  test: 16
-  train: 32
-  val: 32
+  test: 128
+  train: 128
+  val: 128
 data_path: ${oc.env:PROJECT_ROOT}/data
 defaults:
 - dataset: cifar100
