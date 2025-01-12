@@ -38,20 +38,8 @@ callbacks:
   #   logging_interval: "step"
   #   log_momentum: False
 
-  - _target_: pytorch_lightning.callbacks.progress.RichProgressBar
+  - _target_: pytorch_lightning.callbacks.progress.tqdm_progress.TQDMProgressBar
     refresh_rate: 1
-    theme:
-      _target_: lightning.pytorch.callbacks.progress.rich_progress.RichProgressBarTheme
-      description: "#6D213C"
-      progress_bar: "#9000B3"
-      progress_bar_finished: "#228B22"
-      progress_bar_pulse: "#6206E0"
-      batch_progress: "E6AF2E"
-      time: "#6F8AB7"
-      processing_speed: "#6F8AB7"
-      metrics: "#6F8AB7"
-      metrics_text_delimiter: "\n"
-      metrics_format: ".3e"
 
 logging:
   upload:
