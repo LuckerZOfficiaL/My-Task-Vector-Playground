@@ -233,7 +233,10 @@ def main():
 
     # pprint(task_difficulties, expand_all=True)
 
-    merged_accs_dir = "./evaluations/merged_subsets/paper-tsv-20/subset_size_05"
+    TASKS = "paper-tsv-20"
+    SUBSET_SIZE = "05"
+
+    merged_accs_dir = f"./evaluations/merged_subsets/{TASKS}/subset_size_{SUBSET_SIZE}"
     _, merged_accs_file_ta, merged_accs_file_atm = _get_list_of_merged_accs(merged_accs_dir)
 
     df: pd.DataFrame = _prepare_data_for_plot(
@@ -243,12 +246,14 @@ def main():
         task_difficulties=task_difficulties
     )
 
+    num_subsets = len(df)
+
     plot_dir = "./plots/task_difficulty_metric_vs_delta_norm_merged_acc"
     os.makedirs(plot_dir, exist_ok=True)
-    plot_name = "tasks_paper-tsv-20_num_subsets_200_subset_size_05"
+    plot_name = f"{TASKS}_num_subsets_{num_subsets}_subset_size_{SUBSET_SIZE}"
     _plot(
         df=df,
-        add_to_title="Tasks = paper-tsv-20. Num subsets = 200. Subset size = 05",
+        add_to_title=f"Tasks = {TASKS}. Num subsets = {num_subsets}. Subset size = {SUBSET_SIZE}",
         plot_save_path=f"{plot_dir}/{plot_name}.png"
     )
 
