@@ -51,13 +51,13 @@ def run(cfg: DictConfig) -> str:
     pprint(OmegaConf.to_container(cfg, resolve=True))
 
     artifact_name = (
-        f"{cfg.nn.module.model.model_name}_"
-        f"{cfg.seed_index}_"
-        f"{cfg.ft_regime}_"
-        f"{cfg.optimizer_name}_"
-        f"wd_{cfg.weight_decay}_"
-        f"{cfg.lr_scheduler_name}_"
-        f"merged_{'-'.join(cfg.task_vectors.to_apply)}"
+        f"{cfg.nn.module.model.model_name}"
+        f"_{cfg.seed_index}"
+        f"_{cfg.ft_regime}"
+        f"_{cfg.optimizer_name}"
+        f"_wd_{cfg.nn.module.optimizer.weight_decay}"
+        f"{cfg.lr_scheduler_name}"
+        f"_merged_{'-'.join(cfg.task_vectors.to_apply)}"
     )
 
     if cfg.eval_skip_if_exists and os.path.exists(f"{cfg.evaluation_export_dir}/{artifact_name}.json"):
@@ -88,7 +88,7 @@ def run(cfg: DictConfig) -> str:
         f"_{cfg.seed_index}"
         f"_{cfg.ft_regime}"
         f"_{cfg.optimizer_name}"
-        f"_wd_{cfg.weight_decay}"
+        f"_wd_{cfg.nn.module.optimizer.weight_decay}"
         f"{cfg.lr_scheduler_name}"
         f":latest"
     )

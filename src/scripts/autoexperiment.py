@@ -111,8 +111,9 @@ def _validate_args(args: dict):
         if args["evaluation_export_dir"] is None:
             raise ValueError("--perform-eval true requires --evaluation-export-dir to be explicitly provided")
 
-        if ["upload_merged_to_wandb"] is None:
+        if args["upload_merged_to_wandb"] is None:
             raise ValueError("--perform-eval true requires --upload-merged-to-wandb to be explicitly provided")
+
 
     args["optim_class"] = _get_optim_class(args["optim_name"])
 
