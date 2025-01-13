@@ -1,0 +1,119 @@
+{
+    "nn": {
+        "data": {
+            "dataset": {
+                "dataset_name": "EMNIST",
+                "ft_epochs": 2,
+                "num_classes": 10
+            },
+            "accelerator": "gpu",
+            "batch_size": {
+                "test": 128,
+                "train": 128,
+                "val": 128
+            },
+            "data_path": "/root/ATM/Alternating-Tuning-and-Merging/data",
+            "num_workers": {
+                "test": 0,
+                "train": 4,
+                "val": 2
+            },
+            "train_dataset": "EMNISTVal"
+        },
+        "module": {
+            "_target_": "tvp.pl_module.image_classifier.ImageClassifier",
+            "x_key": "x",
+            "y_key": "y",
+            "encoder": "??",
+            "classifier": "??",
+            "optimizer": {
+                "_target_": "torch.optim.Adam",
+                "lr": 1e-05,
+                "weight_decay": 0.0
+            },
+            "model": {
+                "_target_": "tvp.modules.encoder.ImageEncoder",
+                "model_name": "ViT-B-16",
+                "openclip_cachedir": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
+                "cache_dir": null,
+                "keep_lang": "??"
+            }
+        }
+    },
+    "train": {
+        "seed_index": 0,
+        "deterministic": false,
+        "trainer": {
+            "fast_dev_run": false,
+            "accelerator": "gpu",
+            "devices": 1,
+            "precision": 32,
+            "max_steps": -1,
+            "num_sanity_val_steps": 2,
+            "gradient_clip_val": 10.0,
+            "val_check_interval": 1.0,
+            "deterministic": false
+        },
+        "restore": {
+            "ckpt_or_run_path": null,
+            "mode": null
+        },
+        "monitor": {
+            "metric": "loss/train",
+            "mode": "min"
+        },
+        "callbacks": [
+            {
+                "_target_": "pytorch_lightning.callbacks.progress.tqdm_progress.TQDMProgressBar",
+                "refresh_rate": 1
+            }
+        ],
+        "logging": {
+            "upload": {
+                "run_files": false,
+                "source": true
+            },
+            "logger": {
+                "_target_": "lightning.pytorch.loggers.WandbLogger",
+                "project": "task-vectors-playground",
+                "entity": "dansolombrinoandfriends",
+                "log_model": false,
+                "mode": "online",
+                "tags": [
+                    "finetune"
+                ]
+            }
+        }
+    },
+    "conventions": {
+        "x_key": "x",
+        "y_key": "y"
+    },
+    "core": {
+        "entity": "dansolombrinoandfriends",
+        "project_name": "task-vectors-playground",
+        "storage_dir": "/root/ATM/Alternating-Tuning-and-Merging/storage",
+        "tags": [
+            "finetune"
+        ],
+        "version": "0.0.1"
+    },
+    "epoch_divisor": "None",
+    "misc": {
+        "cache_dir": null,
+        "ckpt_path": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16",
+        "openclip_cachedir": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
+        "pretrained_checkpoint": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16/zeroshot.pt",
+        "save_pretrained": false
+    },
+    "order": 1,
+    "reset_classification_head": true,
+    "reset_pretrained_model": false,
+    "seed_index": 0,
+    "task_to_finetune": "emnist",
+    "ft_regime": "ta",
+    "optimizer_name": "adam",
+    "use_lr_scheduler": false,
+    "lr_scheduler_name": "",
+    "timestamp": "2025_01_12_at_22_05_56"
+}
