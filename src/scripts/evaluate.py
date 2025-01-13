@@ -50,13 +50,15 @@ def run(cfg: DictConfig) -> str:
     print("evaluate cfg")
     pprint(OmegaConf.to_container(cfg, resolve=True))
 
+    lr_scheduler_warmup_steps = "" if cfg.nn.module.lr_scheduler.warmup_steps_or_ratio is None else f"_warmup_steps_{cfg.nn.module.lr_scheduler.warmup_steps_or_ratio}"
     artifact_name = (
         f"{cfg.nn.module.model.model_name}"
         f"_{cfg.seed_index}"
         f"_{cfg.ft_regime}"
         f"_{cfg.optimizer_name}"
         f"_wd_{cfg.nn.module.optimizer.weight_decay}"
-        f"{cfg.lr_scheduler_name}"
+        f"_lr_scheduler_{cfg.lr_scheduler_name}"
+        f"{lr_scheduler_warmup_steps}"
         f"_merged_{'-'.join(cfg.task_vectors.to_apply)}"
     )
 
@@ -89,7 +91,8 @@ def run(cfg: DictConfig) -> str:
         f"_{cfg.ft_regime}"
         f"_{cfg.optimizer_name}"
         f"_wd_{cfg.nn.module.optimizer.weight_decay}"
-        f"{cfg.lr_scheduler_name}"
+        f"_lr_scheduler_{cfg.lr_scheduler_name}"
+        f"{lr_scheduler_warmup_steps}"
         f":latest"
     )
 
@@ -135,9 +138,9 @@ def run(cfg: DictConfig) -> str:
 
     results = {}
 
-    for dataset_name in cfg.eval_datasets:
+    for dataset_idx, dataset_name in enumerate(cfg.eval_datasets):
 
-        pylogger.info(f"Evaluating on dataset: {dataset_name}\n\n")
+        pylogger.info(f"Evaluating on dataset: {dataset_name} ({dataset_idx}/{len(cfg.eval_datasets)})\n\n")
 
         classification_head_identifier = f"{cfg.nn.module.model.model_name}_{dataset_name}_head"
         classification_head = load_model_from_artifact(

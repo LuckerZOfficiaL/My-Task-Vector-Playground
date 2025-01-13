@@ -30,6 +30,15 @@ def _get_optim_class(optim_name: str):
         raise ValueError(f"Invalid optimizer name: {optim_name}")
 
 
+def _get_lr_scheduler_class(lr_scheduler_name: str):
+    if lr_scheduler_name.lower() == "cosine_annealing":
+        return "tvp.modules.cosine_annealing_lr_scheduler.CosineAnnealingLRScheduler"
+    elif lr_scheduler_name.lower() == "none":
+        return "None"
+    else:
+        raise ValueError(f"Invalid lr scheduler name: {lr_scheduler_name}")
+
+
 # NOTE used a method not a dict in order to also include some input validation!
 def _handle_task_group_name(task_group_name: str):
     if task_group_name.lower() == "paper-atm":
@@ -117,9 +126,23 @@ def _validate_args(args: dict):
 
     args["optim_class"] = _get_optim_class(args["optim_name"])
 
-    args["lr_scheduler_name"] = "_CosineAnnealingLRScheduler" if args["use_lr_scheduler"] else ""
+    if args["lr_scheduler_name"] == "cosine_annealing":
+        if args["cosine_annealing_warmup_step_number_or_ratio"] is None:
+            raise ValueError("--lr-scheduler-name cosine_annealing requires --cosine-annealing-warmup-step-number-or-ratio to be explicitly provided") 
+
+    args["lr_scheduler_class"] = _get_lr_scheduler_class(args["lr_scheduler_name"])
 
     return args
+
+
+def float_or_int(value):
+    try:
+        return int(value)
+    except ValueError:
+        try:
+            return float(value)
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"Invalid value: {value}. Must be a float or integer.")
 
 
 def _parse_args():
@@ -133,7 +156,8 @@ def _parse_args():
     parser.add_argument("--eval-dataset-names", type=str, nargs='+', help="Evaluation datasets to evaluate on.")
     parser.add_argument("--optim-name", type=str, required=True, help="Optimizer to use. Options: ['adam', 'sgd']")
     parser.add_argument("--weight-decay", type=float, required=True, help="Weight decay to use")
-    parser.add_argument("--use-lr-scheduler", type=str_to_bool, required=True, help="Flag to indicate if learning rate scheduler should be used (true/false)")
+    parser.add_argument("--lr-scheduler-name", type=str, required=True, help="Flag to indicate if learning rate scheduler should be used (true/false)")
+    parser.add_argument("--cosine-annealing-warmup-step-number-or-ratio", type=float_or_int, help="Number of warmup steps for cosine annealing")
     parser.add_argument("--perform-ft", type=str_to_bool, required=True, help="Flag to indicate if finetuning should be performed (true/false)")
     parser.add_argument("--perform-eval", type=str_to_bool, required=True, help="Flag to indicate if evaluation should be performed (true/false)")
     parser.add_argument("--eval-skip-if-exists", type=str_to_bool, help="Flag to indicate if evaluation should be skipped if the evaluation results already exist (true/false)")
@@ -158,6 +182,9 @@ def main():
 
     if args["perform_ft"]:
 
+        lr_scheduler_target = '+empty_flag=-123456' if args['lr_scheduler_class'] == 'None' else '+nn.module.lr_scheduler._target_=' + args['lr_scheduler_class']
+        cosine_annealing_warmup_steps_or_ratio = '+empty_flag_2=-123456' if args['cosine_annealing_warmup_step_number_or_ratio'] is None else f"+nn.module.lr_scheduler.warmup_steps_or_ratio={args['cosine_annealing_warmup_step_number_or_ratio']}"
+
         ft_tasks = args["ft_tasks"]
         print(f"\n\nFinetuning tasks: {ft_tasks}\n\n")
 
@@ -166,7 +193,7 @@ def main():
             print(
                 f"\n\n{task_to_finetune} ({dataset_id + 1}/{len(ft_tasks)})\n\n"
             )
-            
+
             subprocess.run(
                 [
                     "python", 
@@ -176,14 +203,20 @@ def main():
                     f"+optimizer_name={args['optim_name']}",
                     f"nn.module.optimizer._target_={args['optim_class']}",
                     f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
-                    f"+use_lr_scheduler={args['use_lr_scheduler']}",
                     f"+lr_scheduler_name={args['lr_scheduler_name']}",
+                    lr_scheduler_target,
+                    cosine_annealing_warmup_steps_or_ratio,
                     f"+timestamp={timestamp}",
                 ], 
                 check=True
             )
     
     if args["perform_eval"]:
+
+        if args["cosine_annealing_warmup_step_number_or_ratio"] == None:
+            cosine_annealing_warmup_steps_or_ratio = "+nn.module.lr_scheduler.warmup_steps_or_ratio=null"
+        else:
+            cosine_annealing_warmup_steps_or_ratio = f"+nn.module.lr_scheduler.warmup_steps_or_ratio={args['cosine_annealing_warmup_step_number_or_ratio']}"
 
         print(f"\n\nEvaluation datasets: {args['eval_datasets']}\n\n")
 
@@ -197,8 +230,8 @@ def main():
                 f"+optimizer_name={args['optim_name']}",
                 f"nn.module.optimizer._target_={args['optim_class']}",
                 f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
-                f"+use_lr_scheduler={args['use_lr_scheduler']}",
                 f"+lr_scheduler_name={args['lr_scheduler_name']}",
+                cosine_annealing_warmup_steps_or_ratio,
                 f"+upload_merged_to_wandb={args['upload_merged_to_wandb']}",
                 f"+evaluation_export_dir={args['evaluation_export_dir']}",
                 f"+eval_skip_if_exists={args['eval_skip_if_exists']}",

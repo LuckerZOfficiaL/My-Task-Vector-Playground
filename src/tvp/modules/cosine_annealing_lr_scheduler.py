@@ -33,3 +33,6 @@ class CosineAnnealingLRScheduler(_LRScheduler):
                 lr = 0.5 * (1 + math.cos(math.pi * e / es)) * base_lr
             lrs.append(lr)
         return lrs
+
+    def __repr__(self) -> str:
+        return f" warmup_length={self.warmup_length}, total_steps={self.total_steps}, base_lrs={self.base_lrs}"

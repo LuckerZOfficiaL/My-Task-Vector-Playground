@@ -51,6 +51,8 @@ class ImageClassifier(pl.LightningModule):
 
         self.elapsed_train_steps = 0
 
+        self.cosine_annealing_warmup_steps = None
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Method for the forward pass.
 
@@ -135,8 +137,25 @@ class ImageClassifier(pl.LightningModule):
 
                 lr_scheduler.total_steps = self.max_train_steps
 
+    def _set_cosine_annealing_lr_scheduler_warmup_steps(self):
+        if "lr_scheduler" in self.hparams:
+
+            lr_schedulers = self.lr_schedulers()
+
+            if type(lr_schedulers) == list:
+                lr_scheduler = lr_schedulers[0]
+            else:
+                lr_scheduler = lr_schedulers
+
+            if lr_scheduler.__class__.__name__ == "CosineAnnealingLRScheduler":
+
+                lr_scheduler: CosineAnnealingLRScheduler = lr_scheduler
+
+                lr_scheduler.warmup_steps = self.cosine_annealing_warmup_steps
+
     def on_train_start(self):
         self._set_cosine_annealing_lr_scheduler_total_steps()
+        self._set_cosine_annealing_lr_scheduler_warmup_steps()
         
     """
     def on_after_backward(self): # after backprop, we apply the binary mask element-wise to the gradient to prevent some weights from updating, maintaining TV sparsity
@@ -160,8 +179,8 @@ class ImageClassifier(pl.LightningModule):
         scheduler = CosineAnnealingLRScheduler(
             optimizer=opt,
             base_lr=self.hparams.optimizer.lr,
-            warmup_length=self.hparams.lr_scheduler.warmup_length,
-            total_steps=self.hparams.lr_scheduler.total_steps
+            warmup_length=self.cosine_annealing_warmup_steps,
+            total_steps=self.max_train_steps,
         )
         scheduler_config = {
             "scheduler": scheduler,

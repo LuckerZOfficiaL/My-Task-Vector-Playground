@@ -53,14 +53,6 @@ def _set_max_epochs(cfg: DictConfig):
     return cfg
 
 
-def _handle_lr_scheduler(cfg: DictConfig):
-    if not cfg.use_lr_scheduler:
-        # remove the lr_scheduler from the config
-        del cfg.nn.module.lr_scheduler
-
-    return cfg
-
-
 def _edit_cfg(cfg: DictConfig):
     print("finetune cfg before edits")
     pprint(OmegaConf.to_container(cfg, resolve=True))
@@ -68,13 +60,28 @@ def _edit_cfg(cfg: DictConfig):
 
     cfg = _replace_train_dataset(cfg)
     cfg = _set_max_epochs(cfg)
-    cfg = _handle_lr_scheduler(cfg)
 
     print("finetune cfg after edits")
     pprint(OmegaConf.to_container(cfg, resolve=True))
     print("\n\n")
 
     return cfg
+
+# NOTE this assume the case where only just one single lr scheduler is used!
+def _get_warmpup_steps(model: ImageClassifier, cfg: DictConfig):
+    if "lr_scheduler" in cfg.nn.module:
+        
+        if "cosine_annealing" in cfg.lr_scheduler_name:
+
+            if isinstance(cfg.nn.module.lr_scheduler.warmup_steps_or_ratio, int):
+                return cfg.nn.module.lr_scheduler.warmup_steps_or_ratio
+            elif isinstance(cfg.nn.module.lr_scheduler.warmup_steps_or_ratio, float):
+                return int(model.max_train_steps * cfg.nn.module.lr_scheduler.warmup_steps_or_ratio)
+            else:
+                raise ValueError(f"Invalid warmup step configuration for cosine annealing scheduler. Expected either an int or a float, got {type(cfg.nn.module.lr_scheduler.warmup_steps_or_ratio)}.")
+    
+    else:
+        return None
 
 
 def run(cfg: DictConfig):
@@ -146,11 +153,13 @@ def run(cfg: DictConfig):
         batch_size=cfg.nn.data.batch_size.train,
     )
     model.max_train_steps = len(dataset.train_loader) * cfg.nn.data.dataset.ft_epochs
+    model.cosine_annealing_warmup_steps = _get_warmpup_steps(model, cfg)
     
     print("\n\n")
     pylogger.info(f"num train samples: {len(dataset.train_dataset)}, num train batches: {len(dataset.train_loader)}")
     pylogger.info(f"num test samples: {len(dataset.test_dataset)}, num test batches: {len(dataset.test_loader)}")
     pylogger.info(f"max train steps: {model.max_train_steps}")
+    pylogger.info(f"cosine annealing warmup steps: {model.cosine_annealing_warmup_steps}")
     print("\n\n")
 
     model.freeze_head()
@@ -182,6 +191,7 @@ def run(cfg: DictConfig):
     trainer.test(model=model, dataloaders=dataset.test_loader)
 
     # NOTE only works if one lr_scheduler is used
+    lr_scheduler_warmup_steps = f"_warmup_steps_{cfg.nn.module.lr_scheduler.warmup_steps_or_ratio}" if model.lr_schedulers() is not None else ""
     artifact_name = (
         f"{cfg.nn.module.model.model_name}"
         f"_{cfg.nn.data.dataset.dataset_name}"
@@ -189,7 +199,8 @@ def run(cfg: DictConfig):
         f"_{cfg.ft_regime}"
         f"_{cfg.optimizer_name}"
         f"_wd_{cfg.nn.module.optimizer.weight_decay}"
-        f"{cfg.lr_scheduler_name}"
+        f"_lr_scheduler_{cfg.lr_scheduler_name}"
+        f"{lr_scheduler_warmup_steps}"
     )
 
     print("\n\n")
@@ -211,7 +222,7 @@ def run(cfg: DictConfig):
         export_run_data_to_disk(
             cfg=cfg, 
             logger=logger, 
-            export_dir=f"./evaluations/ft/{cfg.ft_regime}/{cfg.optimizer_name}/use_lr_scheduler_{cfg.use_lr_scheduler}", 
+            export_dir=f"./evaluations/ft/{cfg.ft_regime}/{cfg.optimizer_name}/lr_scheduler_{cfg.lr_scheduler_name}{lr_scheduler_warmup_steps}", 
             file_base_name=artifact_name
         )
 

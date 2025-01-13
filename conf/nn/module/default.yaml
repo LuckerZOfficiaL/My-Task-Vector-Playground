@@ -17,8 +17,9 @@ optimizer:
   # momentum: 0.9
   # weight_decay: 1e-1
 
-lr_scheduler:
-  # NOTE in case of multiple lr schedulers, to keep compatibility with current code, cosine annealing lr scheduler should be the first one
-  _target_: tvp.modules.cosine_annealing_lr_scheduler.CosineAnnealingLRScheduler
-  warmup_length: 200
-  total_steps: -42 # this is a placeholder, it will be set by the lightning module as the number of training steps
+# KEEP THIS COMMENTED OUT, it is handled in autoexperiment
+# lr_scheduler:
+#   # NOTE in case of multiple lr schedulers, to keep compatibility with current code, cosine annealing lr scheduler should be the first one
+#   _target_: tvp.modules.cosine_annealing_lr_scheduler.CosineAnnealingLRScheduler
+#   warmup_length: 200
+#   total_steps: -42 # this is a placeholder, it will be set by the lightning module as the number of training steps
