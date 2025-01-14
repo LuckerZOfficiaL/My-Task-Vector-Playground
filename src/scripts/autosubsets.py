@@ -45,13 +45,17 @@ def _validate_args(args: dict):
     if args["subset_size"] > len(args["tvs_to_apply"]):
         raise ValueError(f"The subset size ({args['subset_size']}) is greater than the number of datasets available ({len(args['tvs_to_apply'])}).")
 
-    if args["optim"].lower() not in ["adam", "sgd"]:
+    if args["optim"].lower() not in ["adam", "sgd", "adamw"]:
         raise ValueError(f"Invalid optimizer name: {args['optim']}")
     args["optim"] = args["optim"].lower()
 
     if args["ft_regime"].lower() not in ["atm", "ta"]:
         raise ValueError(f"Invalid finetuning regime: {args['ft_regime']}")
     args["ft_regime"] = args["ft_regime"].lower()
+
+    if args["lr_scheduler_name"].lower() == "cosine_annealing":
+        if args["cosine_annealing_warmup_step_number_or_ratio"] is None:
+            raise ValueError(f"cosine_annealing_warmup_step_number_or_ratio must be provided when using cosine_annealing")
 
     
     return args
@@ -77,6 +81,16 @@ def _sample_subset_list(all_possible_subsets: List[List[str]], num_subsets: int)
     return dataset_random_subsets
 
 
+def float_or_int(value):
+    try:
+        return int(value)
+    except ValueError:
+        try:
+            return float(value)
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"Invalid value: {value}. Must be a float or integer.")
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="AutoSubsets script")
 
@@ -84,6 +98,9 @@ def parse_args():
     parser.add_argument("--num-subsets", type=int, required=True, help="Number of subsets to create")
     parser.add_argument("--subset-size", type=int, required=True, help="Size of each subset")
     parser.add_argument("--optim", type=str, required=True, help="Optimization algorithm to use")
+    parser.add_argument("--weight-decay", type=float, required=True, help="Weight decay value")
+    parser.add_argument("--lr-scheduler-name", type=str, required=True, help="Learning rate scheduler name")
+    parser.add_argument("--cosine-annealing-warmup-step-number-or-ratio", type=float_or_int, required=True, help="Cosine annealing warmup step number or ratio")
     parser.add_argument("--ft-regime", type=str, required=True, help="Finetuning regime. Options: ['atm', 'ta']")
     parser.add_argument("--start-idx", type=int, required=True, help="Start index of the subset list")
     parser.add_argument("--end-idx", type=int, required=True, help="End index of the subset list")
@@ -117,6 +134,21 @@ def main():
 
         subset_str = " ".join(subset)
 
+        lr_scheduler_name = args["lr_scheduler_name"]
+        if lr_scheduler_name == "cosine_annealing":
+            lr_scheduler_name += f"_warmup_steps_{args['cosine_annealing_warmup_step_number_or_ratio']}"
+        lr_scheduler_name += "/"
+        
+        evaluation_export_dir = (
+            f"./evaluations/merged_subsets/"
+            f"{args['tvs_to_apply_group_name']}/"
+            f"{args['ft_regime']}/"
+            f"optim_{args['optim']}_wd_{args['weight_decay']}/"
+            f"{lr_scheduler_name}"
+            f"subset_size_{str(args['subset_size']).zfill(2)}/"
+                      
+        )
+
         subprocess.run(
             [
                 f"bash",
@@ -125,11 +157,14 @@ def main():
                 f"--tvs-to-apply-names {subset_str}",
                 f"--eval-dataset-names {subset_str}",
                 f"--optim-name {args['optim']}", 
+                f"--weight-decay {args['weight_decay']}",
+                f"--lr-scheduler-name {args['lr_scheduler_name']}",
+                f"--cosine-annealing-warmup-step-number-or-ratio {args['cosine_annealing_warmup_step_number_or_ratio']}",
                 f"--ft-regime {args['ft_regime']}", 
                 f"--perform-ft false",
                 f"--perform-eval true",
-                f"--upload-to-wandb false",
-                f"--evaluation-export-dir evaluations/merged_subsets/{args['tvs_to_apply_group_name']}/subset_size_{str(args['subset_size']).zfill(2)}",
+                f"--upload-merged-to-wandb false",
+                f"--evaluation-export-dir {evaluation_export_dir}",
                 f"--eval-skip-if-exists {args['eval_skip_if_exists']}",
             ]
         )
