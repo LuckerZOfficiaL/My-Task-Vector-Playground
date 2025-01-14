@@ -2,125 +2,125 @@
     "results": {
         "Cars": [
             {
-                "acc/test": 0.6645939350128174,
-                "loss/test": 0.9559692740440369
+                "acc/test": 0.6622310876846313,
+                "loss/test": 0.9715494513511658
             }
         ],
         "DTD": [
             {
-                "acc/test": 0.47340425848960876,
-                "loss/test": 1.9643080234527588
+                "acc/test": 0.472517728805542,
+                "loss/test": 1.9804693460464478
             }
         ],
         "EuroSAT": [
             {
-                "acc/test": 0.64083331823349,
-                "loss/test": 1.0683220624923706
+                "acc/test": 0.6383796334266663,
+                "loss/test": 1.0706661939620972
             }
         ],
         "GTSRB": [
             {
-                "acc/test": 0.5110847353935242,
-                "loss/test": 1.685857892036438
+                "acc/test": 0.5101345777511597,
+                "loss/test": 1.678758978843689
             }
         ],
         "MNIST": [
             {
-                "acc/test": 0.8503000140190125,
-                "loss/test": 0.9227246046066284
+                "acc/test": 0.8540999889373779,
+                "loss/test": 0.9175751209259033
             }
         ],
         "RESISC45": [
             {
-                "acc/test": 0.6992063522338867,
-                "loss/test": 0.9575384259223938
+                "acc/test": 0.6952381134033203,
+                "loss/test": 0.9660966396331787
             }
         ],
         "SVHN": [
             {
-                "acc/test": 0.6403272747993469,
-                "loss/test": 1.2847669124603271
+                "acc/test": 0.6353334188461304,
+                "loss/test": 1.2927656173706055
             }
         ],
         "SUN397": [
             {
-                "acc/test": 0.6712846159934998,
-                "loss/test": 1.142366886138916
+                "acc/test": 0.6702770590782166,
+                "loss/test": 1.1445673704147339
             }
         ],
         "STL10": [
             {
-                "acc/test": 0.9810000061988831,
-                "loss/test": 0.0721169039607048
+                "acc/test": 0.9806249737739563,
+                "loss/test": 0.07416526228189468
             }
         ],
         "OxfordIIITPet": [
             {
-                "acc/test": 0.8882529139518738,
-                "loss/test": 0.30161842703819275
+                "acc/test": 0.886890172958374,
+                "loss/test": 0.3018636405467987
             }
         ],
         "Flowers102": [
             {
-                "acc/test": 0.7193039655685425,
-                "loss/test": 1.3159085512161255
+                "acc/test": 0.7183281779289246,
+                "loss/test": 1.3419361114501953
             }
         ],
         "CIFAR100": [
             {
-                "acc/test": 0.7354999780654907,
-                "loss/test": 0.9806394577026367
+                "acc/test": 0.7343000173568726,
+                "loss/test": 0.9877780079841614
             }
         ],
         "PCAM": [
             {
-                "acc/test": 0.61004638671875,
-                "loss/test": 0.8949813842773438
+                "acc/test": 0.610992431640625,
+                "loss/test": 0.8977542519569397
             }
         ],
         "FER2013": [
             {
-                "acc/test": 0.4054054021835327,
-                "loss/test": 1.9809166193008423
+                "acc/test": 0.4047088325023651,
+                "loss/test": 1.9696346521377563
             }
         ],
         "CIFAR10": [
             {
-                "acc/test": 0.9381999969482422,
-                "loss/test": 0.19071801006793976
+                "acc/test": 0.9391999840736389,
+                "loss/test": 0.18671709299087524
             }
         ],
         "Food101": [
             {
-                "acc/test": 0.870851457118988,
-                "loss/test": 0.4458722174167633
+                "acc/test": 0.8714059591293335,
+                "loss/test": 0.44636180996894836
             }
         ],
         "FashionMNIST": [
             {
-                "acc/test": 0.7182000279426575,
-                "loss/test": 0.8218455910682678
+                "acc/test": 0.7196000218391418,
+                "loss/test": 0.8120352029800415
             }
         ],
         "RenderedSST2": [
             {
-                "acc/test": 0.6166941523551941,
-                "loss/test": 0.6561824083328247
+                "acc/test": 0.6216364502906799,
+                "loss/test": 0.6532680988311768
             }
         ],
         "EMNIST": [
             {
-                "acc/test": 0.29945001006126404,
-                "loss/test": 2.1329431533813477
+                "acc/test": 0.2990249991416931,
+                "loss/test": 2.127927780151367
             }
         ],
         "KMNIST": [
             {
-                "acc/test": 0.10809999704360962,
-                "loss/test": 2.629901885986328
+                "acc/test": 0.10840000212192535,
+                "loss/test": 2.6274003982543945
             }
         ],
-        "average_of_tasks": 0.6521019399166107
+        "average_of_tasks": 0.6516661815345287
     },
     "cfg": {
         "nn": {
@@ -138,7 +138,7 @@
                     "train": 128,
                     "val": 128
                 },
-                "data_path": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/data",
+                "data_path": "/root/ATM/Alternating-Tuning-and-Merging/data",
                 "num_workers": {
                     "test": 0,
                     "train": 4,
@@ -160,7 +160,7 @@
                 "model": {
                     "_target_": "tvp.modules.encoder.ImageEncoder",
                     "model_name": "ViT-B-16",
-                    "openclip_cachedir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
+                    "openclip_cachedir": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
                     "cache_dir": null,
                     "keep_lang": "??"
                 },
@@ -177,6 +177,7 @@
                 "accelerator": "gpu",
                 "devices": 1,
                 "precision": 32,
+                "max_steps": -1,
                 "num_sanity_val_steps": 2,
                 "gradient_clip_val": 10.0,
                 "val_check_interval": 1.0,
@@ -220,7 +221,7 @@
         "core": {
             "entity": "dansolombrinoandfriends",
             "project_name": "task-vectors-playground",
-            "storage_dir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/storage",
+            "storage_dir": "/root/ATM/Alternating-Tuning-and-Merging/storage",
             "tags": [
                 "dev"
             ],
@@ -252,9 +253,9 @@
         "eval_on_train": false,
         "misc": {
             "cache_dir": null,
-            "ckpt_path": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16",
-            "openclip_cachedir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
-            "pretrained_checkpoint": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16/zeroshot.pt"
+            "ckpt_path": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16",
+            "openclip_cachedir": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
+            "pretrained_checkpoint": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16/zeroshot.pt"
         },
         "order": 1,
         "seed_index": 0,
@@ -300,7 +301,7 @@
         "lr_scheduler_name": "cosine_annealing",
         "upload_merged_to_wandb": true,
         "evaluation_export_dir": "./evaluations/merged",
-        "eval_skip_if_exists": true,
-        "timestamp": null
+        "eval_skip_if_exists": false,
+        "timestamp": "2025_01_14_at_09_09_16"
     }
 }
