@@ -113,7 +113,8 @@
     "task_to_finetune": "fashionmnist",
     "ft_regime": "ta",
     "optimizer_name": "adam",
-    "use_lr_scheduler": false,
-    "lr_scheduler_name": "",
-    "timestamp": "2025_01_12_at_22_05_56"
+    "lr_scheduler_name": "none",
+    "empty_flag": -123456,
+    "empty_flag_2": -123456,
+    "timestamp": "2025_01_14_at_12_36_13"
 }
