@@ -118,5 +118,5 @@
     "ft_regime": "ta",
     "optimizer_name": "adamw",
     "lr_scheduler_name": "cosine_annealing",
-    "timestamp": "2025_01_13_at_19_38_39"
+    "timestamp": "2025_01_14_at_10_55_27"
 }
