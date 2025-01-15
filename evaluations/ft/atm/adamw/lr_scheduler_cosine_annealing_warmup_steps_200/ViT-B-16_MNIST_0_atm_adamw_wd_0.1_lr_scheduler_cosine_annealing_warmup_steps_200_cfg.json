@@ -33,17 +33,16 @@
                 "lr": 1e-05,
                 "weight_decay": 0.1
             },
-            "lr_scheduler": {
-                "_target_": "tvp.modules.cosine_annealing_lr_scheduler.CosineAnnealingLRScheduler",
-                "warmup_length": 200,
-                "total_steps": -42
-            },
             "model": {
                 "_target_": "tvp.modules.encoder.ImageEncoder",
                 "model_name": "ViT-B-16",
                 "openclip_cachedir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
                 "cache_dir": null,
                 "keep_lang": "??"
+            },
+            "lr_scheduler": {
+                "_target_": "tvp.modules.cosine_annealing_lr_scheduler.CosineAnnealingLRScheduler",
+                "warmup_steps_or_ratio": 200
             }
         }
     },
@@ -120,7 +119,6 @@
     "task_to_finetune": "mnist",
     "ft_regime": "atm",
     "optimizer_name": "adamw",
-    "use_lr_scheduler": true,
-    "lr_scheduler_name": "_CosineAnnealingLRScheduler",
-    "timestamp": "2025_01_13_at_07_50_04"
+    "lr_scheduler_name": "cosine_annealing",
+    "timestamp": "2025_01_14_at_11_37_25"
 }

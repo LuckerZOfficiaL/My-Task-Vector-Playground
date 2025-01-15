@@ -12,7 +12,7 @@
                 "train": 128,
                 "val": 128
             },
-            "data_path": "/root/ATM/Alternating-Tuning-and-Merging/data",
+            "data_path": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/data",
             "num_workers": {
                 "test": 0,
                 "train": 4,
@@ -34,7 +34,7 @@
             "model": {
                 "_target_": "tvp.modules.encoder.ImageEncoder",
                 "model_name": "ViT-B-16",
-                "openclip_cachedir": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
+                "openclip_cachedir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
                 "cache_dir": null,
                 "keep_lang": "??"
             },
@@ -96,7 +96,7 @@
     "core": {
         "entity": "dansolombrinoandfriends",
         "project_name": "task-vectors-playground",
-        "storage_dir": "/root/ATM/Alternating-Tuning-and-Merging/storage",
+        "storage_dir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/storage",
         "tags": [
             "finetune"
         ],
@@ -105,9 +105,9 @@
     "epoch_divisor": "None",
     "misc": {
         "cache_dir": null,
-        "ckpt_path": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16",
-        "openclip_cachedir": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
-        "pretrained_checkpoint": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16/zeroshot.pt",
+        "ckpt_path": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16",
+        "openclip_cachedir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
+        "pretrained_checkpoint": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16/zeroshot.pt",
         "save_pretrained": false
     },
     "order": 1,
@@ -118,5 +118,5 @@
     "ft_regime": "ta",
     "optimizer_name": "adamw",
     "lr_scheduler_name": "cosine_annealing",
-    "timestamp": "2025_01_13_at_19_38_39"
+    "timestamp": "2025_01_14_at_10_55_18"
 }
