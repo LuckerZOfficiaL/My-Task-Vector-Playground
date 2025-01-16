@@ -136,13 +136,15 @@ def _validate_args(args: dict):
 
 
 def float_or_int(value):
-    try:
+
+    if type(value) == int:
         return int(value)
-    except ValueError:
-        try:
-            return float(value)
-        except ValueError:
-            raise argparse.ArgumentTypeError(f"Invalid value: {value}. Must be a float or integer.")
+    elif type(value) == float:
+        return float(value)
+    elif value == None:
+        return None
+    else:
+        raise argparse.ArgumentTypeError(f"Invalid value: {value}. Must be a float or integer.")
 
 
 def _parse_args():
@@ -157,7 +159,7 @@ def _parse_args():
     parser.add_argument("--optim-name", type=str, required=True, help="Optimizer to use. Options: ['adam', 'sgd']")
     parser.add_argument("--weight-decay", type=float, required=True, help="Weight decay to use")
     parser.add_argument("--lr-scheduler-name", type=str, required=True, help="Flag to indicate if learning rate scheduler should be used (true/false)")
-    parser.add_argument("--cosine-annealing-warmup-step-number-or-ratio", type=float_or_int, help="Number of warmup steps for cosine annealing")
+    parser.add_argument("--cosine-annealing-warmup-step-number-or-ratio", type=float_or_int, default=None, help="Number of warmup steps for cosine annealing")
     parser.add_argument("--perform-ft", type=str_to_bool, required=True, help="Flag to indicate if finetuning should be performed (true/false)")
     parser.add_argument("--perform-eval", type=str_to_bool, required=True, help="Flag to indicate if evaluation should be performed (true/false)")
     parser.add_argument("--eval-skip-if-exists", type=str_to_bool, help="Flag to indicate if evaluation should be skipped if the evaluation results already exist (true/false)")

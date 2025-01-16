@@ -1,25 +1,27 @@
 from rich import print
 from rich.pretty import pprint
 
+import pandas as pd
 from src.tvp.utils.io_utils import import_json_from_disk, list_all_files_in_dir
 import os
 
 from typing import List
 
 import pandas as pd
+from pandas import DataFrame
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-def _check_list_of_merged_accs(merged_accs_file_ta, merged_accs_file_atm):
-    if len(merged_accs_file_ta) != len(merged_accs_file_atm):
+def _check_list_of_merged_accs(merged_accs_files_ta, merged_accs_files_atm):
+    if len(merged_accs_files_ta) != len(merged_accs_files_atm):
         raise ValueError(
             "The number of TA and ATM merged accuracies files are not equal."
         )
 
-    for ta, atm in zip(merged_accs_file_ta, merged_accs_file_atm):
-        ta = ta.replace("_ta_", "")
-        atm = atm.replace("_atm_", "")
+    for ta, atm in zip(merged_accs_files_ta, merged_accs_files_atm):
+        ta = ta.split("/")[-1].split("_")[-1].split(".")[0]
+        atm = atm.split("/")[-1].split("_")[-1].split(".")[0]
 
         if ta != atm:
             raise ValueError(
@@ -27,28 +29,24 @@ def _check_list_of_merged_accs(merged_accs_file_ta, merged_accs_file_atm):
             )
 
 
-def _get_list_of_merged_accs(merged_accs_dir: str):
-    merged_accs_files = list_all_files_in_dir(merged_accs_dir)
-    merged_accs_files = [os.path.join(merged_accs_dir, f) for f in merged_accs_files]
-    
-    merged_accs_files = [f for f in merged_accs_files if f.endswith(".json")]
+def _get_list_of_merged_accs(
+    merged_accs_dir_atm: str,
+    merged_accs_dir_ta: str
+):  
+    merged_accs_files_atm = list_all_files_in_dir(merged_accs_dir_atm)
+    merged_accs_files_atm = [os.path.join(merged_accs_dir_atm, f) for f in merged_accs_files_atm]
+    merged_accs_files_atm = sorted(merged_accs_files_atm)
 
-    merged_accs_file_ta = [
-        f for f in merged_accs_files if "_ta_" in f
-    ]
-    merged_accs_file_ta = sorted(merged_accs_file_ta)
+    merged_accs_files_ta = list_all_files_in_dir(merged_accs_dir_ta)
+    merged_accs_files_ta = [os.path.join(merged_accs_dir_ta, f) for f in merged_accs_files_ta]
+    merged_accs_files_ta = sorted(merged_accs_files_ta)
 
-    merged_accs_file_atm = [
-        f for f in merged_accs_files if "_atm_" in f
-    ]
-    merged_accs_file_atm = sorted(merged_accs_file_atm)
+    _check_list_of_merged_accs(merged_accs_files_ta, merged_accs_files_atm)
 
-    _check_list_of_merged_accs(merged_accs_file_ta, merged_accs_file_atm)
-
-    return merged_accs_files, merged_accs_file_ta, merged_accs_file_atm
+    return merged_accs_files_atm, merged_accs_files_ta
 
 
-def _get_norm_merged_acc(accs: dict, ft_summary: dict):
+def _get_norm_merged_acc(accs: dict, ft_summary: DataFrame):
 
     accs_norm = {}
 
@@ -57,7 +55,8 @@ def _get_norm_merged_acc(accs: dict, ft_summary: dict):
         if "average_of_tasks" in t:
             continue
 
-        accs_norm[t] = accs[t][0]["acc/test"] / ft_summary[t]["ta"]["adam"]["acc/test"]
+        # accs_norm[t] = accs[t][0]["acc/test"] / ft_summary[t]["ta"]["adam"]["acc/test"]
+        accs_norm[t] = accs[t][0]["acc/test"] / float(ft_summary[ft_summary["dataset"] == t]["acc_test"])
 
     accs_norm["average_of_tasks"] = sum(accs_norm.values()) / len(accs_norm.keys())
 
@@ -65,17 +64,17 @@ def _get_norm_merged_acc(accs: dict, ft_summary: dict):
 
 
 def _prepare_data_for_plot(
-    merged_accs_file_ta: List[str], 
-    merged_accs_file_atm: List[str],
-    ft_summary: dict,
-    task_difficulties: dict
+    merged_accs_files_ta: List[str], 
+    merged_accs_files_atm: List[str],
+    ft_summary: DataFrame,
+    task_difficulties: DataFrame
 ):
 
     df_row_list = []
 
-    for ta, atm in zip(merged_accs_file_ta, merged_accs_file_atm):
+    for ta, atm in zip(merged_accs_files_ta, merged_accs_files_atm):
 
-        if ta.replace("_ta_", "") != atm.replace("_atm_", ""):
+        if ta.split("/")[-1].split("_")[-1] != atm.split("/")[-1].split("_")[-1]:
             raise ValueError(
                 f"TA and ATM merged accuracies files are not equal: {ta} != {atm}"
             )
@@ -94,20 +93,23 @@ def _prepare_data_for_plot(
         norm_merged_acc_ta = _get_norm_merged_acc(accs_ta, ft_summary)
         norm_merged_acc_atm = _get_norm_merged_acc(accs_atm, ft_summary)
 
+        # pprint(norm_merged_acc_ta, expand_all=True)
+        # pprint(norm_merged_acc_atm, expand_all=True)
+
         avg_acc_gap = sum(
-            [task_difficulties["adam"][t]["acc_gap"] for t in accs_ta.keys() if t != "average_of_tasks"]
+            [float(task_difficulties[task_difficulties["dataset"] == t]["acc_gap"].iloc[0]) for t in accs_ta.keys() if t != "average_of_tasks"]
         ) / len(accs_ta.keys())
 
         avg_acc_ratio = sum(
-            [task_difficulties["adam"][t]["acc_ratio"] for t in accs_ta.keys() if t != "average_of_tasks"]
+            [float(task_difficulties[task_difficulties["dataset"] == t]["acc_ratio"].iloc[0]) for t in accs_ta.keys() if t != "average_of_tasks"]
         ) / len(accs_ta.keys())
 
         avg_loss_gap = sum(
-            [task_difficulties["adam"][t]["loss_gap"] for t in accs_ta.keys() if t != "average_of_tasks"]
+            [float(task_difficulties[task_difficulties["dataset"] == t]["loss_gap"].iloc[0]) for t in accs_ta.keys() if t != "average_of_tasks"]
         ) / len(accs_ta.keys())
 
         avg_norm_loss_gap = sum(
-            [task_difficulties["adam"][t]["normalized_loss_gap"] for t in accs_ta.keys() if t != "average_of_tasks"]
+            [float(task_difficulties[task_difficulties["dataset"] == t]["normalized_loss_gap"].iloc[0]) for t in accs_ta.keys() if t != "average_of_tasks"]
         ) / len(accs_ta.keys())
 
         df_row_list.append({
@@ -224,33 +226,42 @@ def _plot(
 
 
 def main():
-    TASK_DIFFICULTY_FILE = "./evaluations/task_difficulty/task_difficulty_metrics.json"
-    # TODO check this with Luca
-    task_difficulties = import_json_from_disk(TASK_DIFFICULTY_FILE)
+    TASK_DIFFICULTY_FILE = "./evaluations/task_difficulty/task_difficulty_metrics_ta_adamw_wd_0.1_lr_scheduler_cosine_annealing_warmup_steps_200.csv"
+    task_difficulties = pd.read_csv(TASK_DIFFICULTY_FILE)
 
-    FT_SUMMARY_FILE = "./evaluations/ft_summary/ft_summary.json"
-    ft_summary = import_json_from_disk(FT_SUMMARY_FILE)
+    FT_SUMMARY_FILE = "./evaluations/ft_summary/ft_summary_ta_adamw_wd_0.1_lr_scheduler_cosine_annealing_warmup_steps_200.csv"
+    ft_summary = pd.read_csv(FT_SUMMARY_FILE)
 
     # pprint(task_difficulties, expand_all=True)
 
     TASKS = "paper-tsv-20"
     SUBSET_SIZE = "05"
+    OPTIM = "adamw_wd_0.1"
+    LR_SCHEDULER_TA = "cosine_annealing_warmup_steps_200"
+    LR_SCHEDULER_ATM = "none"
+    ATM_SUBDIR = f"atm/optim_{OPTIM}/{LR_SCHEDULER_ATM}"
+    TA_SUBDIR  = f"ta/optim_{OPTIM}/{LR_SCHEDULER_TA}"
+    EVALS_DIR = f"./evaluations/merged_subsets/{TASKS}"
 
-    merged_accs_dir = f"./evaluations/merged_subsets/{TASKS}/subset_size_{SUBSET_SIZE}"
-    _, merged_accs_file_ta, merged_accs_file_atm = _get_list_of_merged_accs(merged_accs_dir)
+    merged_accs_dir_atm = f"{EVALS_DIR}/{ATM_SUBDIR}/subset_size_{SUBSET_SIZE}"
+    merged_accs_dir_ta = f"{EVALS_DIR}/{TA_SUBDIR}/subset_size_{SUBSET_SIZE}"
+    merged_accs_files_atm, merged_accs_files_ta = _get_list_of_merged_accs(
+        merged_accs_dir_atm=merged_accs_dir_atm,
+        merged_accs_dir_ta=merged_accs_dir_ta
+    )
 
     df: pd.DataFrame = _prepare_data_for_plot(
-        merged_accs_file_ta=merged_accs_file_ta, 
-        merged_accs_file_atm=merged_accs_file_atm,
+        merged_accs_files_ta=merged_accs_files_ta, 
+        merged_accs_files_atm=merged_accs_files_atm,
         ft_summary=ft_summary,
         task_difficulties=task_difficulties
     )
 
     num_subsets = len(df)
 
-    plot_dir = "./plots/task_difficulty_metric_vs_delta_norm_merged_acc"
+    plot_dir = "./plots/task_difficulty_metric_vs_delta_norm_merged_acc/"
     os.makedirs(plot_dir, exist_ok=True)
-    plot_name = f"{TASKS}_num_subsets_{num_subsets}_subset_size_{SUBSET_SIZE}"
+    plot_name = f"{TASKS}_num_subsets_{num_subsets}_subset_size_{SUBSET_SIZE}_atm_{OPTIM}_{LR_SCHEDULER_ATM}_ta_{OPTIM}_{LR_SCHEDULER_TA}"
     _plot(
         df=df,
         add_to_title=f"Tasks = {TASKS}. Num subsets = {num_subsets}. Subset size = {SUBSET_SIZE}",

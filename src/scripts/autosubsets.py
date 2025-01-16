@@ -100,7 +100,7 @@ def parse_args():
     parser.add_argument("--optim", type=str, required=True, help="Optimization algorithm to use")
     parser.add_argument("--weight-decay", type=float, required=True, help="Weight decay value")
     parser.add_argument("--lr-scheduler-name", type=str, required=True, help="Learning rate scheduler name")
-    parser.add_argument("--cosine-annealing-warmup-step-number-or-ratio", type=float_or_int, required=True, help="Cosine annealing warmup step number or ratio")
+    parser.add_argument("--cosine-annealing-warmup-step-number-or-ratio", type=float_or_int, help="Cosine annealing warmup step number or ratio")
     parser.add_argument("--ft-regime", type=str, required=True, help="Finetuning regime. Options: ['atm', 'ta']")
     parser.add_argument("--start-idx", type=int, required=True, help="Start index of the subset list")
     parser.add_argument("--end-idx", type=int, required=True, help="End index of the subset list")
@@ -135,9 +135,12 @@ def main():
         subset_str = " ".join(subset)
 
         lr_scheduler_name = args["lr_scheduler_name"]
+        cosine_annealing = ""
         if lr_scheduler_name == "cosine_annealing":
             lr_scheduler_name += f"_warmup_steps_{args['cosine_annealing_warmup_step_number_or_ratio']}"
+            cosine_annealing = f"--cosine-annealing-warmup-step-number-or-ratio {args['cosine_annealing_warmup_step_number_or_ratio']}"
         lr_scheduler_name += "/"
+
         
         evaluation_export_dir = (
             f"./evaluations/merged_subsets/"
@@ -159,7 +162,7 @@ def main():
                 f"--optim-name {args['optim']}", 
                 f"--weight-decay {args['weight_decay']}",
                 f"--lr-scheduler-name {args['lr_scheduler_name']}",
-                f"--cosine-annealing-warmup-step-number-or-ratio {args['cosine_annealing_warmup_step_number_or_ratio']}",
+                f"{cosine_annealing}",
                 f"--ft-regime {args['ft_regime']}", 
                 f"--perform-ft false",
                 f"--perform-eval true",
