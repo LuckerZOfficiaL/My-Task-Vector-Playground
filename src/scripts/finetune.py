@@ -24,7 +24,7 @@ from tvp.data.datasets.registry import get_dataset
 from tvp.modules.encoder import ImageEncoder
 from tvp.modules.heads import get_classification_head
 from tvp.pl_module.image_classifier import ImageClassifier
-from tvp.utils.io_utils import get_class, load_model_from_artifact, export_run_data_to_disk
+from tvp.utils.io_utils import get_class, load_model_from_artifact, export_run_data_to_disk, upload_model_to_wandb
 from tvp.utils.utils import LabelSmoothing, build_callbacks
 
 from rich.pretty import pprint
@@ -225,39 +225,6 @@ def run(cfg: DictConfig):
             export_dir=f"./evaluations/ft/{cfg.ft_regime}/{cfg.optimizer_name}/lr_scheduler_{cfg.lr_scheduler_name}{lr_scheduler_warmup_steps}", 
             file_base_name=artifact_name
         )
-
-
-def upload_model_to_wandb(
-    model: Union[LightningModule, nn.Module], artifact_name, run, cfg: DictConfig, metadata: Dict
-):
-    model = model.cpu()
-
-    pylogger.info(f"Uploading artifact {artifact_name}")
-
-    model_artifact = wandb.Artifact(name=artifact_name, type="checkpoint", metadata=metadata)
-
-    temp_path = "temp_checkpoint.ckpt"
-
-    if isinstance(model, LightningModule):
-        trainer = pl.Trainer(
-            plugins=[NNCheckpointIO(jailing_dir="./tmp")],
-        )
-
-        trainer.strategy.connect(model)
-        trainer.save_checkpoint(temp_path)
-
-        model_artifact.add_file(temp_path + ".zip", name="trained.ckpt.zip")
-        path_to_remove = temp_path + ".zip"
-
-    else:
-        torch.save(model.state_dict(), temp_path)
-
-        model_artifact.add_file(temp_path, name="trained.ckpt")
-        path_to_remove = temp_path
-
-    run.log_artifact(model_artifact)
-
-    os.remove(path_to_remove)
 
 
 @hydra.main(config_path=str(PROJECT_ROOT / "conf"), config_name="finetune.yaml")

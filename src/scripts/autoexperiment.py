@@ -105,14 +105,14 @@ def _validate_args(args: dict):
                 DATASET_TO_STYLED[t] for t in _handle_task_group_name(args["tvs_to_apply_group_name"])
             ]
         else:
-            args["tvs_to_apply"] = args["tvs_to_apply_names"]
+            args["tvs_to_apply"] = [DATASET_TO_STYLED[t] for t in args["tvs_to_apply_names"]]
 
         if args["eval_dataset_group_name"] is not None:
             args["eval_datasets"] = [
                 DATASET_TO_STYLED[t] for t in _handle_task_group_name(args["eval_dataset_group_name"])
             ]
         else :
-            args["eval_datasets"] = args["eval_dataset_names"]
+            args["eval_datasets"] = [DATASET_TO_STYLED[t] for t in args["eval_dataset_names"]]
 
         if args["eval_skip_if_exists"] is None:
             raise ValueError("--perform-eval true requires --eval-skip-if-exists to be explicitly provided")
@@ -123,6 +123,9 @@ def _validate_args(args: dict):
         if args["upload_merged_to_wandb"] is None:
             raise ValueError("--perform-eval true requires --upload-merged-to-wandb to be explicitly provided")
 
+        if args["eval_apply_pcgrad"] is None:
+            raise ValueError("--perform-eval true requires --eval-apply-pcgrad to be explicitly provided")
+
 
     args["optim_class"] = _get_optim_class(args["optim_name"])
 
@@ -130,21 +133,22 @@ def _validate_args(args: dict):
         if args["cosine_annealing_warmup_step_number_or_ratio"] is None:
             raise ValueError("--lr-scheduler-name cosine_annealing requires --cosine-annealing-warmup-step-number-or-ratio to be explicitly provided") 
 
+        args["cosine_annealing_warmup_step_number_or_ratio"] = str_to_float_or_int(args["cosine_annealing_warmup_step_number_or_ratio"])
+
     args["lr_scheduler_class"] = _get_lr_scheduler_class(args["lr_scheduler_name"])
 
     return args
 
 
-def float_or_int(value):
-
-    if type(value) == int:
-        return int(value)
-    elif type(value) == float:
-        return float(value)
-    elif value == None:
+def str_to_float_or_int(value: str):
+    if value is None or value.lower() == "none":  # Handle None or "None"
         return None
-    else:
-        raise argparse.ArgumentTypeError(f"Invalid value: {value}. Must be a float or integer.")
+    try:
+        if '.' in value or 'e' in value.lower():  # Check for float-like representation
+            return float(value)
+        return int(value)  # If not, it's an integer
+    except ValueError:
+        raise ValueError(f"Unable to parse '{value}' as int, float, or None.")
 
 
 def _parse_args():
@@ -159,12 +163,13 @@ def _parse_args():
     parser.add_argument("--optim-name", type=str, required=True, help="Optimizer to use. Options: ['adam', 'sgd']")
     parser.add_argument("--weight-decay", type=float, required=True, help="Weight decay to use")
     parser.add_argument("--lr-scheduler-name", type=str, required=True, help="Flag to indicate if learning rate scheduler should be used (true/false)")
-    parser.add_argument("--cosine-annealing-warmup-step-number-or-ratio", type=float_or_int, default=None, help="Number of warmup steps for cosine annealing")
+    parser.add_argument("--cosine-annealing-warmup-step-number-or-ratio", type=str, help="Number of warmup steps for cosine annealing")
     parser.add_argument("--perform-ft", type=str_to_bool, required=True, help="Flag to indicate if finetuning should be performed (true/false)")
     parser.add_argument("--perform-eval", type=str_to_bool, required=True, help="Flag to indicate if evaluation should be performed (true/false)")
     parser.add_argument("--eval-skip-if-exists", type=str_to_bool, help="Flag to indicate if evaluation should be skipped if the evaluation results already exist (true/false)")
     parser.add_argument("--upload-merged-to-wandb", type=str_to_bool, help="Flag to indicate if merged model should be uploaded to wandb (true/false)")
     parser.add_argument("--evaluation-export-dir", type=str, help="Directory to export evaluation results")
+    parser.add_argument("--eval-apply-pcgrad", type=str_to_bool, help="Flag to indicate if pcgrad should be applied during evaluation (true/false)")
     parser.add_argument("--called-from-bash", action="store_true", help="Flag to indicate if script was called from bash")
     parser.add_argument("--timestamp", type=str, help="Timestamp used to identify the experiment")
     
@@ -236,6 +241,7 @@ def main():
                 cosine_annealing_warmup_steps_or_ratio,
                 f"+upload_merged_to_wandb={args['upload_merged_to_wandb']}",
                 f"+evaluation_export_dir={args['evaluation_export_dir']}",
+                f"+eval_apply_pcgrad={args['eval_apply_pcgrad']}",
                 f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
                 f"+timestamp={timestamp}",
             ], 

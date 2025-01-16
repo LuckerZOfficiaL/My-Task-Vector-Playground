@@ -13,6 +13,14 @@ import json
 
 from tvp.modules.encoder import ClassificationHead, ImageEncoder
 
+from typing import Union, Dict
+from pytorch_lightning import LightningModule
+import wandb
+from torch import nn
+import lightning as pl
+from nn_core.serialization import NNCheckpointIO
+import os
+
 pylogger = logging.getLogger(__name__)
 
 
@@ -121,6 +129,38 @@ def export_merged_model_to_disk(
 def list_all_files_in_dir(dir_path: str):
     return [f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))]
 
+
+def upload_model_to_wandb(
+    model: Union[LightningModule, nn.Module], artifact_name, run, cfg: DictConfig, metadata: Dict
+):
+    model = model.cpu()
+
+    pylogger.info(f"Uploading artifact {artifact_name}")
+
+    model_artifact = wandb.Artifact(name=artifact_name, type="checkpoint", metadata=metadata)
+
+    temp_path = "temp_checkpoint.ckpt"
+
+    if isinstance(model, LightningModule):
+        trainer = pl.Trainer(
+            plugins=[NNCheckpointIO(jailing_dir="./tmp")],
+        )
+
+        trainer.strategy.connect(model)
+        trainer.save_checkpoint(temp_path)
+
+        model_artifact.add_file(temp_path + ".zip", name="trained.ckpt.zip")
+        path_to_remove = temp_path + ".zip"
+
+    else:
+        torch.save(model.state_dict(), temp_path)
+
+        model_artifact.add_file(temp_path, name="trained.ckpt")
+        path_to_remove = temp_path
+
+    run.log_artifact(model_artifact)
+
+    os.remove(path_to_remove)
 
 
 def get_class(model):

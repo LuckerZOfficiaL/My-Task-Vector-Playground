@@ -28,7 +28,7 @@ import tvp  # noqa
 from tvp.data.datamodule import MetaData
 from tvp.data.datasets.registry import get_dataset
 from tvp.task_vectors.task_vectors import TaskVector
-from tvp.utils.io_utils import load_model_from_artifact, export_json_to_disk, export_merged_model_to_disk
+from tvp.utils.io_utils import load_model_from_artifact, export_json_to_disk, export_merged_model_to_disk, upload_model_to_wandb
 from tvp.utils.utils import build_callbacks
 from torch.nn.utils import vector_to_parameters
 from torch.nn.utils import parameters_to_vector
@@ -36,6 +36,8 @@ from hydra.utils import instantiate
 import hydra
 from hydra import initialize, compose
 from typing import Dict, List
+
+from tvp.utils.vectors import print_pairwise_cos_sim, gram_schmidt
 
 from rich.pretty import pprint
 
@@ -51,6 +53,9 @@ def run(cfg: DictConfig) -> str:
     pprint(OmegaConf.to_container(cfg, resolve=True))
 
     lr_scheduler_warmup_steps = "" if cfg.nn.module.lr_scheduler.warmup_steps_or_ratio is None else f"_warmup_steps_{cfg.nn.module.lr_scheduler.warmup_steps_or_ratio}"
+    pc_grad = ""
+    if cfg.eval_apply_pcgrad:
+        pc_grad = "_pc_grad"
     artifact_name = (
         f"{cfg.nn.module.model.model_name}"
         f"_{cfg.seed_index}"
@@ -59,8 +64,13 @@ def run(cfg: DictConfig) -> str:
         f"_wd_{cfg.nn.module.optimizer.weight_decay}"
         f"_lr_scheduler_{cfg.lr_scheduler_name}"
         f"{lr_scheduler_warmup_steps}"
+        f"{pc_grad}"
         f"_merged_{'-'.join(cfg.task_vectors.to_apply)}"
     )
+
+    print(f"\n\n\n")
+    pylogger.info(f"Merrged artifact name: {artifact_name}")
+    print(f"\n\n\n")
 
     if cfg.eval_skip_if_exists and os.path.exists(f"{cfg.evaluation_export_dir}/{artifact_name}.json"):
         print(f"\n\n\n")
@@ -118,7 +128,16 @@ def run(cfg: DictConfig) -> str:
             [flatten(finetuned_models[dataset]) - zeroshot_vec for dataset in cfg.task_vectors.to_apply]
         )
     
+    pylogger.info(f"pairwise cosine similarity between task vectors before PCGrad:")
     print_pairwise_cos_sim(task_vectors)
+
+    if cfg.eval_apply_pcgrad:
+        pylogger.info(f"Applying PCGrad")
+
+        task_vectors = gram_schmidt(task_vectors)
+
+        pylogger.info(f"pairwise cosine similarity between task vectors after PCGrad:")
+        print_pairwise_cos_sim(task_vectors)
 
     
     task_vector_aggregator = instantiate(cfg.task_vectors.aggregator)
@@ -200,84 +219,6 @@ def run(cfg: DictConfig) -> str:
         cfg.evaluation_export_dir,
         artifact_name
     )
-
-
-
-
-
-
-
-def print_pairwise_cos_sim(task_vectors): # input shape: [num_vectors, vector_size]:
-    norm_tensor = F.normalize(task_vectors, p=2, dim=1)
-    cosine_similarity_matrix = torch.mm(norm_tensor, norm_tensor.T)
-    cosine_similarity_matrix_np = cosine_similarity_matrix.detach().numpy()
-    print(f"\n")
-    pylogger.info("Pairwise Cosine Similarity Matrix:")
-    pylogger.info(cosine_similarity_matrix_np)
-    print(f"\n")
-
-
-def generate_orthogonal_directions_for_tv(state_dict, num_directions): # returns a dictionary where keys are the parameter names and the values are many orthogonal directions
-    orthogonal_directions = {}
-    for key, tensor in state_dict.items():
-        shape = tensor.shape
-        flat_dim = tensor.numel()
-        random_matrix = np.random.randn(flat_dim, num_directions)
-        q, _ = np.linalg.qr(random_matrix)
-        orthogonal_directions[key] = torch.tensor(q, dtype=torch.float32).view(*shape, num_directions)
-    return orthogonal_directions
-
-def project_onto_direction(tensor, direction):
-    flat_tensor = tensor.view(-1)
-    flat_direction = direction.view(-1)
-    projection = torch.matmul(flat_tensor, flat_direction) / torch.norm(flat_direction, dim=0)**2
-    projected_tensor = (flat_direction*projection).view(tensor.shape)
-    return projected_tensor
-
-def project_tv(tv, orthogonal_directions, task_id):
-    projected_state_dict = {}
-    for key, tensor in tv.items():
-        direction = orthogonal_directions[key][..., task_id].to("cuda")
-        projected_tensor = project_onto_direction(tensor, direction)
-        projected_state_dict[key] = projected_tensor
-    return projected_state_dict
-
-
-def upload_model_to_wandb(
-    model: Union[LightningModule, nn.Module], artifact_name, run, cfg: DictConfig, metadata: Dict
-):
-    model = model.cpu()
-
-    pylogger.info(f"Uploading artifact {artifact_name}")
-
-    model_artifact = wandb.Artifact(name=artifact_name, type="checkpoint", metadata=metadata)
-
-    temp_path = "temp_checkpoint.ckpt"
-
-    if isinstance(model, LightningModule):
-        trainer = pl.Trainer(
-            plugins=[NNCheckpointIO(jailing_dir="./tmp")],
-        )
-
-        trainer.strategy.connect(model)
-        trainer.save_checkpoint(temp_path)
-
-        model_artifact.add_file(temp_path + ".zip", name="trained.ckpt.zip")
-        path_to_remove = temp_path + ".zip"
-
-    else:
-        torch.save(model.state_dict(), temp_path)
-
-        model_artifact.add_file(temp_path, name="trained.ckpt")
-        path_to_remove = temp_path
-
-    run.log_artifact(model_artifact)
-
-    os.remove(path_to_remove)
-
-
-
-
 
 
 @hydra.main(config_path=str(PROJECT_ROOT / "conf"), config_name="task_vectors.yaml")
