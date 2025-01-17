@@ -1,7 +1,15 @@
+from rich import print
+from rich.pretty import pprint
+
 import torch
 import torch.nn.functional as F
 from torch import Tensor
 import numpy as np
+
+from src.tvp.utils.io_utils import import_json_from_disk
+
+import pandas as pd
+from pandas import DataFrame
 
 import logging
 
@@ -58,3 +66,80 @@ def gram_schmidt(vectors: Tensor) -> Tensor:
         orthogonal_vectors.append(v)
     
     return torch.stack(orthogonal_vectors) 
+
+
+def _get_norm_merged_acc(accs: dict, ft_summary: DataFrame):
+
+    accs_norm = {}
+
+    for t in accs.keys():
+        
+        if "average_of_tasks" in t: continue
+
+        accs_norm[t] = accs[t][0]["acc/test"] / float(ft_summary[ft_summary["dataset"] == t]["acc_test"])
+
+    return accs_norm
+
+
+# NOTE this can potentially support any possible metric for sorting the task vectors
+def sort_tvs_by_norm_merged_accuracy(
+    task_vectors: dict,
+    merged_accs_file_path: str,
+    ft_summary_file_path: str,
+) -> dict:  
+    
+    pylogger.info(f"Sorting task vectors by norm merged accuracy")
+    pylogger.info(f"Loading merged accuracies from {merged_accs_file_path}")
+
+    merged_accs = import_json_from_disk(file_path=merged_accs_file_path)["results"]
+
+    pylogger.info(f"Loading ft summary from {ft_summary_file_path}")
+    
+    ft_summary = pd.read_csv(ft_summary_file_path)
+
+    accs_norm = _get_norm_merged_acc(accs=merged_accs, ft_summary=ft_summary)
+    pylogger.info(f"Norm merged accuracies before sorting: {accs_norm}")
+
+    accs_norm_sorted = dict(sorted(accs_norm.items(), key=lambda item: item[1]))
+    pylogger.info(f"Norm merged accuracies after sorting: {accs_norm_sorted}")
+
+    task_vectors_sorted = {k: task_vectors[k] for k in accs_norm_sorted.keys()}
+
+    return task_vectors_sorted
+
+
+def orthogonalize_task_vectors(
+    task_vectors: dict,
+    cfg,
+    artifact_name: str,
+) -> Tensor:
+
+    if cfg.eval_orthogonalization_method == "pc_grad":
+        pylogger.info(f"Applying PCGrad")
+
+        task_vectors = gram_schmidt(vectors=torch.stack(list(task_vectors.values())))
+    
+    elif cfg.eval_orthogonalization_method == "sorted_pc_grad":
+
+        pylogger.info(f"Applying Sorted PCGrad")
+
+        task_vectors_sorted = sort_tvs_by_norm_merged_accuracy(
+            task_vectors=task_vectors, 
+            merged_accs_file_path=f"./evaluations/merged/{artifact_name.replace('_sorted_pc_grad', '')}.json",
+            ft_summary_file_path="./evaluations/ft_summary/ft_summary_ta_adamw_wd_0.1_lr_scheduler_cosine_annealing_warmup_steps_200.csv",
+        )
+
+        task_vectors = gram_schmidt(vectors=torch.stack(list(task_vectors_sorted.values())))
+    
+    elif cfg.eval_orthogonalization_method == "none":
+
+        pylogger.info(f"Orthogonalization method: None")
+
+        task_vectors = torch.stack(list(task_vectors.values()))
+    
+    else:
+        raise ValueError(f"Unknown orthogonalization method: {cfg.eval_orthogonalization_method}")
+
+    return task_vectors
+
+    

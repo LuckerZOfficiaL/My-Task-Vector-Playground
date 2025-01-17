@@ -37,7 +37,7 @@ import hydra
 from hydra import initialize, compose
 from typing import Dict, List
 
-from tvp.utils.vectors import print_pairwise_cos_sim, gram_schmidt
+from tvp.utils.vectors import print_pairwise_cos_sim, orthogonalize_task_vectors
 
 from rich.pretty import pprint
 
@@ -53,9 +53,16 @@ def run(cfg: DictConfig) -> str:
     pprint(OmegaConf.to_container(cfg, resolve=True))
 
     lr_scheduler_warmup_steps = "" if cfg.nn.module.lr_scheduler.warmup_steps_or_ratio is None else f"_warmup_steps_{cfg.nn.module.lr_scheduler.warmup_steps_or_ratio}"
-    pc_grad = ""
-    if cfg.eval_apply_pcgrad:
-        pc_grad = "_pc_grad"
+    
+    if cfg.eval_orthogonalization_method == "none":
+        orthogonalization_method = ""
+    elif cfg.eval_orthogonalization_method == "pc_grad":
+        orthogonalization_method = "_pc_grad"
+    elif cfg.eval_orthogonalization_method == "sorted_pc_grad":
+        orthogonalization_method = "_sorted_pc_grad"
+    else:
+        raise ValueError(f"Unknown orthogonalization method: {cfg.eval_orthogonalization_method}")
+    
     artifact_name = (
         f"{cfg.nn.module.model.model_name}"
         f"_{cfg.seed_index}"
@@ -64,7 +71,7 @@ def run(cfg: DictConfig) -> str:
         f"_wd_{cfg.nn.module.optimizer.weight_decay}"
         f"_lr_scheduler_{cfg.lr_scheduler_name}"
         f"{lr_scheduler_warmup_steps}"
-        f"{pc_grad}"
+        f"{orthogonalization_method}"
         f"_merged_{'-'.join(cfg.task_vectors.to_apply)}"
     )
 
@@ -123,23 +130,24 @@ def run(cfg: DictConfig) -> str:
         #model.load_state_dict({k: v + task_vector[k] for k, v in model.state_dict().items()})
         model.load_state_dict({k: v + 1/(scaling_coef)*task_vector[k] for k, v in model.state_dict().items()})
 
+    # before adding support for tv sort by difficulty
+    # with torch.no_grad():
+    #     task_vectors = torch.stack(
+    #         [flatten(finetuned_models[dataset]) - zeroshot_vec for dataset in cfg.task_vectors.to_apply]
+    #     )
     with torch.no_grad():
-        task_vectors = torch.stack(
-            [flatten(finetuned_models[dataset]) - zeroshot_vec for dataset in cfg.task_vectors.to_apply]
-        )
+        task_vectors = {
+            dataset: flatten(finetuned_models[dataset]) - zeroshot_vec for dataset in cfg.task_vectors.to_apply
+        }
     
-    pylogger.info(f"pairwise cosine similarity between task vectors before PCGrad:")
+    pylogger.info(f"pairwise cosine similarity between task vectors before orthogonalization:")
+    print_pairwise_cos_sim(torch.stack(list(task_vectors.values())))
+
+    task_vectors = orthogonalize_task_vectors(task_vectors, cfg, artifact_name)
+
+    pylogger.info(f"pairwise cosine similarity between task vectors after orthogonalization:")
     print_pairwise_cos_sim(task_vectors)
-
-    if cfg.eval_apply_pcgrad:
-        pylogger.info(f"Applying PCGrad")
-
-        task_vectors = gram_schmidt(task_vectors)
-
-        pylogger.info(f"pairwise cosine similarity between task vectors after PCGrad:")
-        print_pairwise_cos_sim(task_vectors)
-
-    
+ 
     task_vector_aggregator = instantiate(cfg.task_vectors.aggregator)
     multi_task_vector = task_vector_aggregator(task_vectors)
 

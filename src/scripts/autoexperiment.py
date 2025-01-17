@@ -123,8 +123,11 @@ def _validate_args(args: dict):
         if args["upload_merged_to_wandb"] is None:
             raise ValueError("--perform-eval true requires --upload-merged-to-wandb to be explicitly provided")
 
-        if args["eval_apply_pcgrad"] is None:
-            raise ValueError("--perform-eval true requires --eval-apply-pcgrad to be explicitly provided")
+        if args["eval_orthogonalization_method"] is None:
+            raise ValueError("--perform-eval true requires --eval-orthogonalization-method to be explicitly provided")
+
+        if args["eval_orthogonalization_method"] not in ["pc_grad", "sorted_pc_grad", "none"]:
+            raise ValueError(f"Invalid eval orthogonalization method: {args['eval_orthogonalization_method']}")
 
 
     args["optim_class"] = _get_optim_class(args["optim_name"])
@@ -169,7 +172,7 @@ def _parse_args():
     parser.add_argument("--eval-skip-if-exists", type=str_to_bool, help="Flag to indicate if evaluation should be skipped if the evaluation results already exist (true/false)")
     parser.add_argument("--upload-merged-to-wandb", type=str_to_bool, help="Flag to indicate if merged model should be uploaded to wandb (true/false)")
     parser.add_argument("--evaluation-export-dir", type=str, help="Directory to export evaluation results")
-    parser.add_argument("--eval-apply-pcgrad", type=str_to_bool, help="Flag to indicate if pcgrad should be applied during evaluation (true/false)")
+    parser.add_argument("--eval-orthogonalization-method", type=str, help="Name of the orthogonalization method to use while applying TVs in eval")
     parser.add_argument("--called-from-bash", action="store_true", help="Flag to indicate if script was called from bash")
     parser.add_argument("--timestamp", type=str, help="Timestamp used to identify the experiment")
     
@@ -241,7 +244,7 @@ def main():
                 cosine_annealing_warmup_steps_or_ratio,
                 f"+upload_merged_to_wandb={args['upload_merged_to_wandb']}",
                 f"+evaluation_export_dir={args['evaluation_export_dir']}",
-                f"+eval_apply_pcgrad={args['eval_apply_pcgrad']}",
+                f"+eval_orthogonalization_method={args['eval_orthogonalization_method']}",
                 f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
                 f"+timestamp={timestamp}",
             ], 
