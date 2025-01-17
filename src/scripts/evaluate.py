@@ -163,6 +163,33 @@ def run(cfg: DictConfig) -> str:
 
     seed_index_everything(cfg)
 
+    eval_results = eval_merged_model(
+        cfg=cfg, 
+        task_equipped_model=task_equipped_model, 
+        template_core=template_core, 
+        logger=logger
+    )
+
+    print(f"\n\n")
+    pprint(eval_results)
+
+    export_json_to_disk(
+        {
+            "results": eval_results,
+            "cfg": OmegaConf.to_container(cfg, resolve=True),
+        },
+        cfg.evaluation_export_dir,
+        artifact_name
+    )
+
+
+def eval_merged_model(
+    cfg: DictConfig,
+    task_equipped_model,
+    template_core,
+    logger,
+
+):  
     results = {}
 
     for dataset_idx, dataset_name in enumerate(cfg.eval_datasets):
@@ -215,18 +242,7 @@ def run(cfg: DictConfig) -> str:
         item[0]['acc/test'] for item in results.values()
     ) / len(results)
 
-
-    print(f"\n\n")
-    pprint(results)
-
-    export_json_to_disk(
-        {
-            "results": results,
-            "cfg": OmegaConf.to_container(cfg, resolve=True),
-        },
-        cfg.evaluation_export_dir,
-        artifact_name
-    )
+    return results
 
 
 @hydra.main(config_path=str(PROJECT_ROOT / "conf"), config_name="task_vectors.yaml")
