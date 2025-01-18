@@ -5,7 +5,7 @@ import torchvision.datasets as datasets
 
 
 class STL10:
-    def __init__(self, preprocess, location=os.path.expanduser("~/data"), batch_size=128, num_workers=16):
+    def __init__(self, preprocess, location=os.path.expanduser("~/data"), batch_size=128, num_workers=6):
         location = os.path.join(location, "stl10")
         self.train_dataset = datasets.STL10(root=location, download=True, split="train", transform=preprocess)
 

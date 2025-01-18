@@ -12,7 +12,7 @@ cifar_classnames = ["airplane", "automobile", "bird", "cat", "deer", "dog", "fro
 
 
 class CIFAR10:
-    def __init__(self, preprocess, location=os.path.expanduser("~/data"), batch_size=128, num_workers=16):
+    def __init__(self, preprocess, location=os.path.expanduser("~/data"), batch_size=128, num_workers=6):
         self.train_dataset = PyTorchCIFAR10(root=location, download=True, train=True, transform=preprocess)
 
         self.train_loader = torch.utils.data.DataLoader(

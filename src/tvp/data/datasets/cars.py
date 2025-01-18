@@ -125,7 +125,7 @@ class PytorchStanfordCars(VisionDataset):
 
 
 class Cars:
-    def __init__(self, preprocess, location=os.path.expanduser("~/data"), batch_size=32, num_workers=16):
+    def __init__(self, preprocess, location=os.path.expanduser("~/data"), batch_size=32, num_workers=6):
         # Data loading code
 
         self.train_dataset = PytorchStanfordCars(location, "train", preprocess, download=False)

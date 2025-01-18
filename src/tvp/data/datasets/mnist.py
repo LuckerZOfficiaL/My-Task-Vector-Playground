@@ -5,7 +5,7 @@ import torchvision.datasets as datasets
 
 
 class MNIST:
-    def __init__(self, preprocess, location=os.path.expanduser("~/data"), batch_size=128, num_workers=16):
+    def __init__(self, preprocess, location=os.path.expanduser("~/data"), batch_size=128, num_workers=6):
         self.train_dataset = datasets.MNIST(root=location, download=True, train=True, transform=preprocess)
 
         self.train_loader = torch.utils.data.DataLoader(

@@ -120,7 +120,7 @@ class PyTorchGTSRB(VisionDataset):
 
 
 class GTSRB:
-    def __init__(self, preprocess, location=os.path.expanduser("~/data"), batch_size=128, num_workers=16):
+    def __init__(self, preprocess, location=os.path.expanduser("~/data"), batch_size=128, num_workers=6):
         # to fit with repo conventions for location
         self.train_dataset = PyTorchGTSRB(root=location, download=True, split="train", transform=preprocess)
 

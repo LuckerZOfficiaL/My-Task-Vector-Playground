@@ -274,7 +274,7 @@ class RESISC45Dataset(VisionClassificationDataset):
 
 
 class RESISC45:
-    def __init__(self, preprocess, location=os.path.expanduser("~/data"), batch_size=32, num_workers=16):
+    def __init__(self, preprocess, location=os.path.expanduser("~/data"), batch_size=32, num_workers=6):
         self.train_dataset = RESISC45Dataset(root=location, split="train", transforms=preprocess)
         self.train_loader = torch.utils.data.DataLoader(
             self.train_dataset,

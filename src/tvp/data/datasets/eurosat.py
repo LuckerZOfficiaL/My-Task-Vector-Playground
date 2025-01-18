@@ -15,7 +15,7 @@ def pretify_classname(classname):
 
 
 class EuroSATBase:
-    def __init__(self, preprocess, test_split, location="~/datasets", batch_size=32, num_workers=16):
+    def __init__(self, preprocess, test_split, location="~/datasets", batch_size=32, num_workers=6):
         # Data loading code
         traindir = os.path.join(location, "EuroSAT_splits", "train")
         testdir = os.path.join(location, "EuroSAT_splits", test_split)
@@ -52,10 +52,10 @@ class EuroSATBase:
 
 
 class EuroSAT(EuroSATBase):
-    def __init__(self, preprocess, location="~/datasets", batch_size=32, num_workers=16):
+    def __init__(self, preprocess, location="~/datasets", batch_size=32, num_workers=6):
         super().__init__(preprocess, "test", location, batch_size, num_workers)
 
 
 class EuroSATVal(EuroSATBase):
-    def __init__(self, preprocess, location="~/datasets", batch_size=32, num_workers=16):
+    def __init__(self, preprocess, location="~/datasets", batch_size=32, num_workers=6):
         super().__init__(preprocess, "val", location, batch_size, num_workers)
