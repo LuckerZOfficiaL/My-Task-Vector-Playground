@@ -8,6 +8,8 @@ import numpy as np
 
 from src.tvp.utils.io_utils import import_json_from_disk
 
+from typing import Union
+
 import pandas as pd
 from pandas import DataFrame
 
@@ -84,14 +86,18 @@ def _get_norm_merged_acc(accs: dict, ft_summary: DataFrame):
 # NOTE this can potentially support any possible metric for sorting the task vectors
 def sort_tvs_by_norm_merged_accuracy(
     task_vectors: dict,
-    merged_accs_file_path: str,
+    merged_accs_file_path_or_dict: Union[str, dict],
     ft_summary_file_path: str,
 ) -> dict:  
     
     pylogger.info(f"Sorting task vectors by norm merged accuracy")
-    pylogger.info(f"Loading merged accuracies from {merged_accs_file_path}")
 
-    merged_accs = import_json_from_disk(file_path=merged_accs_file_path)["results"]
+    if isinstance(merged_accs_file_path_or_dict, dict):
+        pylogger.info(f"Using given merged accuracies")
+        merged_accs = merged_accs_file_path_or_dict
+    elif isinstance(merged_accs_file_path_or_dict, str):
+        pylogger.info(f"Loading merged accuracies from {merged_accs_file_path_or_dict}")
+        merged_accs = import_json_from_disk(file_path=merged_accs_file_path_or_dict)["results"]
 
     pylogger.info(f"Loading ft summary from {ft_summary_file_path}")
     

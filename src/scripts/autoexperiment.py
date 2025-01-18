@@ -128,6 +128,19 @@ def _validate_args(args: dict):
 
         if args["eval_orthogonalization_method"] not in ["pc_grad", "sorted_pc_grad", "none"]:
             raise ValueError(f"Invalid eval orthogonalization method: {args['eval_orthogonalization_method']}")
+        
+        if args["eval_use_wita"] is None:
+            raise ValueError("--perform-eval true requires --eval-use-wita to be explicitly provided")
+
+        if args["eval_use_wita"]:
+            if args["wita_top_k_weakest"] is None:
+                raise ValueError("--perform-eval true requires --wita-top-k-weakest to be explicitly provided")
+            
+            if args["wita_top_k_strongest"] is None:
+                raise ValueError("--perform-eval true requires --wita-top-k-strongest to be explicitly provided")
+
+            if args["wita_num_iters"] is None:
+                raise ValueError("--perform-eval true requires --wita-num-iters to be explicitly provided")
 
 
     args["optim_class"] = _get_optim_class(args["optim_name"])
@@ -173,6 +186,10 @@ def _parse_args():
     parser.add_argument("--upload-merged-to-wandb", type=str_to_bool, help="Flag to indicate if merged model should be uploaded to wandb (true/false)")
     parser.add_argument("--evaluation-export-dir", type=str, help="Directory to export evaluation results")
     parser.add_argument("--eval-orthogonalization-method", type=str, help="Name of the orthogonalization method to use while applying TVs in eval")
+    parser.add_argument("--eval-use-wita", type=str_to_bool, help="Flag to indicate if WITA should be used for evaluation (true/false)")
+    parser.add_argument("--wita-top-k-weakest", type=int, help="Top k weakest tasks to consider for WITA")
+    parser.add_argument("--wita-top-k-strongest", type=int, help="Top k strongest tasks to consider for WITA")
+    parser.add_argument("--wita-num-iters", type=int, help="Number of iterations for WITA (H)")
     parser.add_argument("--called-from-bash", action="store_true", help="Flag to indicate if script was called from bash")
     parser.add_argument("--timestamp", type=str, help="Timestamp used to identify the experiment")
     
@@ -230,26 +247,55 @@ def main():
 
         print(f"\n\nEvaluation datasets: {args['eval_datasets']}\n\n")
 
-        subprocess.run(
-            [
-                "python", 
-                "src/scripts/evaluate.py",
-                f"+ft_regime={args['ft_regime']}",
-                f"task_vectors.to_apply={args['tvs_to_apply']}",
-                f"eval_datasets={args['eval_datasets']}",
-                f"+optimizer_name={args['optim_name']}",
-                f"nn.module.optimizer._target_={args['optim_class']}",
-                f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
-                f"+lr_scheduler_name={args['lr_scheduler_name']}",
-                cosine_annealing_warmup_steps_or_ratio,
-                f"+upload_merged_to_wandb={args['upload_merged_to_wandb']}",
-                f"+evaluation_export_dir={args['evaluation_export_dir']}",
-                f"+eval_orthogonalization_method={args['eval_orthogonalization_method']}",
-                f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
-                f"+timestamp={timestamp}",
-            ], 
-            check=True
-        )
+        if not args["eval_use_wita"]:
+
+            subprocess.run(
+                [
+                    "python", 
+                    "src/scripts/evaluate.py",
+                    f"+ft_regime={args['ft_regime']}",
+                    f"task_vectors.to_apply={args['tvs_to_apply']}",
+                    f"eval_datasets={args['eval_datasets']}",
+                    f"+optimizer_name={args['optim_name']}",
+                    f"nn.module.optimizer._target_={args['optim_class']}",
+                    f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
+                    f"+lr_scheduler_name={args['lr_scheduler_name']}",
+                    cosine_annealing_warmup_steps_or_ratio,
+                    f"+upload_merged_to_wandb={args['upload_merged_to_wandb']}",
+                    f"+evaluation_export_dir={args['evaluation_export_dir']}",
+                    f"+eval_orthogonalization_method={args['eval_orthogonalization_method']}",
+                    f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
+                    f"+timestamp={timestamp}",
+                ], 
+                check=True
+            )
+
+        else:
+                
+                subprocess.run(
+                    [
+                        "python", 
+                        "src/scripts/evaluate_wita.py",
+                        f"+ft_regime={args['ft_regime']}",
+                        f"task_vectors.to_apply={args['tvs_to_apply']}",
+                        f"eval_datasets={args['eval_datasets']}",
+                        f"+optimizer_name={args['optim_name']}",
+                        f"nn.module.optimizer._target_={args['optim_class']}",
+                        f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
+                        f"+lr_scheduler_name={args['lr_scheduler_name']}",
+                        cosine_annealing_warmup_steps_or_ratio,
+                        f"+upload_merged_to_wandb={args['upload_merged_to_wandb']}",
+                        f"+evaluation_export_dir={args['evaluation_export_dir']}",
+                        f"+eval_orthogonalization_method={args['eval_orthogonalization_method']}",
+                        f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
+                        f"+timestamp={timestamp}",
+                        f"+eval_use_wita={args['eval_use_wita']}",
+                        f"+wita.top_k_weakest={args['wita_top_k_weakest']}",
+                        f"+wita.top_k_strongest={args['wita_top_k_strongest']}",
+                        f"+wita.num_iters={args['wita_num_iters']}",
+                    ], 
+                    check=True
+                )
     
 
 if __name__ == "__main__":
