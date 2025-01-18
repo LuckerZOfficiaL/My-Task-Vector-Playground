@@ -78,7 +78,8 @@ def run(cfg: DictConfig) -> str:
         f"{lr_scheduler_warmup_steps}"
         f"{orthogonalization_method}"
         f"{wita}"
-        f"_merged_{'-'.join(cfg.task_vectors.to_apply)}"
+        # f"_merged_{'-'.join(cfg.task_vectors.to_apply)}"
+        f"_merged_{cfg.tvs_to_apply_group_name}"
     )
 
     print(f"\n\n\n")
@@ -151,7 +152,7 @@ def run(cfg: DictConfig) -> str:
     for h in range(cfg.wita.num_iters):
 
         print(f"\n\n\n\n\n")
-        pylogger.info(f"WITA iteration {h}")
+        pylogger.info(f"WITA iteration {h}/{cfg.wita.num_iters}")
 
         seed_index_everything(cfg)
 
