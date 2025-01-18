@@ -278,6 +278,7 @@ def main():
                         "src/scripts/evaluate_wita.py",
                         f"+ft_regime={args['ft_regime']}",
                         f"task_vectors.to_apply={args['tvs_to_apply']}",
+                        f"+tvs_to_apply_group_name={args['tvs_to_apply_group_name']}",
                         f"eval_datasets={args['eval_datasets']}",
                         f"+optimizer_name={args['optim_name']}",
                         f"nn.module.optimizer._target_={args['optim_class']}",
