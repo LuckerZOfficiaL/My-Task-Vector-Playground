@@ -1,0 +1,791 @@
+{
+    "results": {
+        "Cars": [
+            {
+                "acc/test": 0.6805123686790466,
+                "loss/test": 0.9054644703865051
+            }
+        ],
+        "DTD": [
+            {
+                "acc/test": 0.4991134703159332,
+                "loss/test": 1.8660801649093628
+            }
+        ],
+        "EuroSAT": [
+            {
+                "acc/test": 0.7647685408592224,
+                "loss/test": 0.7297270894050598
+            }
+        ],
+        "GTSRB": [
+            {
+                "acc/test": 0.5581156015396118,
+                "loss/test": 1.5037282705307007
+            }
+        ],
+        "MNIST": [
+            {
+                "acc/test": 0.7623999714851379,
+                "loss/test": 1.1894900798797607
+            }
+        ],
+        "RESISC45": [
+            {
+                "acc/test": 0.7287301421165466,
+                "loss/test": 0.8384978175163269
+            }
+        ],
+        "SVHN": [
+            {
+                "acc/test": 0.6545405387878418,
+                "loss/test": 1.2486987113952637
+            }
+        ],
+        "SUN397": [
+            {
+                "acc/test": 0.6570780873298645,
+                "loss/test": 1.2035260200500488
+            }
+        ],
+        "STL10": [
+            {
+                "acc/test": 0.9819999933242798,
+                "loss/test": 0.0681946873664856
+            }
+        ],
+        "OxfordIIITPet": [
+            {
+                "acc/test": 0.8702643513679504,
+                "loss/test": 0.3385247588157654
+            }
+        ],
+        "Flowers102": [
+            {
+                "acc/test": 0.7288990020751953,
+                "loss/test": 1.2832099199295044
+            }
+        ],
+        "CIFAR100": [
+            {
+                "acc/test": 0.7455999851226807,
+                "loss/test": 0.9457157254219055
+            }
+        ],
+        "PCAM": [
+            {
+                "acc/test": 0.634765625,
+                "loss/test": 0.7654939293861389
+            }
+        ],
+        "FER2013": [
+            {
+                "acc/test": 0.4456673264503479,
+                "loss/test": 1.8627147674560547
+            }
+        ],
+        "average_of_tasks": 0.6937467860324043
+    },
+    "results_all_iters": {
+        "0": {
+            "Cars": [
+                {
+                    "acc/test": 0.6259171962738037,
+                    "loss/test": 1.089281439781189
+                }
+            ],
+            "DTD": [
+                {
+                    "acc/test": 0.457446813583374,
+                    "loss/test": 2.0317864418029785
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.5387963056564331,
+                    "loss/test": 1.3657138347625732
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.4321456849575043,
+                    "loss/test": 2.148716688156128
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.5252000093460083,
+                    "loss/test": 1.8299634456634521
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.6644444465637207,
+                    "loss/test": 1.0965020656585693
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.5237399935722351,
+                    "loss/test": 1.791903018951416
+                }
+            ],
+            "SUN397": [
+                {
+                    "acc/test": 0.6531485915184021,
+                    "loss/test": 1.2246012687683105
+                }
+            ],
+            "STL10": [
+                {
+                    "acc/test": 0.9821249842643738,
+                    "loss/test": 0.07889693975448608
+                }
+            ],
+            "OxfordIIITPet": [
+                {
+                    "acc/test": 0.8762605786323547,
+                    "loss/test": 0.35562705993652344
+                }
+            ],
+            "Flowers102": [
+                {
+                    "acc/test": 0.7062937021255493,
+                    "loss/test": 1.2524031400680542
+                }
+            ],
+            "CIFAR100": [
+                {
+                    "acc/test": 0.6578999757766724,
+                    "loss/test": 1.3468555212020874
+                }
+            ],
+            "PCAM": [
+                {
+                    "acc/test": 0.5350341796875,
+                    "loss/test": 0.7507601380348206
+                }
+            ],
+            "FER2013": [
+                {
+                    "acc/test": 0.3590136468410492,
+                    "loss/test": 1.9129812717437744
+                }
+            ],
+            "average_of_tasks": 0.6098190077713558
+        },
+        "1": {
+            "Cars": [
+                {
+                    "acc/test": 0.6394727230072021,
+                    "loss/test": 1.037406325340271
+                }
+            ],
+            "DTD": [
+                {
+                    "acc/test": 0.4654255211353302,
+                    "loss/test": 1.978407859802246
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.6035647988319397,
+                    "loss/test": 1.2041887044906616
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.4619952440261841,
+                    "loss/test": 1.9837677478790283
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.6297000050544739,
+                    "loss/test": 1.619490623474121
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.6866666674613953,
+                    "loss/test": 1.013077974319458
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.5695682168006897,
+                    "loss/test": 1.6381715536117554
+                }
+            ],
+            "SUN397": [
+                {
+                    "acc/test": 0.6550126075744629,
+                    "loss/test": 1.207890272140503
+                }
+            ],
+            "STL10": [
+                {
+                    "acc/test": 0.9833750128746033,
+                    "loss/test": 0.07309115678071976
+                }
+            ],
+            "OxfordIIITPet": [
+                {
+                    "acc/test": 0.8738075494766235,
+                    "loss/test": 0.3465047776699066
+                }
+            ],
+            "Flowers102": [
+                {
+                    "acc/test": 0.7071068286895752,
+                    "loss/test": 1.2754944562911987
+                }
+            ],
+            "CIFAR100": [
+                {
+                    "acc/test": 0.6949999928474426,
+                    "loss/test": 1.157928228378296
+                }
+            ],
+            "PCAM": [
+                {
+                    "acc/test": 0.5877685546875,
+                    "loss/test": 0.7310616970062256
+                }
+            ],
+            "FER2013": [
+                {
+                    "acc/test": 0.3817219138145447,
+                    "loss/test": 1.9019960165023804
+                }
+            ],
+            "average_of_tasks": 0.6385846883058548
+        },
+        "2": {
+            "Cars": [
+                {
+                    "acc/test": 0.6591219902038574,
+                    "loss/test": 0.9669178128242493
+                }
+            ],
+            "DTD": [
+                {
+                    "acc/test": 0.47695034742355347,
+                    "loss/test": 1.907741904258728
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.6751388907432556,
+                    "loss/test": 0.9980607032775879
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.4990498721599579,
+                    "loss/test": 1.7689018249511719
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.7936000227928162,
+                    "loss/test": 1.2488538026809692
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.7106349468231201,
+                    "loss/test": 0.91672682762146
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.6216195225715637,
+                    "loss/test": 1.4183690547943115
+                }
+            ],
+            "SUN397": [
+                {
+                    "acc/test": 0.6557179093360901,
+                    "loss/test": 1.2009973526000977
+                }
+            ],
+            "STL10": [
+                {
+                    "acc/test": 0.9832500219345093,
+                    "loss/test": 0.06945693492889404
+                }
+            ],
+            "OxfordIIITPet": [
+                {
+                    "acc/test": 0.871627151966095,
+                    "loss/test": 0.34169313311576843
+                }
+            ],
+            "Flowers102": [
+                {
+                    "acc/test": 0.7193039655685425,
+                    "loss/test": 1.2513717412948608
+                }
+            ],
+            "CIFAR100": [
+                {
+                    "acc/test": 0.7038000226020813,
+                    "loss/test": 1.0916622877120972
+                }
+            ],
+            "PCAM": [
+                {
+                    "acc/test": 0.61822509765625,
+                    "loss/test": 0.7335448861122131
+                }
+            ],
+            "FER2013": [
+                {
+                    "acc/test": 0.411813884973526,
+                    "loss/test": 1.8771179914474487
+                }
+            ],
+            "average_of_tasks": 0.6714181176253727
+        },
+        "3": {
+            "Cars": [
+                {
+                    "acc/test": 0.6745429635047913,
+                    "loss/test": 0.9245295524597168
+                }
+            ],
+            "DTD": [
+                {
+                    "acc/test": 0.48758864402770996,
+                    "loss/test": 1.8734347820281982
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.7327314615249634,
+                    "loss/test": 0.82058185338974
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.5352335572242737,
+                    "loss/test": 1.6018612384796143
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.7778000235557556,
+                    "loss/test": 1.211234211921692
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.7231746315956116,
+                    "loss/test": 0.8595364689826965
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.6441687345504761,
+                    "loss/test": 1.309043049812317
+                }
+            ],
+            "SUN397": [
+                {
+                    "acc/test": 0.6578337550163269,
+                    "loss/test": 1.1971901655197144
+                }
+            ],
+            "STL10": [
+                {
+                    "acc/test": 0.9825000166893005,
+                    "loss/test": 0.06723550707101822
+                }
+            ],
+            "OxfordIIITPet": [
+                {
+                    "acc/test": 0.8699918389320374,
+                    "loss/test": 0.33706799149513245
+                }
+            ],
+            "Flowers102": [
+                {
+                    "acc/test": 0.7271100878715515,
+                    "loss/test": 1.2630701065063477
+                }
+            ],
+            "CIFAR100": [
+                {
+                    "acc/test": 0.7347000241279602,
+                    "loss/test": 0.9779965877532959
+                }
+            ],
+            "PCAM": [
+                {
+                    "acc/test": 0.632049560546875,
+                    "loss/test": 0.7541142106056213
+                }
+            ],
+            "FER2013": [
+                {
+                    "acc/test": 0.43480077385902405,
+                    "loss/test": 1.8623631000518799
+                }
+            ],
+            "average_of_tasks": 0.6867304337876183
+        },
+        "4": {
+            "Cars": [
+                {
+                    "acc/test": 0.6813828945159912,
+                    "loss/test": 0.9032840728759766
+                }
+            ],
+            "DTD": [
+                {
+                    "acc/test": 0.49468085169792175,
+                    "loss/test": 1.8503954410552979
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.7406481504440308,
+                    "loss/test": 0.7826269268989563
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.5505938529968262,
+                    "loss/test": 1.5139344930648804
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.8849999904632568,
+                    "loss/test": 0.8105625510215759
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.7284126877784729,
+                    "loss/test": 0.8399275541305542
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.6737861037254333,
+                    "loss/test": 1.1700924634933472
+                }
+            ],
+            "SUN397": [
+                {
+                    "acc/test": 0.6538538932800293,
+                    "loss/test": 1.2149578332901
+                }
+            ],
+            "STL10": [
+                {
+                    "acc/test": 0.9816250205039978,
+                    "loss/test": 0.07064525038003922
+                }
+            ],
+            "OxfordIIITPet": [
+                {
+                    "acc/test": 0.8680839538574219,
+                    "loss/test": 0.3475593626499176
+                }
+            ],
+            "Flowers102": [
+                {
+                    "acc/test": 0.7261343598365784,
+                    "loss/test": 1.255095362663269
+                }
+            ],
+            "CIFAR100": [
+                {
+                    "acc/test": 0.7035999894142151,
+                    "loss/test": 1.1198662519454956
+                }
+            ],
+            "PCAM": [
+                {
+                    "acc/test": 0.63525390625,
+                    "loss/test": 0.7631905674934387
+                }
+            ],
+            "FER2013": [
+                {
+                    "acc/test": 0.44106993079185486,
+                    "loss/test": 1.8648090362548828
+                }
+            ],
+            "average_of_tasks": 0.6974375418254307
+        },
+        "5": {
+            "Cars": [
+                {
+                    "acc/test": 0.6805123686790466,
+                    "loss/test": 0.9054644703865051
+                }
+            ],
+            "DTD": [
+                {
+                    "acc/test": 0.4991134703159332,
+                    "loss/test": 1.8660801649093628
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.7647685408592224,
+                    "loss/test": 0.7297270894050598
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.5581156015396118,
+                    "loss/test": 1.5037282705307007
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.7623999714851379,
+                    "loss/test": 1.1894900798797607
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.7287301421165466,
+                    "loss/test": 0.8384978175163269
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.6545405387878418,
+                    "loss/test": 1.2486987113952637
+                }
+            ],
+            "SUN397": [
+                {
+                    "acc/test": 0.6570780873298645,
+                    "loss/test": 1.2035260200500488
+                }
+            ],
+            "STL10": [
+                {
+                    "acc/test": 0.9819999933242798,
+                    "loss/test": 0.0681946873664856
+                }
+            ],
+            "OxfordIIITPet": [
+                {
+                    "acc/test": 0.8702643513679504,
+                    "loss/test": 0.3385247588157654
+                }
+            ],
+            "Flowers102": [
+                {
+                    "acc/test": 0.7288990020751953,
+                    "loss/test": 1.2832099199295044
+                }
+            ],
+            "CIFAR100": [
+                {
+                    "acc/test": 0.7455999851226807,
+                    "loss/test": 0.9457157254219055
+                }
+            ],
+            "PCAM": [
+                {
+                    "acc/test": 0.634765625,
+                    "loss/test": 0.7654939293861389
+                }
+            ],
+            "FER2013": [
+                {
+                    "acc/test": 0.4456673264503479,
+                    "loss/test": 1.8627147674560547
+                }
+            ],
+            "average_of_tasks": 0.6937467860324043
+        }
+    },
+    "cfg": {
+        "nn": {
+            "data": {
+                "dataset": {
+                    "dataset_name": "CIFAR100",
+                    "ft_epochs": 6,
+                    "posthoc_epochs": 2,
+                    "finegrained_epochs": 1,
+                    "num_classes": 100
+                },
+                "accelerator": "gpu",
+                "batch_size": {
+                    "test": 128,
+                    "train": 128,
+                    "val": 128
+                },
+                "data_path": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/data",
+                "num_workers": {
+                    "test": 0,
+                    "train": 4,
+                    "val": 2
+                },
+                "train_dataset": "CIFAR100Val"
+            },
+            "module": {
+                "_target_": "tvp.pl_module.image_classifier.ImageClassifier",
+                "x_key": "x",
+                "y_key": "y",
+                "encoder": "??",
+                "classifier": "??",
+                "optimizer": {
+                    "_target_": "torch.optim.AdamW",
+                    "lr": 1e-05,
+                    "weight_decay": 0.1
+                },
+                "model": {
+                    "_target_": "tvp.modules.encoder.ImageEncoder",
+                    "model_name": "ViT-B-16",
+                    "openclip_cachedir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
+                    "cache_dir": null,
+                    "keep_lang": "??"
+                },
+                "lr_scheduler": {
+                    "warmup_steps_or_ratio": 200
+                }
+            }
+        },
+        "train": {
+            "seed_index": 0,
+            "deterministic": false,
+            "trainer": {
+                "fast_dev_run": false,
+                "accelerator": "gpu",
+                "devices": 1,
+                "precision": 32,
+                "max_steps": -1,
+                "num_sanity_val_steps": 2,
+                "gradient_clip_val": 10.0,
+                "val_check_interval": 1.0,
+                "deterministic": false
+            },
+            "restore": {
+                "ckpt_or_run_path": null,
+                "mode": null
+            },
+            "monitor": {
+                "metric": "loss/train",
+                "mode": "min"
+            },
+            "callbacks": [
+                {
+                    "_target_": "pytorch_lightning.callbacks.progress.tqdm_progress.TQDMProgressBar",
+                    "refresh_rate": 1
+                }
+            ],
+            "logging": {
+                "upload": {
+                    "run_files": false,
+                    "source": true
+                },
+                "logger": {
+                    "_target_": "lightning.pytorch.loggers.WandbLogger",
+                    "project": "task-vectors-playground",
+                    "entity": "dansolombrinoandfriends",
+                    "log_model": false,
+                    "mode": "online",
+                    "tags": [
+                        "dev"
+                    ]
+                }
+            }
+        },
+        "conventions": {
+            "x_key": "x",
+            "y_key": "y"
+        },
+        "core": {
+            "entity": "dansolombrinoandfriends",
+            "project_name": "task-vectors-playground",
+            "storage_dir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/storage",
+            "tags": [
+                "dev"
+            ],
+            "version": "0.0.1"
+        },
+        "epoch_divisor": "None",
+        "eval_datasets": [
+            "Cars",
+            "DTD",
+            "EuroSAT",
+            "GTSRB",
+            "MNIST",
+            "RESISC45",
+            "SVHN",
+            "SUN397",
+            "STL10",
+            "OxfordIIITPet",
+            "Flowers102",
+            "CIFAR100",
+            "PCAM",
+            "FER2013"
+        ],
+        "eval_on_train": false,
+        "misc": {
+            "cache_dir": null,
+            "ckpt_path": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16",
+            "openclip_cachedir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
+            "pretrained_checkpoint": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16/zeroshot.pt"
+        },
+        "order": 1,
+        "seed_index": 0,
+        "task_vectors": {
+            "aggregator": {
+                "_target_": "tvp.task_vectors.aggregator.SumAggregator",
+                "mean": true
+            },
+            "breadcrumbs_beta": 0.85,
+            "breadcrumbs_gamma": 0.993,
+            "dare_rate": 0.9,
+            "merging_method": "normal",
+            "num_task_vectors": 8,
+            "orthogonalize": false,
+            "scaling_coefficient": 1,
+            "ties_lambda": 1,
+            "ties_topk": 0.15,
+            "to_apply": [
+                "Cars",
+                "DTD",
+                "EuroSAT",
+                "GTSRB",
+                "MNIST",
+                "RESISC45",
+                "SVHN",
+                "SUN397",
+                "STL10",
+                "OxfordIIITPet",
+                "Flowers102",
+                "CIFAR100",
+                "PCAM",
+                "FER2013"
+            ]
+        },
+        "ft_regime": "ta",
+        "tvs_to_apply_group_name": "paper-tsv-14",
+        "optimizer_name": "adamw",
+        "lr_scheduler_name": "cosine_annealing",
+        "upload_merged_to_wandb": false,
+        "evaluation_export_dir": "./evaluations/merged_wita_grid_search",
+        "eval_orthogonalization_method": "none",
+        "eval_skip_if_exists": true,
+        "timestamp": "2025_01_18_at_21_03_30",
+        "eval_use_wita": true,
+        "wita": {
+            "top_k_weakest": 10,
+            "top_k_strongest": 1,
+            "num_iters": 5
+        }
+    }
+}
