@@ -221,12 +221,13 @@ def run(cfg: DictConfig) -> str:
             task_vectors=task_vectors, cfg=cfg, ref_model=M_h
         )
 
-        pylogger.info(f"pairwise cosine similarity between task vectors after orthogonalization:")
-        print_pairwise_cos_sim(torch.stack(list(task_vectors.values())))
+        if cfg.conflict_res_method != "ties":
+            pylogger.info(f"pairwise cosine similarity between task vectors after orthogonalization:")
+            print_pairwise_cos_sim(torch.stack(list(task_vectors.values())) if isinstance(task_vectors, dict) else task_vectors)
 
         # NOTE: this is needed because ties method already comprises an aggregation step
         if cfg.conflict_res_method == "ties":
-            multi_task_vector = task_vectors * cfg.ties.ties_lambda
+            multi_task_vector = task_vectors * cfg.task_vectors.ties.ties_lambda
         else:
             task_vector_aggregator = instantiate(cfg.task_vectors.aggregator)
             multi_task_vector = task_vector_aggregator(torch.stack(list(task_vectors.values())))
