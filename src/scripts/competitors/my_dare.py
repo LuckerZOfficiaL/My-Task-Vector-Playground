@@ -2,14 +2,18 @@ import torch
 import random
 import copy
 from torch.nn.utils import vector_to_parameters, parameters_to_vector
+from torch import Tensor
 
-def my_dare(flattened_vectors, ref_model, p=0.9):
-    pruned_vectors = []
+from typing import Dict
+
+
+def my_dare(task_vectors: Dict[str, Tensor], ref_model, p=0.9):
+    pruned_task_vectors = {}
+    
     ref_model_copy = copy.deepcopy(ref_model)
 
-    for i in range(flattened_vectors.size(0)):
-        flattened_vector = flattened_vectors[i]
-        vector_to_parameters(flattened_vector, ref_model_copy.parameters())
+    for task_name, task_vector in task_vectors.items():
+        vector_to_parameters(task_vector, ref_model_copy.parameters())
 
         with torch.no_grad():
             for param in ref_model_copy.parameters():
@@ -20,6 +24,6 @@ def my_dare(flattened_vectors, ref_model, p=0.9):
                 param_flat[drop_indices] = 0
                 param_flat *= 1 / (1 - p)
         
-        pruned_flattened_vector = parameters_to_vector(ref_model_copy.parameters())
-        pruned_vectors.append(pruned_flattened_vector)
-        return torch.stack(pruned_vectors)
+        pruned_task_vectors[task_name] = parameters_to_vector(ref_model_copy.parameters())
+    
+    return pruned_task_vectors

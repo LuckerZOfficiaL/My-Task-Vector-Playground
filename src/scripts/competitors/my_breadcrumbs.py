@@ -1,9 +1,11 @@
 import torch
 
-def model_breadcrumbs(task_vectors, beta=0.85, gamma=0.993):
-    pruned_task_vectors = []
+from typing import Dict
 
-    for task_vector in task_vectors:
+def model_breadcrumbs(task_vectors: Dict[str, torch.Tensor], beta=0.85, gamma=0.993):
+    pruned_task_vectors = {}
+
+    for task_name, task_vector in task_vectors.items():
         num_params = task_vector.numel()
         
         # Step 1: Calculate thresholds directly
@@ -25,10 +27,8 @@ def model_breadcrumbs(task_vectors, beta=0.85, gamma=0.993):
         # Step 2: Prune using thresholds
         pruned = torch.where((abs_tensor >= beta_threshold) & (abs_tensor <= gamma_threshold), task_vector, torch.tensor(0.0))
         
-        pruned_task_vectors.append(pruned)
+        pruned_task_vectors[task_name] = pruned
     
-    # Convert the list of tensors to a single tensor
-    pruned_task_vectors = torch.stack(pruned_task_vectors, dim=0)
     return pruned_task_vectors
 
 """# 

@@ -186,6 +186,7 @@ def _parse_args():
     parser.add_argument("--upload-merged-to-wandb", type=str_to_bool, help="Flag to indicate if merged model should be uploaded to wandb (true/false)")
     parser.add_argument("--evaluation-export-dir", type=str, help="Directory to export evaluation results")
     parser.add_argument("--eval-orthogonalization-method", type=str, help="Name of the orthogonalization method to use while applying TVs in eval")
+    parser.add_argument("--eval-conflict-res-method", type=str, help="Name of the conflict resolution method to use while applying TVs in eval")
     parser.add_argument("--eval-use-wita", type=str_to_bool, help="Flag to indicate if WITA should be used for evaluation (true/false)")
     parser.add_argument("--wita-top-k-weakest", type=int, help="Top k weakest tasks to consider for WITA")
     parser.add_argument("--wita-top-k-strongest", type=int, help="Top k strongest tasks to consider for WITA")
@@ -288,6 +289,7 @@ def main():
                         f"+upload_merged_to_wandb={args['upload_merged_to_wandb']}",
                         f"+evaluation_export_dir={args['evaluation_export_dir']}",
                         f"+eval_orthogonalization_method={args['eval_orthogonalization_method']}",
+                        f"+conflict_res_method={args['eval_conflict_res_method']}",
                         f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
                         f"+timestamp={timestamp}",
                         f"+eval_use_wita={args['eval_use_wita']}",

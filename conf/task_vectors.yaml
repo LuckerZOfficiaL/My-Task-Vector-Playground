@@ -34,15 +34,19 @@ task_vectors:
   aggregator:
     _target_: tvp.task_vectors.aggregator.SumAggregator
     mean: true
-  breadcrumbs_beta: 0.85
-  breadcrumbs_gamma: 0.993
-  dare_rate: 0.9
+  breadcrumbs:
+    beta: 0.85
+    gamma: 0.993
+  dare:
+    rate: 0.9
   merging_method: normal
   num_task_vectors: 8
   orthogonalize: false
   scaling_coefficient: 1
-  ties_lambda: 1
-  ties_topk: 0.15
+  ties:
+    ties_lambda: 1
+    top_k: 0.2
+    merge_func: mean
   to_apply:
   - CIFAR100
   - DTD

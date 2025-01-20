@@ -10,6 +10,7 @@ from pytorch_lightning import Callback, LightningModule
 from tqdm import tqdm
 import torch
 import torch.nn as nn
+from torch import Tensor
 from lightning.pytorch import Callback
 from omegaconf import DictConfig, ListConfig, OmegaConf
 import copy
@@ -41,6 +42,7 @@ from tvp.utils.vectors import print_pairwise_cos_sim, orthogonalize_task_vectors
 
 from src.scripts.evaluate import eval_merged_model
 from src.tvp.utils.vectors import sort_tvs_by_norm_merged_accuracy
+from src.tvp.utils.vectors import apply_conflict_res_method
 
 from rich.pretty import pprint
 
@@ -66,6 +68,17 @@ def run(cfg: DictConfig) -> str:
     else:
         raise ValueError(f"Unknown orthogonalization method: {cfg.eval_orthogonalization_method}")
 
+    if cfg.conflict_res_method == "none":
+        conflict_res_method = ""
+    elif cfg.conflict_res_method == "bc":
+        conflict_res_method = f"_bc_alpha_{cfg.breadcrumbs.alpha}_gamma_{cfg.breadcrumbs.gamma}"
+    elif cfg.conflict_res_method == "dare":
+        conflict_res_method = f"_dare_rate_{cfg.dare.rate}"
+    elif cfg.conflict_res_method == "ties":
+        conflict_res_method = f"_ties_lambda_{cfg.ties.ties_lambda}_top_k_{cfg.ties.top_k}"
+    else:
+        raise ValueError(f"Unknown conflict resolution method: {cfg.conflict_res_method}")
+
     wita = f"_wita_num_iters_{cfg.wita.num_iters}_top_k_weakest_{cfg.wita.top_k_weakest}_top_k_strongest_{cfg.wita.top_k_strongest}"
     
     artifact_name = (
@@ -77,6 +90,7 @@ def run(cfg: DictConfig) -> str:
         f"_lr_scheduler_{cfg.lr_scheduler_name}"
         f"{lr_scheduler_warmup_steps}"
         f"{orthogonalization_method}"
+        f"{conflict_res_method}"
         f"{wita}"
         # f"_merged_{'-'.join(cfg.task_vectors.to_apply)}"
         f"_merged_{cfg.tvs_to_apply_group_name}"
@@ -193,24 +207,29 @@ def run(cfg: DictConfig) -> str:
         print(f"\n\n")
 
         # merge the two dicts
-        task_vectors = {**task_vectors_top_weakest, **task_vectors_top_strongest}
+        task_vectors: Dict[str, Tensor] = {**task_vectors_top_weakest, **task_vectors_top_strongest}
         print("task_vectors")
         pylogger.info(task_vectors.keys())
         print(f"\n\n")
 
-        task_vectors = torch.stack(list(task_vectors.values()))
-
         pylogger.info(f"pairwise cosine similarity between task vectors before orthogonalization:")
-        print_pairwise_cos_sim(task_vectors)
+        print_pairwise_cos_sim(torch.stack(list(task_vectors.values())))
 
-        # TODO add support for orthogonalization method
-        # task_vectors = orthogonalize_task_vectors(task_vectors, cfg, artifact_name)
+        task_vectors: Dict[str, Tensor] = orthogonalize_task_vectors(task_vectors, cfg, artifact_name)
 
-        # pylogger.info(f"pairwise cosine similarity between task vectors after orthogonalization:")
-        # print_pairwise_cos_sim(task_vectors)
- 
-        task_vector_aggregator = instantiate(cfg.task_vectors.aggregator)
-        multi_task_vector = task_vector_aggregator(task_vectors)
+        task_vectors: Union[Dict[str, Tensor], Tensor] = apply_conflict_res_method(
+            task_vectors=task_vectors, cfg=cfg, ref_model=M_h
+        )
+
+        pylogger.info(f"pairwise cosine similarity between task vectors after orthogonalization:")
+        print_pairwise_cos_sim(torch.stack(list(task_vectors.values())))
+
+        # NOTE: this is needed because ties method already comprises an aggregation step
+        if cfg.conflict_res_method == "ties":
+            multi_task_vector = task_vectors * cfg.ties.ties_lambda
+        else:
+            task_vector_aggregator = instantiate(cfg.task_vectors.aggregator)
+            multi_task_vector = task_vector_aggregator(torch.stack(list(task_vectors.values())))
 
         delta_model = copy.deepcopy(M_h)
         vector_to_parameters(multi_task_vector, delta_model.parameters())
