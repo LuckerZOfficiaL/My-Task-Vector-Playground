@@ -20,8 +20,10 @@ def topk_values_mask(M, K=0.8, return_mask=False):
     final_mask = mask.squeeze() if original_shape == M.squeeze().shape else mask
 
     if return_mask:
-        return M * final_mask, final_mask.float().mean(dim=1), final_mask
-    return M * final_mask, final_mask.float().mean(dim=1)
+        # return M * final_mask, final_mask.float().mean(dim=1), final_mask
+        return M * final_mask, final_mask.float().mean(dim=0), final_mask
+    # return M * final_mask, final_mask.float().mean(dim=1)
+    return M * final_mask, final_mask.float().mean(dim=0)
 
 
 def resolve_zero_signs(sign_to_mult, method="majority"):
@@ -95,7 +97,9 @@ def their_ties_merging(
 ):
 
     flat_task_checks = torch.cat([v.flatten() for v in task_vectors.values()])
+    print(f"flat_task_checks.shape: {flat_task_checks.shape}")
     all_checks = flat_task_checks.clone()
+    print(f"all_checks.shape: {all_checks.shape}")
 
     updated_checks, *_ = topk_values_mask(
         all_checks, K=reset_thresh, return_mask=False
@@ -109,3 +113,21 @@ def their_ties_merging(
     merged_tv = disjoint_merge(updated_checks, merge_func, final_signs)
     
     return merged_tv
+
+
+if __name__ == "__main__":
+    task_vectors = {
+        "CIFAR100": torch.randn(86_000000),
+        "CIFAR10": torch.randn(86_000000),
+        "SVHN": torch.randn(86_000000),
+        "MNIST": torch.randn(86_000000)
+    }
+
+    reset_thresh = 0.8
+    merge_func = "mean"
+
+    their_ties_merging(
+        task_vectors=task_vectors,
+        reset_thresh=reset_thresh,
+        merge_func=merge_func
+    )
