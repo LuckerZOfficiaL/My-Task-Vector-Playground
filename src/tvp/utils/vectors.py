@@ -166,8 +166,8 @@ def apply_conflict_res_method(
         
         task_vectors = bc.model_breadcrumbs(
             task_vectors=task_vectors,
-            beta=cfg.breadcrumbs.beta,
-            gamma=cfg.breadcrumbs.gamma
+            beta=cfg.task_vectors.breadcrumbs.beta,
+            gamma=cfg.task_vectors.breadcrumbs.gamma
         )
 
         return task_vectors
@@ -177,14 +177,14 @@ def apply_conflict_res_method(
         print(f"\n\n")
         pylogger.info(f"Applying DARE")
         return dare.my_dare(
-            task_vectors=task_vectors, ref_model=ref_model, p=cfg.dare.rate
+            task_vectors=task_vectors, ref_model=ref_model, p=cfg.task_vectors.dare.rate
         )
     
     elif cfg.conflict_res_method == "ties":
         return ties.their_ties_merging(
             task_vectors=task_vectors,
-            reset_thresh=cfg.ties.top_k,
-            merge_func=cfg.ties.merge_func,
+            reset_thresh=cfg.task_vectors.ties.top_k,
+            merge_func=cfg.task_vectors.ties.merge_func,
         )
 
     else:
