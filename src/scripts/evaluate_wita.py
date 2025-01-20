@@ -71,7 +71,7 @@ def run(cfg: DictConfig) -> str:
     if cfg.conflict_res_method == "none":
         conflict_res_method = ""
     elif cfg.conflict_res_method == "bc":
-        conflict_res_method = f"_bc_alpha_{cfg.task_vectors.breadcrumbs.alpha}_gamma_{cfg.task_vectors.breadcrumbs.gamma}"
+        conflict_res_method = f"_bc_beta_{cfg.task_vectors.breadcrumbs.beta}_gamma_{cfg.task_vectors.breadcrumbs.gamma}"
     elif cfg.conflict_res_method == "dare":
         conflict_res_method = f"_dare_rate_{cfg.task_vectors.dare.rate}"
     elif cfg.conflict_res_method == "ties":
