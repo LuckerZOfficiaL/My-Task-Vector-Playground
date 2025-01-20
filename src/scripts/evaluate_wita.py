@@ -71,11 +71,11 @@ def run(cfg: DictConfig) -> str:
     if cfg.conflict_res_method == "none":
         conflict_res_method = ""
     elif cfg.conflict_res_method == "bc":
-        conflict_res_method = f"_bc_alpha_{cfg.breadcrumbs.alpha}_gamma_{cfg.breadcrumbs.gamma}"
+        conflict_res_method = f"_bc_alpha_{cfg.task_vectors.breadcrumbs.alpha}_gamma_{cfg.task_vectors.breadcrumbs.gamma}"
     elif cfg.conflict_res_method == "dare":
-        conflict_res_method = f"_dare_rate_{cfg.dare.rate}"
+        conflict_res_method = f"_dare_rate_{cfg.task_vectors.dare.rate}"
     elif cfg.conflict_res_method == "ties":
-        conflict_res_method = f"_ties_lambda_{cfg.ties.ties_lambda}_top_k_{cfg.ties.top_k}"
+        conflict_res_method = f"_ties_lambda_{cfg.task_vectors.ties.ties_lambda}_top_k_{cfg.task_vectors.ties.top_k}_merge_func_{cfg.task_vectors.ties.merge_func}"
     else:
         raise ValueError(f"Unknown conflict resolution method: {cfg.conflict_res_method}")
 

@@ -45,7 +45,7 @@ task_vectors:
   scaling_coefficient: 1
   ties:
     ties_lambda: 1
-    top_k: 0.2
+    top_k: 20
     merge_func: mean
   to_apply:
   - CIFAR100
