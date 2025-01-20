@@ -8,10 +8,14 @@ import numpy as np
 
 from src.tvp.utils.io_utils import import_json_from_disk
 
-from typing import Union
+from typing import Union, Dict
 
 import pandas as pd
 from pandas import DataFrame
+
+from src.scripts.competitors import my_breadcrumbs as bc
+from src.scripts.competitors import my_dare as dare
+from src.scripts.competitors import their_ties as ties
 
 import logging
 
@@ -19,7 +23,7 @@ import logging
 pylogger = logging.getLogger(__name__)
 
 
-def print_pairwise_cos_sim(task_vectors): # input shape: [num_vectors, vector_size]:
+def print_pairwise_cos_sim(task_vectors: Tensor): # input shape: [num_vectors, vector_size]:
     norm_tensor = F.normalize(task_vectors, p=2, dim=1)
     cosine_similarity_matrix = torch.mm(norm_tensor, norm_tensor.T)
     cosine_similarity_matrix_np = cosine_similarity_matrix.detach().numpy()
@@ -57,17 +61,17 @@ def project_tv(tv, orthogonal_directions, task_id):
     return projected_state_dict
 
 
-def gram_schmidt(vectors: Tensor) -> Tensor: 
-    orthogonal_vectors = []
+def gram_schmidt(vectors: Dict[str, Tensor]) -> Dict[str, Tensor]: 
+    orthogonal_vectors = {}
     
-    for v in vectors:
+    for v_name, v in vectors.items():
         
-        for u in orthogonal_vectors:
+        for u_name, u in orthogonal_vectors.items():
             v = v - (torch.dot(v, u) / torch.dot(u, u)) * u
         
-        orthogonal_vectors.append(v)
+        orthogonal_vectors[v_name] = v
     
-    return torch.stack(orthogonal_vectors) 
+    return orthogonal_vectors
 
 
 def _get_norm_merged_acc(accs: dict, ft_summary: DataFrame):
@@ -115,15 +119,15 @@ def sort_tvs_by_norm_merged_accuracy(
 
 
 def orthogonalize_task_vectors(
-    task_vectors: dict,
+    task_vectors: Dict[str, Tensor],
     cfg,
     artifact_name: str,
-) -> Tensor:
+) -> Dict[str, Tensor]:
 
     if cfg.eval_orthogonalization_method == "pc_grad":
         pylogger.info(f"Applying PCGrad")
 
-        task_vectors = gram_schmidt(vectors=torch.stack(list(task_vectors.values())))
+        return gram_schmidt(vectors=task_vectors)
     
     elif cfg.eval_orthogonalization_method == "sorted_pc_grad":
 
@@ -135,17 +139,56 @@ def orthogonalize_task_vectors(
             ft_summary_file_path="./evaluations/ft_summary/ft_summary_ta_adamw_wd_0.1_lr_scheduler_cosine_annealing_warmup_steps_200.csv",
         )
 
-        task_vectors = gram_schmidt(vectors=torch.stack(list(task_vectors_sorted.values())))
+        return gram_schmidt(vectors=torch.stack(list(task_vectors_sorted.values())))
     
     elif cfg.eval_orthogonalization_method == "none":
 
         pylogger.info(f"Orthogonalization method: None")
 
-        task_vectors = torch.stack(list(task_vectors.values()))
+        return task_vectors
     
     else:
         raise ValueError(f"Unknown orthogonalization method: {cfg.eval_orthogonalization_method}")
 
-    return task_vectors
+
+def apply_conflict_res_method(
+    task_vectors: Dict[str, Tensor],
+    cfg,
+    ref_model: torch.nn.Module,
+) -> Union[Dict[str, Tensor], Tensor]:
+
+    if cfg.conflict_res_method == "none":
+        return task_vectors
+    
+    elif cfg.conflict_res_method == "bc":
+        print(f"\n\n")
+        pylogger.info(f"Applying Model BreadCrumbs")
+        
+        task_vectors = bc.model_breadcrumbs(
+            task_vectors=task_vectors,
+            beta=cfg.breadcrumbs.beta,
+            gamma=cfg.breadcrumbs.gamma
+        )
+
+        return task_vectors
+
+    elif cfg.conflict_res_method == "dare":
+
+        print(f"\n\n")
+        pylogger.info(f"Applying DARE")
+        return dare.my_dare(
+            task_vectors=task_vectors, ref_model=ref_model, p=cfg.dare.rate
+        )
+    
+    elif cfg.conflict_res_method == "ties":
+        return ties.their_ties_merging(
+            task_vectors=task_vectors,
+            reset_thresh=cfg.ties.top_k,
+            merge_func=cfg.ties.merge_func,
+        )
+
+    else:
+        raise ValueError(f"Unknown conflict resolution method: {cfg.conflict_res_method}")
+
 
     
