@@ -40,7 +40,7 @@ def _handle_task_group_name(task_group_name: str):
 def _validate_args(args: dict):
 
     args["tvs_to_apply"] = _handle_task_group_name(args["tvs_to_apply_group_name"])
-    args["tvs_to_apply"] = [DATASET_TO_STYLED[dataset] for dataset in args["tvs_to_apply"]]
+    # args["tvs_to_apply"] = [DATASET_TO_STYLED[dataset] for dataset in args["tvs_to_apply"]]
 
     if args["subset_size"] > len(args["tvs_to_apply"]):
         raise ValueError(f"The subset size ({args['subset_size']}) is greater than the number of datasets available ({len(args['tvs_to_apply'])}).")
@@ -166,6 +166,9 @@ def main():
                 f"--ft-regime {args['ft_regime']}", 
                 f"--perform-ft false",
                 f"--perform-eval true",
+                f"--eval-orthogonalization-method none",
+                f"--eval-conflict-res-method none",
+                f"--eval-use-wita false",
                 f"--upload-merged-to-wandb false",
                 f"--evaluation-export-dir {evaluation_export_dir}",
                 f"--eval-skip-if-exists {args['eval_skip_if_exists']}",

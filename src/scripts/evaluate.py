@@ -146,10 +146,10 @@ def run(cfg: DictConfig) -> str:
     task_vectors = orthogonalize_task_vectors(task_vectors, cfg, artifact_name)
 
     pylogger.info(f"pairwise cosine similarity between task vectors after orthogonalization:")
-    print_pairwise_cos_sim(task_vectors)
+    print_pairwise_cos_sim(torch.stack(list(task_vectors.values())))
  
     task_vector_aggregator = instantiate(cfg.task_vectors.aggregator)
-    multi_task_vector = task_vector_aggregator(task_vectors)
+    multi_task_vector = task_vector_aggregator(torch.stack(list(task_vectors.values())))
 
     delta_model = copy.deepcopy(zeroshot_model)
     vector_to_parameters(multi_task_vector, delta_model.parameters())
@@ -194,7 +194,7 @@ def eval_merged_model(
 
     for dataset_idx, dataset_name in enumerate(cfg.eval_datasets):
 
-        pylogger.info(f"Evaluating on dataset: {dataset_name} ({dataset_idx}/{len(cfg.eval_datasets)})\n\n")
+        pylogger.info(f"Evaluating on dataset: {dataset_name} ({dataset_idx + 1}/{len(cfg.eval_datasets)})\n\n")
 
         classification_head_identifier = f"{cfg.nn.module.model.model_name}_{dataset_name}_head"
         classification_head = load_model_from_artifact(
