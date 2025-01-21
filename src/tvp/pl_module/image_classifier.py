@@ -19,6 +19,9 @@ from tvp.utils.utils import torch_load, torch_save
 
 from src.tvp.modules.cosine_annealing_lr_scheduler import CosineAnnealingLRScheduler
 
+from tvp.utils.io_utils import upload_model_to_wandb
+from tvp.utils.io_utils import get_class
+
 pylogger = logging.getLogger(__name__)
 
 
@@ -50,6 +53,12 @@ class ImageClassifier(pl.LightningModule):
         self.max_train_steps = None
 
         self.elapsed_train_steps = 0
+        self.save_ckpt_progress_list = None
+        self.save_ckpt_steps_list = None
+        self.ckpt_progress_list_idx = None
+        self.save_ckpt_path = None
+        self.artifact_name = None
+        self.cfg = None
 
         self.cosine_annealing_warmup_steps = None
 
@@ -91,6 +100,7 @@ class ImageClassifier(pl.LightningModule):
 
         if split == "train":
             self.elapsed_train_steps += 1
+            
             self.log_dict(
                 {
                     f"elapsed_train_steps": self.elapsed_train_steps,
@@ -99,6 +109,22 @@ class ImageClassifier(pl.LightningModule):
                 },
                 on_step=True,
             )
+
+            if self.save_ckpt_steps_list is not None and self.elapsed_train_steps in self.save_ckpt_steps_list:
+
+                tmp_artifact_name = self.artifact_name.replace("_STEP_RATIO_PLACEHOLDER_", f"_step_{self.save_ckpt_progress_list[self.ckpt_progress_list_idx]}")
+                
+                upload_model_to_wandb(
+                    self.encoder,
+                    tmp_artifact_name,
+                    self.logger.experiment,
+                    self.cfg,
+                    {"model_name": self.cfg.nn.module.model.model_name, "model_class": get_class(self.encoder)}
+                )
+
+                self.ckpt_progress_list_idx += 1
+
+                
 
         return {"logits": logits.detach(), "loss": loss}
 

@@ -84,6 +84,25 @@ def _get_warmpup_steps(model: ImageClassifier, cfg: DictConfig):
         return None
 
 
+def _get_save_ckpt_step_list(cfg: DictConfig, max_train_steps: int):
+    if cfg.nn.module.save_ckpt_progress_list is not None:
+
+        ckpt_save_steps = []
+
+        for ratio in cfg.nn.module.save_ckpt_progress_list:
+            try:
+                ratio_float = float(ratio)
+            except Exception as e:
+                raise ValueError(f"Got the following exception while trying to convert ratio to float {e}")
+
+            ckpt_save_steps.append(int(max_train_steps * ratio_float))
+
+        return ckpt_save_steps
+
+    else:
+        return None
+
+
 def run(cfg: DictConfig):
 
     cfg = _edit_cfg(cfg=cfg)
@@ -153,14 +172,18 @@ def run(cfg: DictConfig):
         batch_size=cfg.nn.data.batch_size.train,
     )
     model.max_train_steps = len(dataset.train_loader) * cfg.nn.data.dataset.ft_epochs
+    model.save_ckpt_progress_list = cfg.nn.module.save_ckpt_progress_list
+    model.ckpt_progress_list_idx = 0 if model.save_ckpt_progress_list is not None else None
+    model.save_ckpt_steps_list = _get_save_ckpt_step_list(cfg, model.max_train_steps)
     model.cosine_annealing_warmup_steps = _get_warmpup_steps(model, cfg)
     
     print("\n\n")
     pylogger.info(f"num train samples: {len(dataset.train_dataset)}, num train batches: {len(dataset.train_loader)}")
     pylogger.info(f"num test samples: {len(dataset.test_dataset)}, num test batches: {len(dataset.test_loader)}")
     pylogger.info(f"max train steps: {model.max_train_steps}")
+    pylogger.info(f"save ckpts @ progress: {model.save_ckpt_progress_list}")
+    pylogger.info(f"save ckpts @ steps: {model.save_ckpt_steps_list}")
     pylogger.info(f"cosine annealing warmup steps: {model.cosine_annealing_warmup_steps}")
-    print("\n\n")
 
     model.freeze_head()
 
@@ -184,14 +207,9 @@ def run(cfg: DictConfig):
     pylogger.info(f"accumulate_grad_batches: {trainer.accumulate_grad_batches}")
     print("\n\n")
 
-    pylogger.info("Starting training!")
-    trainer.fit(model=model, train_dataloaders=dataset.train_loader, val_dataloaders=dataset.test_loader, ckpt_path=template_core.trainer_ckpt_path)
-
-    pylogger.info("Starting testing!")
-    trainer.test(model=model, dataloaders=dataset.test_loader)
-
     # NOTE only works if one lr_scheduler is used
-    lr_scheduler_warmup_steps = f"_warmup_steps_{cfg.nn.module.lr_scheduler.warmup_steps_or_ratio}" if model.lr_schedulers() is not None else ""
+    lr_scheduler_warmup_steps = f"_warmup_steps_{cfg.nn.module.lr_scheduler.warmup_steps_or_ratio}" if "lr_scheduler" in cfg.nn.module else ""
+    ckpt_step_ratio = "_STEP_RATIO_PLACEHOLDER_" if model.save_ckpt_steps_list is not None else ""
     artifact_name = (
         f"{cfg.nn.module.model.model_name}"
         f"_{cfg.nn.data.dataset.dataset_name}"
@@ -201,7 +219,16 @@ def run(cfg: DictConfig):
         f"_wd_{cfg.nn.module.optimizer.weight_decay}"
         f"_lr_scheduler_{cfg.lr_scheduler_name}"
         f"{lr_scheduler_warmup_steps}"
+        f"{ckpt_step_ratio}"
     )
+    model.artifact_name = artifact_name
+    model.cfg = cfg
+
+    pylogger.info("Starting training!")
+    trainer.fit(model=model, train_dataloaders=dataset.train_loader, val_dataloaders=dataset.test_loader, ckpt_path=template_core.trainer_ckpt_path)
+
+    pylogger.info("Starting testing!")
+    trainer.test(model=model, dataloaders=dataset.test_loader)
 
     print("\n\n")
     pylogger.info(f"artifact_name: {artifact_name}")
@@ -213,6 +240,8 @@ def run(cfg: DictConfig):
 
     model_class = get_class(image_encoder)
     metadata = {"model_name": cfg.nn.module.model.model_name, "model_class": model_class}
+    if cfg.nn.module.save_ckpt_progress_list is not None:
+        artifact_name = artifact_name.replace("_STEP_RATIO_PLACEHOLDER_", "")
     upload_model_to_wandb(model.encoder, artifact_name, logger.experiment, cfg, metadata)
 
     if logger is not None:

@@ -87,6 +87,11 @@ def _validate_args(args: dict):
         else:
             args["ft_tasks"] = args["ft_task_names"]
 
+        if args["ft_save_ckpt_progress_list"] is not None:
+            for ratio in args["ft_save_ckpt_progress_list"]:
+                if not 0 <= float(ratio) <= 1:
+                    raise ValueError(f"Invalid ratio: {ratio}")
+
     if args["perform_eval"]:
         if args["tvs_to_apply_group_name"] is None and args["tvs_to_apply_names"] is None:
             raise ValueError("Either --tvs-to-apply-group-name or --tvs-to-apply-names should be provided")
@@ -181,6 +186,7 @@ def _parse_args():
     parser.add_argument("--lr-scheduler-name", type=str, required=True, help="Flag to indicate if learning rate scheduler should be used (true/false)")
     parser.add_argument("--cosine-annealing-warmup-step-number-or-ratio", type=str, help="Number of warmup steps for cosine annealing")
     parser.add_argument("--perform-ft", type=str_to_bool, required=True, help="Flag to indicate if finetuning should be performed (true/false)")
+    parser.add_argument("--ft-save-ckpt-progress-list", type=str, nargs='+', help="List of ratios to save checkpoints at")
     parser.add_argument("--perform-eval", type=str_to_bool, required=True, help="Flag to indicate if evaluation should be performed (true/false)")
     parser.add_argument("--eval-skip-if-exists", type=str_to_bool, help="Flag to indicate if evaluation should be skipped if the evaluation results already exist (true/false)")
     parser.add_argument("--upload-merged-to-wandb", type=str_to_bool, help="Flag to indicate if merged model should be uploaded to wandb (true/false)")
@@ -210,6 +216,7 @@ def main():
 
     if args["perform_ft"]:
 
+        ft_save_ckpt_progress_list = f"+nn.module.save_ckpt_progress_list={args['ft_save_ckpt_progress_list'] if args['ft_save_ckpt_progress_list'] is not None else 'null'}"
         lr_scheduler_target = '+empty_flag=-123456' if args['lr_scheduler_class'] == 'None' else '+nn.module.lr_scheduler._target_=' + args['lr_scheduler_class']
         cosine_annealing_warmup_steps_or_ratio = '+empty_flag_2=-123456' if args['cosine_annealing_warmup_step_number_or_ratio'] is None else f"+nn.module.lr_scheduler.warmup_steps_or_ratio={args['cosine_annealing_warmup_step_number_or_ratio']}"
 
@@ -229,6 +236,7 @@ def main():
                     f"+task_to_finetune={task_to_finetune}",
                     f"+ft_regime={args['ft_regime']}",
                     f"+optimizer_name={args['optim_name']}",
+                    f"{ft_save_ckpt_progress_list}",
                     f"nn.module.optimizer._target_={args['optim_class']}",
                     f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
                     f"+lr_scheduler_name={args['lr_scheduler_name']}",

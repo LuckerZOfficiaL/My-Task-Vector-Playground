@@ -133,7 +133,7 @@ def list_all_files_in_dir(dir_path: str):
 def upload_model_to_wandb(
     model: Union[LightningModule, nn.Module], artifact_name, run, cfg: DictConfig, metadata: Dict
 ):
-    model = model.cpu()
+    # model = model.cpu()
 
     pylogger.info(f"Uploading artifact {artifact_name}")
 
