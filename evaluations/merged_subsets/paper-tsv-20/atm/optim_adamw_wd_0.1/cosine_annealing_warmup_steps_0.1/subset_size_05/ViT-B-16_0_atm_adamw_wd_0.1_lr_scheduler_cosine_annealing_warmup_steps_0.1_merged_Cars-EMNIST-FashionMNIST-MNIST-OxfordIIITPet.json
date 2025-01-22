@@ -1,0 +1,195 @@
+{
+    "results": {
+        "Cars": [
+            {
+                "acc/test": 0.6552667617797852,
+                "loss/test": 0.9739136099815369
+            }
+        ],
+        "EMNIST": [
+            {
+                "acc/test": 0.5092750191688538,
+                "loss/test": 1.6407124996185303
+            }
+        ],
+        "FashionMNIST": [
+            {
+                "acc/test": 0.7998999953269958,
+                "loss/test": 0.5911393165588379
+            }
+        ],
+        "MNIST": [
+            {
+                "acc/test": 0.9386000037193298,
+                "loss/test": 0.3828386664390564
+            }
+        ],
+        "OxfordIIITPet": [
+            {
+                "acc/test": 0.8950667977333069,
+                "loss/test": 0.28991496562957764
+            }
+        ],
+        "average_of_tasks": 0.7596217155456543
+    },
+    "cfg": {
+        "nn": {
+            "data": {
+                "dataset": {
+                    "dataset_name": "CIFAR100",
+                    "ft_epochs": 6,
+                    "posthoc_epochs": 2,
+                    "finegrained_epochs": 1,
+                    "num_classes": 100
+                },
+                "accelerator": "gpu",
+                "batch_size": {
+                    "test": 128,
+                    "train": 128,
+                    "val": 128
+                },
+                "data_path": "/home/dansolombrino/PARA/Projects/ATM/Alternating-Tuning-and-Merging/data",
+                "num_workers": {
+                    "test": 0,
+                    "train": 4,
+                    "val": 2
+                },
+                "train_dataset": "CIFAR100Val"
+            },
+            "module": {
+                "_target_": "tvp.pl_module.image_classifier.ImageClassifier",
+                "x_key": "x",
+                "y_key": "y",
+                "encoder": "??",
+                "classifier": "??",
+                "optimizer": {
+                    "_target_": "torch.optim.AdamW",
+                    "lr": 1e-05,
+                    "weight_decay": 0.1
+                },
+                "model": {
+                    "_target_": "tvp.modules.encoder.ImageEncoder",
+                    "model_name": "ViT-B-16",
+                    "openclip_cachedir": "/home/dansolombrino/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
+                    "cache_dir": null,
+                    "keep_lang": "??"
+                },
+                "lr_scheduler": {
+                    "warmup_steps_or_ratio": 0.1
+                }
+            }
+        },
+        "train": {
+            "seed_index": 0,
+            "deterministic": false,
+            "trainer": {
+                "fast_dev_run": false,
+                "accelerator": "gpu",
+                "devices": 1,
+                "precision": 32,
+                "max_steps": -1,
+                "num_sanity_val_steps": 2,
+                "gradient_clip_val": 10.0,
+                "val_check_interval": 1.0,
+                "deterministic": false
+            },
+            "restore": {
+                "ckpt_or_run_path": null,
+                "mode": null
+            },
+            "monitor": {
+                "metric": "loss/train",
+                "mode": "min"
+            },
+            "callbacks": [
+                {
+                    "_target_": "pytorch_lightning.callbacks.progress.tqdm_progress.TQDMProgressBar",
+                    "refresh_rate": 1
+                }
+            ],
+            "logging": {
+                "upload": {
+                    "run_files": false,
+                    "source": true
+                },
+                "logger": {
+                    "_target_": "lightning.pytorch.loggers.WandbLogger",
+                    "project": "task-vectors-playground",
+                    "entity": "dansolombrinoandfriends",
+                    "log_model": false,
+                    "mode": "online",
+                    "tags": [
+                        "dev"
+                    ]
+                }
+            }
+        },
+        "conventions": {
+            "x_key": "x",
+            "y_key": "y"
+        },
+        "core": {
+            "entity": "dansolombrinoandfriends",
+            "project_name": "task-vectors-playground",
+            "storage_dir": "/home/dansolombrino/PARA/Projects/ATM/Alternating-Tuning-and-Merging/storage",
+            "tags": [
+                "dev"
+            ],
+            "version": "0.0.1"
+        },
+        "epoch_divisor": "None",
+        "eval_datasets": [
+            "Cars",
+            "EMNIST",
+            "FashionMNIST",
+            "MNIST",
+            "OxfordIIITPet"
+        ],
+        "eval_on_train": false,
+        "misc": {
+            "cache_dir": null,
+            "ckpt_path": "/home/dansolombrino/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16",
+            "openclip_cachedir": "/home/dansolombrino/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
+            "pretrained_checkpoint": "/home/dansolombrino/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16/zeroshot.pt"
+        },
+        "order": 1,
+        "seed_index": 0,
+        "task_vectors": {
+            "aggregator": {
+                "_target_": "tvp.task_vectors.aggregator.SumAggregator",
+                "mean": true
+            },
+            "breadcrumbs": {
+                "beta": 0.85,
+                "gamma": 0.993
+            },
+            "dare": {
+                "rate": 0.9
+            },
+            "merging_method": "normal",
+            "num_task_vectors": 8,
+            "orthogonalize": false,
+            "scaling_coefficient": 1,
+            "ties": {
+                "ties_lambda": 1,
+                "top_k": 20,
+                "merge_func": "mean"
+            },
+            "to_apply": [
+                "Cars",
+                "EMNIST",
+                "FashionMNIST",
+                "MNIST",
+                "OxfordIIITPet"
+            ]
+        },
+        "ft_regime": "atm",
+        "optimizer_name": "adamw",
+        "lr_scheduler_name": "cosine_annealing",
+        "upload_merged_to_wandb": false,
+        "evaluation_export_dir": "./evaluations/merged_subsets/paper-tsv-20/atm/optim_adamw_wd_0.1/cosine_annealing_warmup_steps_0.1/subset_size_05/",
+        "eval_orthogonalization_method": "none",
+        "eval_skip_if_exists": true,
+        "timestamp": null
+    }
+}
