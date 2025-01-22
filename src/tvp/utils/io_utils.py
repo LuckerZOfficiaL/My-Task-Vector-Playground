@@ -24,7 +24,7 @@ import os
 pylogger = logging.getLogger(__name__)
 
 
-def load_model_from_artifact(run, artifact_path):
+def load_model_from_artifact(run, artifact_path) -> Union[LightningModule, nn.Module, ImageEncoder, ClassificationHead]:
     pylogger.info(f"Loading model from artifact {artifact_path}")
 
     artifact = run.use_artifact(artifact_path)

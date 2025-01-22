@@ -7,9 +7,11 @@ import hydra
 import omegaconf
 import pytorch_lightning as pl
 from pytorch_lightning import Callback, LightningModule
+from tvp.modules.encoder import ClassificationHead, ImageEncoder
 from tqdm import tqdm
 import torch
 import torch.nn as nn
+from torch import Tensor
 from lightning.pytorch import Callback
 from omegaconf import DictConfig, ListConfig, OmegaConf
 import copy
@@ -35,9 +37,9 @@ from torch.nn.utils import parameters_to_vector
 from hydra.utils import instantiate
 import hydra
 from hydra import initialize, compose
-from typing import Dict, List
+from typing import Dict, List, Callable
 
-from tvp.utils.vectors import print_pairwise_cos_sim, orthogonalize_task_vectors
+from tvp.utils.vectors import print_pairwise_cos_sim, orthogonalize_task_vectors, apply_task_vector
 
 from rich.pretty import pprint
 
@@ -99,7 +101,9 @@ def run(cfg: DictConfig) -> str:
 
     zeroshot_identifier = f"{cfg.nn.module.model.model_name}_pt"
     
-    zeroshot_model = load_model_from_artifact(artifact_path=f"{zeroshot_identifier}:latest", run=logger.experiment)
+    zeroshot_model: ImageEncoder = load_model_from_artifact(
+        artifact_path=f"{zeroshot_identifier}:latest", run=logger.experiment
+    )
 
     finetuned_id_fn = lambda dataset: (
         f"{cfg.nn.module.model.model_name}"
@@ -113,31 +117,17 @@ def run(cfg: DictConfig) -> str:
         f":latest"
     )
 
-    finetuned_models = {
+    finetuned_models: Dict[str, ImageEncoder] = {
         dataset: load_model_from_artifact(artifact_path=finetuned_id_fn(dataset), run=logger.experiment)
         for dataset in cfg.task_vectors.to_apply
     }
 
     # Task vectors
-    flatten = lambda model: parameters_to_vector(model.parameters())
+    flatten: Callable[[ImageEncoder], Tensor] = lambda model: parameters_to_vector(model.parameters())
 
-    zeroshot_vec = flatten(zeroshot_model)
-    # task_vectors = [
-        # TaskVector.from_models(zeroshot_model, finetuned_models[dataset]) for dataset in cfg.task_vectors.to_apply
-    # ]
-
-    def apply_task_vector(model, task_vector, scaling_coef=1):
-        #model.load_state_dict({k: v + task_vector[k] for k, v in model.state_dict().items()})
-        model.load_state_dict({k: v + 1/(scaling_coef)*task_vector[k] for k, v in model.state_dict().items()})
-
-    # before adding support for tv sort by difficulty
-    # with torch.no_grad():
-    #     task_vectors = torch.stack(
-    #         [flatten(finetuned_models[dataset]) - zeroshot_vec for dataset in cfg.task_vectors.to_apply]
-    #     )
     with torch.no_grad():
-        task_vectors = {
-            dataset: flatten(finetuned_models[dataset]) - zeroshot_vec for dataset in cfg.task_vectors.to_apply
+        task_vectors: Dict[str, Tensor] = {
+            dataset: flatten(finetuned_models[dataset]) - flatten(zeroshot_model) for dataset in cfg.task_vectors.to_apply
         }
     
     pylogger.info(f"pairwise cosine similarity between task vectors before orthogonalization:")

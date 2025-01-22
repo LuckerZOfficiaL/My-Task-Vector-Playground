@@ -191,4 +191,6 @@ def apply_conflict_res_method(
         raise ValueError(f"Unknown conflict resolution method: {cfg.conflict_res_method}")
 
 
-    
+def apply_task_vector(model, task_vector, scaling_coef=1):
+    #model.load_state_dict({k: v + task_vector[k] for k, v in model.state_dict().items()})
+    model.load_state_dict({k: v + 1/(scaling_coef)*task_vector[k] for k, v in model.state_dict().items()})
