@@ -230,3 +230,5 @@ outputs/
 /data
 
 artifacts_downloaded_from_wandb/
+
+/grads

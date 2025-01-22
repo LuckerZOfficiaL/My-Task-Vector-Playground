@@ -84,23 +84,43 @@ def _get_warmpup_steps(model: ImageClassifier, cfg: DictConfig):
         return None
 
 
-def _get_save_ckpt_step_list(cfg: DictConfig, max_train_steps: int):
-    if cfg.nn.module.save_ckpt_progress_list is not None:
+def _step_ratio_list_to_steps_list(
+    step_ratio_list: Union[List[str], None], 
+    max_train_steps: int
+) -> List[int]:
 
-        ckpt_save_steps = []
+    if step_ratio_list is not None:
+    
+        step_list = []
 
-        for ratio in cfg.nn.module.save_ckpt_progress_list:
+        for ratio in step_ratio_list:
             try:
                 ratio_float = float(ratio)
             except Exception as e:
                 raise ValueError(f"Got the following exception while trying to convert ratio to float {e}")
 
-            ckpt_save_steps.append(int(max_train_steps * ratio_float))
+            step_list.append(int(max_train_steps * ratio_float))
 
-        return ckpt_save_steps
+        return step_list
 
-    else:
-        return None
+
+# def _get_save_ckpt_step_list(cfg: DictConfig, max_train_steps: int):
+#     if cfg.nn.module.save_ckpt_progress_list is not None:
+
+#         ckpt_save_steps = []
+
+#         for ratio in cfg.nn.module.save_ckpt_progress_list:
+#             try:
+#                 ratio_float = float(ratio)
+#             except Exception as e:
+#                 raise ValueError(f"Got the following exception while trying to convert ratio to float {e}")
+
+#             ckpt_save_steps.append(int(max_train_steps * ratio_float))
+
+#         return ckpt_save_steps
+
+#     else:
+#         return None
 
 
 def _get_accumulate_grad_batches(cfg: DictConfig, dataset) -> int:
@@ -181,10 +201,23 @@ def run(cfg: DictConfig):
         location=cfg.nn.data.data_path,
         batch_size=cfg.nn.data.batch_size.train,
     )
+
     model.max_train_steps = len(dataset.train_loader) * cfg.nn.data.dataset.ft_epochs
+
     model.save_ckpt_progress_list = cfg.nn.module.save_ckpt_progress_list
-    model.ckpt_progress_list_idx = 0 if model.save_ckpt_progress_list is not None else None
-    model.save_ckpt_steps_list = _get_save_ckpt_step_list(cfg, model.max_train_steps)
+    model.save_ckpt_progress_list_idx = 0 if model.save_ckpt_progress_list is not None else None
+    model.save_ckpt_steps_list = _step_ratio_list_to_steps_list(
+        cfg.nn.module.save_ckpt_progress_list, model.max_train_steps
+    )
+
+    model.save_grads_progress_list = cfg.nn.module.save_grads_progress_list
+    model.save_grads_steps_list_idx = 0 if model.save_grads_progress_list is not None else None
+    model.save_grads_steps_list = _step_ratio_list_to_steps_list(
+        cfg.nn.module.save_grads_progress_list, model.max_train_steps
+    )
+    model.save_grads_dir = "./grads"
+    os.makedirs(model.save_grads_dir, exist_ok=True)
+    
     model.cosine_annealing_warmup_steps = _get_warmpup_steps(model, cfg)
     
     print("\n\n")
@@ -193,6 +226,8 @@ def run(cfg: DictConfig):
     pylogger.info(f"max train steps: {model.max_train_steps}")
     pylogger.info(f"save ckpts @ progress: {model.save_ckpt_progress_list}")
     pylogger.info(f"save ckpts @ steps: {model.save_ckpt_steps_list}")
+    pylogger.info(f"save grads @ progress: {model.save_grads_progress_list}")
+    pylogger.info(f"save grads @ steps: {model.save_grads_steps_list}")
     pylogger.info(f"cosine annealing warmup steps: {model.cosine_annealing_warmup_steps}")
 
     model.freeze_head()
@@ -222,7 +257,8 @@ def run(cfg: DictConfig):
 
     # NOTE only works if one lr_scheduler is used
     lr_scheduler_warmup_steps = f"_warmup_steps_{cfg.nn.module.lr_scheduler.warmup_steps_or_ratio}" if "lr_scheduler" in cfg.nn.module else ""
-    ckpt_step_ratio = "_STEP_RATIO_PLACEHOLDER_" if model.save_ckpt_steps_list is not None else ""
+    ckpt_step_ratio = "_CKPT_STEP_RATIO_PLACEHOLDER_" if model.save_ckpt_steps_list is not None else ""
+    grad_step_ratio = "_GRAD_STEP_RATIO_PLACEHOLDER_" if model.save_grads_steps_list is not None else ""
     accumulate_grad_batches_str = "" if accumulate_grad_batches == 1 else f"_acc_grad_batches_{accumulate_grad_batches}"
     artifact_name = (
         f"{cfg.nn.module.model.model_name}"
@@ -234,6 +270,7 @@ def run(cfg: DictConfig):
         f"_lr_scheduler_{cfg.lr_scheduler_name}"
         f"{lr_scheduler_warmup_steps}"
         f"{ckpt_step_ratio}"
+        f"{grad_step_ratio}"
         f"{accumulate_grad_batches_str}"
     )
     print("\n\n")
@@ -259,7 +296,9 @@ def run(cfg: DictConfig):
     model_class = get_class(image_encoder)
     metadata = {"model_name": cfg.nn.module.model.model_name, "model_class": model_class}
     if cfg.nn.module.save_ckpt_progress_list is not None:
-        artifact_name = artifact_name.replace("_STEP_RATIO_PLACEHOLDER_", "")
+        artifact_name = artifact_name.replace("_CKPT_STEP_RATIO_PLACEHOLDER_", "")
+    if cfg.nn.module.save_grads_progress_list is not None:
+        artifact_name = artifact_name.replace("_GRAD_STEP_RATIO_PLACEHOLDER_", "")
     upload_model_to_wandb(model.encoder, artifact_name, logger.experiment, cfg, metadata)
 
     if logger is not None:

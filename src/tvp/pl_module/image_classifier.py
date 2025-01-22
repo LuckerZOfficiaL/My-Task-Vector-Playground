@@ -53,11 +53,19 @@ class ImageClassifier(pl.LightningModule):
         self.max_train_steps = None
 
         self.elapsed_train_steps = 0
+
         self.save_ckpt_progress_list = None
         self.save_ckpt_steps_list = None
-        self.ckpt_progress_list_idx = None
+        self.save_ckpt_progress_list_idx = None
+
+        self.save_grads_progress_list = None
+        self.save_grads_steps_list_idx = None
+        self.save_grads_steps_list = None
+        self.save_grads_dir: str = None
+
         self.save_ckpt_path = None
-        self.artifact_name = None
+        self.artifact_name: str = None
+        
         self.cfg = None
 
         self.cosine_annealing_warmup_steps = None
@@ -112,7 +120,8 @@ class ImageClassifier(pl.LightningModule):
 
             if self.save_ckpt_steps_list is not None and self.elapsed_train_steps in self.save_ckpt_steps_list:
 
-                tmp_artifact_name = self.artifact_name.replace("_STEP_RATIO_PLACEHOLDER_", f"_step_{self.save_ckpt_progress_list[self.ckpt_progress_list_idx]}")
+                tmp_artifact_name = self.artifact_name.replace("_CKPT_STEP_RATIO_PLACEHOLDER_", f"_step_{self.save_ckpt_progress_list[self.save_ckpt_progress_list_idx]}")
+                tmp_artifact_name = tmp_artifact_name.replace("_GRAD_STEP_RATIO_PLACEHOLDER_", f"")
                 
                 upload_model_to_wandb(
                     self.encoder,
@@ -122,11 +131,30 @@ class ImageClassifier(pl.LightningModule):
                     {"model_name": self.cfg.nn.module.model.model_name, "model_class": get_class(self.encoder)}
                 )
 
-                self.ckpt_progress_list_idx += 1
+                self.save_ckpt_progress_list_idx += 1
 
-                
+            if self.save_grads_steps_list is not None and self.elapsed_train_steps in self.save_grads_steps_list:
+
+                tmp_artifact_name = self.artifact_name.replace("_GRAD_STEP_RATIO_PLACEHOLDER_", f"_step_{self.save_grads_progress_list[self.save_grads_steps_list_idx]}_grads")
+                tmp_artifact_name = tmp_artifact_name.replace("_CKPT_STEP_RATIO_PLACEHOLDER_", f"")
+
+                self._save_grads(f"{self.save_grads_dir}/{tmp_artifact_name}.pt")
+
+                self.save_grads_steps_list_idx += 1
+
 
         return {"logits": logits.detach(), "loss": loss}
+
+    def _save_grads(self, save_file_name: str) -> None:
+        grads = {}
+
+        for name, param in self.encoder.named_parameters():
+            grads[name] = param.grad
+        
+        pylogger.info(f"Saving gradients to {save_file_name}")
+
+        torch.save(grads, save_file_name)
+        
 
     def freeze_head(self):
         self.classification_head.weight.requires_grad_(False)
@@ -221,12 +249,12 @@ class ImageClassifier(pl.LightningModule):
         return self.forward(inputs)
 
     def save(self, filename):
-        print(f"Saving image classifier to {filename}")
+        pylogger.info(f"Saving image classifier to {filename}")
         torch_save(self, filename)
 
     @classmethod
     def load(cls, filename):
-        print(f"Loading image classifier from {filename}")
+        pylogger.info(f"Loading image classifier from {filename}")
         return torch_load(filename)
 
     """def on_train_epoch_end(self):
