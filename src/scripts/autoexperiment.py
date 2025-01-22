@@ -255,8 +255,6 @@ def main():
                 ], 
                 check=True
             )
-
-            exit()
     
     if args["perform_eval"]:
 
