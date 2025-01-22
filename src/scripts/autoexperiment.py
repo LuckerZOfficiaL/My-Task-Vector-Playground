@@ -92,6 +92,12 @@ def _validate_args(args: dict):
                 if not 0 <= float(ratio) <= 1:
                     raise ValueError(f"Invalid ratio: {ratio}")
 
+        if args["ft_acc_grad_batches_strategy"] is None:
+            raise ValueError("--perform-ft requires --ft-acc-grad-batches-strategy to be provided")
+        
+        if args["ft_acc_grad_batches_strategy"] not in ["1", "dataset-num-batches"]:
+            raise ValueError(f"Invalid accumulation strategy: {args['ft_acc_grad_batches_strategy']}")
+
     if args["perform_eval"]:
         if args["tvs_to_apply_group_name"] is None and args["tvs_to_apply_names"] is None:
             raise ValueError("Either --tvs-to-apply-group-name or --tvs-to-apply-names should be provided")
@@ -186,6 +192,7 @@ def _parse_args():
     parser.add_argument("--lr-scheduler-name", type=str, required=True, help="Flag to indicate if learning rate scheduler should be used (true/false)")
     parser.add_argument("--cosine-annealing-warmup-step-number-or-ratio", type=str, help="Number of warmup steps for cosine annealing")
     parser.add_argument("--perform-ft", type=str_to_bool, required=True, help="Flag to indicate if finetuning should be performed (true/false)")
+    parser.add_argument("--ft-acc-grad-batches-strategy", type=str, help="Strategy to accumulate gradients over batches. Options: ['1', 'dataset-num-batches']")
     parser.add_argument("--ft-save-ckpt-progress-list", type=str, nargs='+', help="List of ratios to save checkpoints at")
     parser.add_argument("--perform-eval", type=str_to_bool, required=True, help="Flag to indicate if evaluation should be performed (true/false)")
     parser.add_argument("--eval-skip-if-exists", type=str_to_bool, help="Flag to indicate if evaluation should be skipped if the evaluation results already exist (true/false)")
@@ -219,6 +226,7 @@ def main():
         ft_save_ckpt_progress_list = f"+nn.module.save_ckpt_progress_list={args['ft_save_ckpt_progress_list'] if args['ft_save_ckpt_progress_list'] is not None else 'null'}"
         lr_scheduler_target = '+empty_flag=-123456' if args['lr_scheduler_class'] == 'None' else '+nn.module.lr_scheduler._target_=' + args['lr_scheduler_class']
         cosine_annealing_warmup_steps_or_ratio = '+empty_flag_2=-123456' if args['cosine_annealing_warmup_step_number_or_ratio'] is None else f"+nn.module.lr_scheduler.warmup_steps_or_ratio={args['cosine_annealing_warmup_step_number_or_ratio']}"
+        accumulate_grad_batches = f"+accumulate_grad_batches={args['ft_acc_grad_batches_strategy']}"
 
         ft_tasks = args["ft_tasks"]
         print(f"\n\nFinetuning tasks: {ft_tasks}\n\n")
@@ -242,10 +250,13 @@ def main():
                     f"+lr_scheduler_name={args['lr_scheduler_name']}",
                     lr_scheduler_target,
                     cosine_annealing_warmup_steps_or_ratio,
+                    accumulate_grad_batches,
                     f"+timestamp={timestamp}",
                 ], 
                 check=True
             )
+
+            exit()
     
     if args["perform_eval"]:
 

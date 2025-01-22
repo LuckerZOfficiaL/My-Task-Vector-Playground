@@ -103,6 +103,16 @@ def _get_save_ckpt_step_list(cfg: DictConfig, max_train_steps: int):
         return None
 
 
+def _get_accumulate_grad_batches(cfg: DictConfig, dataset) -> int:
+
+    if str(cfg.accumulate_grad_batches) == "1":
+        return 1
+    elif str(cfg.accumulate_grad_batches) == "dataset-num-batches":
+        return len(dataset.train_loader)
+    else:
+        raise ValueError(f"Invalid accumulate_grad_batches value: {cfg.accumulate_grad_batches}")
+
+
 def run(cfg: DictConfig):
 
     cfg = _edit_cfg(cfg=cfg)
@@ -191,14 +201,17 @@ def run(cfg: DictConfig):
 
     storage_dir: str = cfg.core.storage_dir
 
+    accumulate_grad_batches = _get_accumulate_grad_batches(cfg, dataset)
+
     pylogger.info("Instantiating the <Trainer>")
     trainer = pl.Trainer(
         default_root_dir=storage_dir,
         # plugins=[NNCheckpointIO(jailing_dir=logger.run_dir)],
         enable_checkpointing=False,
-        max_epochs=cfg.nn.data.dataset.ft_epochs, 
+        max_epochs=cfg.nn.data.dataset.ft_epochs,
         logger=logger,
         callbacks=callbacks,
+        accumulate_grad_batches=accumulate_grad_batches,
         log_every_n_steps=1,
         **cfg.train.trainer,
     )
@@ -210,6 +223,7 @@ def run(cfg: DictConfig):
     # NOTE only works if one lr_scheduler is used
     lr_scheduler_warmup_steps = f"_warmup_steps_{cfg.nn.module.lr_scheduler.warmup_steps_or_ratio}" if "lr_scheduler" in cfg.nn.module else ""
     ckpt_step_ratio = "_STEP_RATIO_PLACEHOLDER_" if model.save_ckpt_steps_list is not None else ""
+    accumulate_grad_batches_str = "" if accumulate_grad_batches == 1 else f"_acc_grad_batches_{accumulate_grad_batches}"
     artifact_name = (
         f"{cfg.nn.module.model.model_name}"
         f"_{cfg.nn.data.dataset.dataset_name}"
@@ -220,18 +234,22 @@ def run(cfg: DictConfig):
         f"_lr_scheduler_{cfg.lr_scheduler_name}"
         f"{lr_scheduler_warmup_steps}"
         f"{ckpt_step_ratio}"
+        f"{accumulate_grad_batches_str}"
     )
+    print("\n\n")
+    pylogger.info(f"artifact_name: {artifact_name}")
+    print("\n\n")
+
     model.artifact_name = artifact_name
     model.cfg = cfg
 
+    print(f"\n\n")
     pylogger.info("Starting training!")
     trainer.fit(model=model, train_dataloaders=dataset.train_loader, val_dataloaders=dataset.test_loader, ckpt_path=template_core.trainer_ckpt_path)
 
+    print(f"\n\n")
     pylogger.info("Starting testing!")
     trainer.test(model=model, dataloaders=dataset.test_loader)
-
-    print("\n\n")
-    pylogger.info(f"artifact_name: {artifact_name}")
 
     print("\n\n")
     pylogger.info(f"optimizer(s): {model.optimizers()}")
