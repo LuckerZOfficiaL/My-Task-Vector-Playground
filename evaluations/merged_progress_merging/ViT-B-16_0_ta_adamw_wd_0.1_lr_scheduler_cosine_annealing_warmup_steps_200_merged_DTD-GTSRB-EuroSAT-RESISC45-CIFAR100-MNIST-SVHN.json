@@ -1,0 +1,676 @@
+{
+    "results_all_ratios": {
+        "0.1": {
+            "DTD": [
+                {
+                    "acc/test": 0.5017730593681335,
+                    "loss/test": 1.7304867506027222
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.5904196500778198,
+                    "loss/test": 1.3805654048919678
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.7824074029922485,
+                    "loss/test": 0.6879053115844727
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.7412698268890381,
+                    "loss/test": 0.7855405807495117
+                }
+            ],
+            "CIFAR100": [
+                {
+                    "acc/test": 0.7343999743461609,
+                    "loss/test": 0.9633318185806274
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.9106000065803528,
+                    "loss/test": 0.6532437205314636
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.721842348575592,
+                    "loss/test": 0.969569981098175
+                }
+            ],
+            "average_of_tasks": 0.7118160384041923
+        },
+        "0.2": {
+            "DTD": [
+                {
+                    "acc/test": 0.5177304744720459,
+                    "loss/test": 1.7348874807357788
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.6153602600097656,
+                    "loss/test": 1.2966704368591309
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.7875925898551941,
+                    "loss/test": 0.6701593399047852
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.7538095116615295,
+                    "loss/test": 0.7553435564041138
+                }
+            ],
+            "CIFAR100": [
+                {
+                    "acc/test": 0.744700014591217,
+                    "loss/test": 0.9349479675292969
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.9340999722480774,
+                    "loss/test": 0.4754005968570709
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.7518438696861267,
+                    "loss/test": 0.8855280876159668
+                }
+            ],
+            "average_of_tasks": 0.7293052417891366
+        },
+        "0.3": {
+            "DTD": [
+                {
+                    "acc/test": 0.5079787373542786,
+                    "loss/test": 1.7770354747772217
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.6179730892181396,
+                    "loss/test": 1.2758491039276123
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.8335185050964355,
+                    "loss/test": 0.5612110495567322
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.7580952644348145,
+                    "loss/test": 0.7367699146270752
+                }
+            ],
+            "CIFAR100": [
+                {
+                    "acc/test": 0.7488999962806702,
+                    "loss/test": 0.9249002933502197
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.9399999976158142,
+                    "loss/test": 0.4381406307220459
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.7552627325057983,
+                    "loss/test": 0.8687112331390381
+                }
+            ],
+            "average_of_tasks": 0.737389760357993
+        },
+        "0.4": {
+            "DTD": [
+                {
+                    "acc/test": 0.515070915222168,
+                    "loss/test": 1.7708684206008911
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.6193982362747192,
+                    "loss/test": 1.271702766418457
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.7981018424034119,
+                    "loss/test": 0.6413017511367798
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.7626984119415283,
+                    "loss/test": 0.7231183052062988
+                }
+            ],
+            "CIFAR100": [
+                {
+                    "acc/test": 0.7457000017166138,
+                    "loss/test": 0.9496532082557678
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.9459999799728394,
+                    "loss/test": 0.40558773279190063
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.7462738156318665,
+                    "loss/test": 0.8988077640533447
+                }
+            ],
+            "average_of_tasks": 0.7333204575947353
+        },
+        "0.5": {
+            "DTD": [
+                {
+                    "acc/test": 0.508865237236023,
+                    "loss/test": 1.7822118997573853
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.6178147196769714,
+                    "loss/test": 1.2647936344146729
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.8251388669013977,
+                    "loss/test": 0.5884419083595276
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.7614285945892334,
+                    "loss/test": 0.7300039529800415
+                }
+            ],
+            "CIFAR100": [
+                {
+                    "acc/test": 0.7494000196456909,
+                    "loss/test": 0.952003002166748
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.9491999745368958,
+                    "loss/test": 0.3848053514957428
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.7543408274650574,
+                    "loss/test": 0.8477208614349365
+                }
+            ],
+            "average_of_tasks": 0.7380268914358956
+        },
+        "0.6": {
+            "DTD": [
+                {
+                    "acc/test": 0.5097517967224121,
+                    "loss/test": 1.8067303895950317
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.6254948377609253,
+                    "loss/test": 1.2368583679199219
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.8293055295944214,
+                    "loss/test": 0.5671412944793701
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.7617460489273071,
+                    "loss/test": 0.7328389286994934
+                }
+            ],
+            "CIFAR100": [
+                {
+                    "acc/test": 0.746999979019165,
+                    "loss/test": 0.9744369983673096
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.9495000243186951,
+                    "loss/test": 0.36250174045562744
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.7658650875091553,
+                    "loss/test": 0.817717432975769
+                }
+            ],
+            "average_of_tasks": 0.7412376148360116
+        },
+        "0.7": {
+            "DTD": [
+                {
+                    "acc/test": 0.5070921778678894,
+                    "loss/test": 1.8173445463180542
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.6272367238998413,
+                    "loss/test": 1.2318711280822754
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.8413888812065125,
+                    "loss/test": 0.5421779751777649
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.7642857432365417,
+                    "loss/test": 0.7303981184959412
+                }
+            ],
+            "CIFAR100": [
+                {
+                    "acc/test": 0.7523000240325928,
+                    "loss/test": 0.958307147026062
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.9495999813079834,
+                    "loss/test": 0.3601900637149811
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.7548401951789856,
+                    "loss/test": 0.8395763039588928
+                }
+            ],
+            "average_of_tasks": 0.7423919609614781
+        },
+        "0.8": {
+            "DTD": [
+                {
+                    "acc/test": 0.5097517967224121,
+                    "loss/test": 1.8228435516357422
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.6268408298492432,
+                    "loss/test": 1.228153944015503
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.8362500071525574,
+                    "loss/test": 0.5591263175010681
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.7646031975746155,
+                    "loss/test": 0.7291253805160522
+                }
+            ],
+            "CIFAR100": [
+                {
+                    "acc/test": 0.7530999779701233,
+                    "loss/test": 0.967265248298645
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.9498999714851379,
+                    "loss/test": 0.3569590449333191
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.7608712315559387,
+                    "loss/test": 0.8217878937721252
+                }
+            ],
+            "average_of_tasks": 0.7430452874728611
+        },
+        "0.9": {
+            "DTD": [
+                {
+                    "acc/test": 0.5097517967224121,
+                    "loss/test": 1.8241946697235107
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.6278701424598694,
+                    "loss/test": 1.2213963270187378
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.839305579662323,
+                    "loss/test": 0.5483266115188599
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.7644444704055786,
+                    "loss/test": 0.7284172177314758
+                }
+            ],
+            "CIFAR100": [
+                {
+                    "acc/test": 0.753600001335144,
+                    "loss/test": 0.9646528363227844
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.9502000212669373,
+                    "loss/test": 0.35620924830436707
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.7608328461647034,
+                    "loss/test": 0.8217512369155884
+                }
+            ],
+            "average_of_tasks": 0.7437149797167096
+        },
+        "1.0": {
+            "DTD": [
+                {
+                    "acc/test": 0.5097517967224121,
+                    "loss/test": 1.8248827457427979
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.6284244060516357,
+                    "loss/test": 1.2221136093139648
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.8393518328666687,
+                    "loss/test": 0.5483543276786804
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.7647619247436523,
+                    "loss/test": 0.7275058031082153
+                }
+            ],
+            "CIFAR100": [
+                {
+                    "acc/test": 0.7534000277519226,
+                    "loss/test": 0.9652035236358643
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.949999988079071,
+                    "loss/test": 0.3570582866668701
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.7609865069389343,
+                    "loss/test": 0.8242764472961426
+                }
+            ],
+            "average_of_tasks": 0.7438109261648995
+        }
+    },
+    "results": {
+        "DTD": [
+            {
+                "acc/test": 0.5097517967224121,
+                "loss/test": 1.8248827457427979
+            }
+        ],
+        "GTSRB": [
+            {
+                "acc/test": 0.6284244060516357,
+                "loss/test": 1.2221136093139648
+            }
+        ],
+        "EuroSAT": [
+            {
+                "acc/test": 0.8393518328666687,
+                "loss/test": 0.5483543276786804
+            }
+        ],
+        "RESISC45": [
+            {
+                "acc/test": 0.7647619247436523,
+                "loss/test": 0.7275058031082153
+            }
+        ],
+        "CIFAR100": [
+            {
+                "acc/test": 0.7534000277519226,
+                "loss/test": 0.9652035236358643
+            }
+        ],
+        "MNIST": [
+            {
+                "acc/test": 0.949999988079071,
+                "loss/test": 0.3570582866668701
+            }
+        ],
+        "SVHN": [
+            {
+                "acc/test": 0.7609865069389343,
+                "loss/test": 0.8242764472961426
+            }
+        ],
+        "average_of_tasks": 0.7438109261648995
+    },
+    "cfg": {
+        "nn": {
+            "data": {
+                "dataset": {
+                    "dataset_name": "CIFAR100",
+                    "ft_epochs": 6,
+                    "posthoc_epochs": 2,
+                    "finegrained_epochs": 1,
+                    "num_classes": 100
+                },
+                "accelerator": "gpu",
+                "batch_size": {
+                    "test": 128,
+                    "train": 128,
+                    "val": 128
+                },
+                "data_path": "/root/ATM/Alternating-Tuning-and-Merging/data",
+                "num_workers": {
+                    "test": 0,
+                    "train": 4,
+                    "val": 2
+                },
+                "train_dataset": "CIFAR100Val"
+            },
+            "module": {
+                "_target_": "tvp.pl_module.image_classifier.ImageClassifier",
+                "x_key": "x",
+                "y_key": "y",
+                "encoder": "??",
+                "classifier": "??",
+                "optimizer": {
+                    "_target_": "torch.optim.AdamW",
+                    "lr": 1e-05,
+                    "weight_decay": 0.1
+                },
+                "model": {
+                    "_target_": "tvp.modules.encoder.ImageEncoder",
+                    "model_name": "ViT-B-16",
+                    "openclip_cachedir": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
+                    "cache_dir": null,
+                    "keep_lang": "??"
+                },
+                "lr_scheduler": {
+                    "warmup_steps_or_ratio": 200
+                }
+            }
+        },
+        "train": {
+            "seed_index": 0,
+            "deterministic": false,
+            "trainer": {
+                "fast_dev_run": false,
+                "accelerator": "gpu",
+                "devices": 1,
+                "precision": 32,
+                "max_steps": -1,
+                "num_sanity_val_steps": 2,
+                "gradient_clip_val": 10.0,
+                "val_check_interval": 1.0,
+                "deterministic": false
+            },
+            "restore": {
+                "ckpt_or_run_path": null,
+                "mode": null
+            },
+            "monitor": {
+                "metric": "loss/train",
+                "mode": "min"
+            },
+            "callbacks": [
+                {
+                    "_target_": "pytorch_lightning.callbacks.progress.tqdm_progress.TQDMProgressBar",
+                    "refresh_rate": 1
+                }
+            ],
+            "logging": {
+                "upload": {
+                    "run_files": false,
+                    "source": true
+                },
+                "logger": {
+                    "_target_": "lightning.pytorch.loggers.WandbLogger",
+                    "project": "task-vectors-playground",
+                    "entity": "dansolombrinoandfriends",
+                    "log_model": false,
+                    "mode": "online",
+                    "tags": [
+                        "dev"
+                    ]
+                }
+            }
+        },
+        "conventions": {
+            "x_key": "x",
+            "y_key": "y"
+        },
+        "core": {
+            "entity": "dansolombrinoandfriends",
+            "project_name": "task-vectors-playground",
+            "storage_dir": "/root/ATM/Alternating-Tuning-and-Merging/storage",
+            "tags": [
+                "dev"
+            ],
+            "version": "0.0.1"
+        },
+        "epoch_divisor": "None",
+        "eval_datasets": [
+            "DTD",
+            "GTSRB",
+            "EuroSAT",
+            "RESISC45",
+            "CIFAR100",
+            "MNIST",
+            "SVHN"
+        ],
+        "eval_on_train": false,
+        "misc": {
+            "cache_dir": null,
+            "ckpt_path": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16",
+            "openclip_cachedir": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
+            "pretrained_checkpoint": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16/zeroshot.pt"
+        },
+        "order": 1,
+        "seed_index": 0,
+        "task_vectors": {
+            "aggregator": {
+                "_target_": "tvp.task_vectors.aggregator.SumAggregator",
+                "mean": true
+            },
+            "breadcrumbs": {
+                "beta": 0.85,
+                "gamma": 0.993
+            },
+            "dare": {
+                "rate": 0.9
+            },
+            "merging_method": "normal",
+            "num_task_vectors": 8,
+            "orthogonalize": false,
+            "scaling_coefficient": 1,
+            "ties": {
+                "ties_lambda": 1,
+                "top_k": 20,
+                "merge_func": "mean"
+            },
+            "to_apply": [
+                "DTD",
+                "GTSRB",
+                "EuroSAT",
+                "RESISC45",
+                "CIFAR100",
+                "MNIST",
+                "SVHN"
+            ]
+        },
+        "ft_regime": "ta",
+        "tvs_to_apply_group_name": "paper-atm",
+        "optimizer_name": "adamw",
+        "lr_scheduler_name": "cosine_annealing",
+        "upload_merged_to_wandb": false,
+        "evaluation_export_dir": "./evaluations/merged_progress_merging",
+        "eval_merged_ratios": [
+            0.1,
+            0.2,
+            0.3,
+            0.4,
+            0.5,
+            0.6,
+            0.7,
+            0.8,
+            0.9,
+            1.0
+        ],
+        "eval_skip_if_exists": true,
+        "eval_orthogonalization_method": "none",
+        "timestamp": "2025_01_23_at_16_27_50"
+    }
+}
