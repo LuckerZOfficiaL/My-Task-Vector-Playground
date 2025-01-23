@@ -6,6 +6,7 @@ import yaml
 import subprocess
 
 import argparse
+import ast
 
 from src.tvp.data.datasets.constants import DATASETS_PAPER_ATM
 from src.tvp.data.datasets.constants import DATASETS_PAPER_TSV_8
@@ -158,7 +159,6 @@ def _validate_args(args: dict):
             if args["wita_num_iters"] is None:
                 raise ValueError("--perform-eval true requires --wita-num-iters to be explicitly provided")
 
-
     args["optim_class"] = _get_optim_class(args["optim_name"])
 
     if args["lr_scheduler_name"] == "cosine_annealing":
@@ -203,6 +203,7 @@ def _parse_args():
     parser.add_argument("--perform-eval", type=str_to_bool, required=True, help="Flag to indicate if evaluation should be performed (true/false)")
     parser.add_argument("--eval-skip-if-exists", type=str_to_bool, help="Flag to indicate if evaluation should be skipped if the evaluation results already exist (true/false)")
     parser.add_argument("--upload-merged-to-wandb", type=str_to_bool, help="Flag to indicate if merged model should be uploaded to wandb (true/false)")
+    parser.add_argument("--eval-use-merged-ratios", type=str, help="Whether to eval progress merging")
     parser.add_argument("--evaluation-export-dir", type=str, help="Directory to export evaluation results")
     parser.add_argument("--eval-orthogonalization-method", type=str, help="Name of the orthogonalization method to use while applying TVs in eval")
     parser.add_argument("--eval-conflict-res-method", type=str, help="Name of the conflict resolution method to use while applying TVs in eval")
@@ -273,7 +274,62 @@ def main():
 
         print(f"\n\nEvaluation datasets: {args['eval_datasets']}\n\n")
 
-        if not args["eval_use_wita"]:
+        if args["eval_use_wita"]:
+                
+            subprocess.run(
+                [
+                    "python", 
+                    "src/scripts/evaluate_wita.py",
+                    f"+ft_regime={args['ft_regime']}",
+                    f"task_vectors.to_apply={args['tvs_to_apply']}",
+                    f"+tvs_to_apply_group_name={args['tvs_to_apply_group_name']}",
+                    f"eval_datasets={args['eval_datasets']}",
+                    f"+optimizer_name={args['optim_name']}",
+                    f"nn.module.optimizer._target_={args['optim_class']}",
+                    f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
+                    f"+lr_scheduler_name={args['lr_scheduler_name']}",
+                    cosine_annealing_warmup_steps_or_ratio,
+                    f"+upload_merged_to_wandb={args['upload_merged_to_wandb']}",
+                    f"+evaluation_export_dir={args['evaluation_export_dir']}",
+                    f"+eval_orthogonalization_method={args['eval_orthogonalization_method']}",
+                    f"+conflict_res_method={args['eval_conflict_res_method']}",
+                    f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
+                    f"+timestamp={timestamp}",
+                    f"+eval_use_wita={args['eval_use_wita']}",
+                    f"+wita.top_k_weakest={args['wita_top_k_weakest']}",
+                    f"+wita.top_k_strongest={args['wita_top_k_strongest']}",
+                    f"+wita.num_iters={args['wita_num_iters']}",
+                ], 
+                check=True
+            )
+
+        elif args["eval_use_merged_ratios"]:
+
+            subprocess.run(
+                [
+                    "python", 
+                    "src/scripts/evaluate_progress_merging.py",
+                    f"+ft_regime={args['ft_regime']}",
+                    f"task_vectors.to_apply={args['tvs_to_apply']}",
+                    f"+tvs_to_apply_group_name={args['tvs_to_apply_group_name']}",
+                    f"eval_datasets={args['eval_datasets']}",
+                    f"+optimizer_name={args['optim_name']}",
+                    f"nn.module.optimizer._target_={args['optim_class']}",
+                    f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
+                    f"+lr_scheduler_name={args['lr_scheduler_name']}",
+                    cosine_annealing_warmup_steps_or_ratio,
+                    f"+upload_merged_to_wandb={args['upload_merged_to_wandb']}",
+                    f"+evaluation_export_dir={args['evaluation_export_dir']}",
+                    f"+eval_merged_ratios={[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}",
+                    f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
+                    f"+eval_orthogonalization_method={args['eval_orthogonalization_method']}",
+                    f"+timestamp={timestamp}",
+                ], 
+                check=True
+            )
+
+        
+        else:
 
             subprocess.run(
                 [
@@ -295,35 +351,7 @@ def main():
                 ], 
                 check=True
             )
-
-        else:
-                
-                subprocess.run(
-                    [
-                        "python", 
-                        "src/scripts/evaluate_wita.py",
-                        f"+ft_regime={args['ft_regime']}",
-                        f"task_vectors.to_apply={args['tvs_to_apply']}",
-                        f"+tvs_to_apply_group_name={args['tvs_to_apply_group_name']}",
-                        f"eval_datasets={args['eval_datasets']}",
-                        f"+optimizer_name={args['optim_name']}",
-                        f"nn.module.optimizer._target_={args['optim_class']}",
-                        f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
-                        f"+lr_scheduler_name={args['lr_scheduler_name']}",
-                        cosine_annealing_warmup_steps_or_ratio,
-                        f"+upload_merged_to_wandb={args['upload_merged_to_wandb']}",
-                        f"+evaluation_export_dir={args['evaluation_export_dir']}",
-                        f"+eval_orthogonalization_method={args['eval_orthogonalization_method']}",
-                        f"+conflict_res_method={args['eval_conflict_res_method']}",
-                        f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
-                        f"+timestamp={timestamp}",
-                        f"+eval_use_wita={args['eval_use_wita']}",
-                        f"+wita.top_k_weakest={args['wita_top_k_weakest']}",
-                        f"+wita.top_k_strongest={args['wita_top_k_strongest']}",
-                        f"+wita.num_iters={args['wita_num_iters']}",
-                    ], 
-                    check=True
-                )
+    
     
 
 if __name__ == "__main__":

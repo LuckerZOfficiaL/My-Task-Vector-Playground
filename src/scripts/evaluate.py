@@ -117,51 +117,14 @@ def run(cfg: DictConfig) -> str:
         f":latest"
     )
 
-    finetuned_models: Dict[str, ImageEncoder] = {
-        dataset: load_model_from_artifact(artifact_path=finetuned_id_fn(dataset), run=logger.experiment)
-        for dataset in cfg.task_vectors.to_apply
-    }
-
-    # Task vectors
-    flatten: Callable[[ImageEncoder], Tensor] = lambda model: parameters_to_vector(model.parameters())
-
-    with torch.no_grad():
-        task_vectors: Dict[str, Tensor] = {
-            dataset: flatten(finetuned_models[dataset]) - flatten(zeroshot_model) for dataset in cfg.task_vectors.to_apply
-        }
-    
-    pylogger.info(f"pairwise cosine similarity between task vectors before orthogonalization:")
-    print_pairwise_cos_sim(torch.stack(list(task_vectors.values())))
-
-    task_vectors = orthogonalize_task_vectors(task_vectors, cfg, artifact_name)
-
-    pylogger.info(f"pairwise cosine similarity between task vectors after orthogonalization:")
-    print_pairwise_cos_sim(torch.stack(list(task_vectors.values())))
- 
-    task_vector_aggregator = instantiate(cfg.task_vectors.aggregator)
-    multi_task_vector = task_vector_aggregator(torch.stack(list(task_vectors.values())))
-
-    delta_model = copy.deepcopy(zeroshot_model)
-    vector_to_parameters(multi_task_vector, delta_model.parameters())
-    
-    task_equipped_model = copy.deepcopy(zeroshot_model)
-    apply_task_vector(task_equipped_model, delta_model.state_dict(), scaling_coef=cfg.task_vectors.scaling_coefficient)
-
-    if cfg.upload_merged_to_wandb:
-        metadata = {"model_name": f"{cfg.nn.module.model.model_name}", "model_class": "tvp.modules.encoder.ImageEncoder"}
-        upload_model_to_wandb(task_equipped_model, artifact_name, logger.experiment, cfg, metadata)
-
-    seed_index_everything(cfg)
-
-    eval_results = eval_merged_model(
-        cfg=cfg, 
-        task_equipped_model=task_equipped_model, 
-        template_core=template_core, 
-        logger=logger
-    )
-
-    print(f"\n\n")
-    pprint(eval_results)
+    eval_results = eval(
+        finetuned_id_fn=finetuned_id_fn,
+        logger=logger,
+        cfg=cfg,
+        zeroshot_model=zeroshot_model,
+        artifact_name=artifact_name,
+        template_core=template_core,
+    )        
 
     export_json_to_disk(
         {
@@ -233,6 +196,63 @@ def eval_merged_model(
     ) / len(results)
 
     return results
+
+
+def eval(
+    finetuned_id_fn: Callable[[str], str],
+    logger: NNLogger,
+    cfg: DictConfig,
+    zeroshot_model: ImageEncoder,
+    artifact_name: str,
+    template_core: NNTemplateCore,
+) -> dict:
+    finetuned_models: Dict[str, ImageEncoder] = {
+        dataset: load_model_from_artifact(artifact_path=finetuned_id_fn(dataset), run=logger.experiment)
+        for dataset in cfg.task_vectors.to_apply
+    }
+
+    # Task vectors
+    flatten: Callable[[ImageEncoder], Tensor] = lambda model: parameters_to_vector(model.parameters())
+
+    with torch.no_grad():
+        task_vectors: Dict[str, Tensor] = {
+            dataset: flatten(finetuned_models[dataset]) - flatten(zeroshot_model) for dataset in cfg.task_vectors.to_apply
+        }
+    
+    pylogger.info(f"pairwise cosine similarity between task vectors before orthogonalization:")
+    print_pairwise_cos_sim(torch.stack(list(task_vectors.values())))
+
+    task_vectors = orthogonalize_task_vectors(task_vectors, cfg, artifact_name)
+
+    pylogger.info(f"pairwise cosine similarity between task vectors after orthogonalization:")
+    print_pairwise_cos_sim(torch.stack(list(task_vectors.values())))
+ 
+    task_vector_aggregator = instantiate(cfg.task_vectors.aggregator)
+    multi_task_vector = task_vector_aggregator(torch.stack(list(task_vectors.values())))
+
+    delta_model = copy.deepcopy(zeroshot_model)
+    vector_to_parameters(multi_task_vector, delta_model.parameters())
+    
+    task_equipped_model = copy.deepcopy(zeroshot_model)
+    apply_task_vector(task_equipped_model, delta_model.state_dict(), scaling_coef=cfg.task_vectors.scaling_coefficient)
+
+    if cfg.upload_merged_to_wandb:
+        metadata = {"model_name": f"{cfg.nn.module.model.model_name}", "model_class": "tvp.modules.encoder.ImageEncoder"}
+        upload_model_to_wandb(task_equipped_model, artifact_name, logger.experiment, cfg, metadata)
+
+    seed_index_everything(cfg)
+
+    eval_results = eval_merged_model(
+        cfg=cfg, 
+        task_equipped_model=task_equipped_model, 
+        template_core=template_core, 
+        logger=logger
+    )
+
+    print(f"\n\n")
+    pprint(eval_results, expand_all=True)
+
+    return eval_results
 
 
 @hydra.main(config_path=str(PROJECT_ROOT / "conf"), config_name="task_vectors.yaml")

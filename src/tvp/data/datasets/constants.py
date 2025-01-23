@@ -45,3 +45,66 @@ DATASET_TO_STYLED = {
     "emnist": "EMNIST",
     "kmnist": "KMNIST"
 }
+
+DATASET_TO_NUM_BATCHES = {
+    "cars": {
+        128: 58
+    },
+    "dtd": {
+        128: 32
+    },
+    "eurosat": {
+        128: 169
+    },
+    "gtsrb": {
+        128: 188
+    },
+    "mnist": {
+        128: 430
+    },
+    "resisc45": {
+        128: 133
+    },
+    "svhn": {
+        128: 534
+    },
+    "sun397": {
+        128: 140
+    },
+    "stl10": {
+        128: 36
+    },
+    "oxfordiiitpet": {
+        128: 26
+    },
+    "flowers102": {
+        128: 8
+    },
+    "cifar100": {
+        128: 352
+    },
+    "pcam": {
+        128: 2009
+    },
+    "fer2013": {
+        128: 202
+    },
+    "cifar10": {
+        128: 352
+    },
+    "food101": {
+        128: 553
+    },
+    "fashionmnist": {
+        128: 430
+    },
+    "renderedsst2": {
+        128: 49
+    },
+    "emnist": {
+        128: 1836
+    },
+    "kmnist": {
+        128: 430
+    }
+}

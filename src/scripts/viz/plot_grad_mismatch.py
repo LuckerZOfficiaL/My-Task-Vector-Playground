@@ -13,7 +13,8 @@ from src.tvp.data.datasets.constants import DATASET_TO_STYLED
 from src.tvp.data.datasets.constants import DATASET_TO_NUM_BATCHES
 
 import torch
-from tvp.utils.io_utils import load_model_from_artifact, import_json_from_disk
+from torch import cosine_similarity
+from tvp.utils.io_utils import load_model_from_artifact, import_json_from_disk, export_json_to_disk
 from torch import Tensor
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
@@ -107,11 +108,11 @@ def main(cfg: DictConfig):
             f":latest"
         )
 
-        cos_sims: Dict[str, List[float]] = {}
+        grad_mismatches: Dict[str, List[float]] = {}
 
         for dataset_idx, dataset in enumerate(DATASETS_PAPER_TSV_20):
 
-            cos_sims[dataset] = []
+            grad_mismatches[dataset] = []
 
             grad_atm_named_parameters: Dict[str, Tensor] = torch.load(
                 grad_atm_identifier.replace(
@@ -120,10 +121,6 @@ def main(cfg: DictConfig):
                     "___DATASET_NUM_BATCHES_PLACEHOLDER___", str(DATASET_TO_NUM_BATCHES[dataset][cfg.nn.data.batch_size.train])
                 )
             )
-
-            # print(type(grad_atm_named_parameters))
-            # print()
-            # pprint(grad_atm_named_parameters, expand_all=True)
 
             for ta_progress_idx, ta_progress_ratio in enumerate(TA_PROGRESS_RATIO_LIST):
 
@@ -139,7 +136,7 @@ def main(cfg: DictConfig):
                 )
 
                 tv_ta_vec = get_task_vector(zeroshot_model, ft_ta_model)
-                print(f"tv_ta_vec: {tv_ta_vec.shape}")
+                vector_to_parameters(tv_ta_vec, ft_ta_model.parameters())
 
                 grad_atm_model: ImageEncoder = deepcopy(zeroshot_model)
 
@@ -149,12 +146,18 @@ def main(cfg: DictConfig):
                 for name, grad in grad_atm_named_parameters.items():
                     if grad_atm_named_parameters[name] is None:
                         grad_atm_named_parameters[name] = torch.zeros_like(dict(ft_ta_model.named_parameters())[name])
+                        
+                        if dict(ft_ta_model.named_parameters())[name].allclose(torch.zeros_like(dict(ft_ta_model.named_parameters())[name])):
+                            print(f"Replaced None with zeros for {name} successfully!")
+                        else:
+                            print(f"Replaced None with zeros for {name} NOT successfully!")
 
                 grad_atm_model.load_state_dict(grad_atm_named_parameters)
                 grad_atm_vec = parameters_to_vector(grad_atm_model.parameters())
-                print(f"grad_atm_vec: {grad_atm_vec.shape}")
 
-                # TODO get cosine similarity and do plots stuff!
+                grad_mismatches[dataset].append(
+                    cosine_similarity(tv_ta_vec, -1 * grad_atm_vec, dim=0).item()
+                )
 
                 
 
@@ -162,21 +165,29 @@ def main(cfg: DictConfig):
 
         print("\n\n\n\n\n")
         print("Computed cosine similarities:")
+
+        os.makedirs(os.path.dirname(GRAD_MISMATCH), exist_ok=True)
+        export_json_to_disk(
+            data=grad_mismatches, 
+            export_dir=os.path.dirname(GRAD_MISMATCH), 
+            file_name=os.path.basename(GRAD_MISMATCH.replace(".json", ""))
+        )
+
     else:
-        cos_sims = import_json_from_disk(file_path=TV_SIMS_PATH)
+        grad_mismatches = import_json_from_disk(file_path=GRAD_MISMATCH)
         print("\n\n\n\n\n")
         print("Loaded cosine similarities:")
     
-    pprint(cos_sims, expand_all=True)
+    pprint(grad_mismatches, expand_all=True)
 
-    if PLOT_TV_SIMS:
+    if PLOT_GRAD_MISMATCH:
 
-        export_file_path = "./plots/atm_ta_tv_similarity/atm_ta_tv_similarity.png"
+        export_file_path = "./plots/grad_mismatch/grad_mismatch.png"
         os.makedirs(os.path.dirname(export_file_path), exist_ok=True)
         
         plt.figure(figsize=(12, 12))
         sns.heatmap(
-            data=np.array(list(cos_sims.values())), 
+            data=np.array(list(grad_mismatches.values())), 
             annot=True, 
             fmt=".2f", 
             cmap="RdYlGn", 
@@ -184,7 +195,7 @@ def main(cfg: DictConfig):
             vmin=0, 
             vmax=1,
             xticklabels=[f"{int(ratio*100)}%" for ratio in TA_PROGRESS_RATIO_LIST],
-            yticklabels=[DATASET_TO_STYLED[t] for t in list(cos_sims.keys())],
+            yticklabels=[DATASET_TO_STYLED[t] for t in list(grad_mismatches.keys())],
         )
         plt.xlabel("TA Training Steps %")
         plt.ylabel("Task")
