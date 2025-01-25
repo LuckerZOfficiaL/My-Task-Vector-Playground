@@ -1,0 +1,734 @@
+{
+    "results_all_ratios": {
+        "0.1": {
+            "Cars": [
+                {
+                    "acc/test": 0.818803608417511,
+                    "loss/test": 0.5472263693809509
+                }
+            ],
+            "DTD": [
+                {
+                    "acc/test": 0.8014184236526489,
+                    "loss/test": 0.7655277252197266
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.9670370221138,
+                    "loss/test": 0.10005072504281998
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.9770388007164001,
+                    "loss/test": 0.1016915887594223
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.9882000088691711,
+                    "loss/test": 0.060581568628549576
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.9285714030265808,
+                    "loss/test": 0.21330949664115906
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.9398432970046997,
+                    "loss/test": 0.22166329622268677
+                }
+            ],
+            "SUN397": [
+                {
+                    "acc/test": 0.7507304549217224,
+                    "loss/test": 0.8406637907028198
+                }
+            ]
+        },
+        "0.2": {
+            "Cars": [
+                {
+                    "acc/test": 0.8557393550872803,
+                    "loss/test": 0.4651908278465271
+                }
+            ],
+            "DTD": [
+                {
+                    "acc/test": 0.817375898361206,
+                    "loss/test": 0.7803892493247986
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.9752777814865112,
+                    "loss/test": 0.07866281270980835
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.9799683094024658,
+                    "loss/test": 0.07967029511928558
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.9901000261306763,
+                    "loss/test": 0.047336019575595856
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.9373015761375427,
+                    "loss/test": 0.20551109313964844
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.957590639591217,
+                    "loss/test": 0.1711052507162094
+                }
+            ],
+            "SUN397": [
+                {
+                    "acc/test": 0.7690680027008057,
+                    "loss/test": 0.8156559467315674
+                }
+            ]
+        },
+        "0.3": {
+            "Cars": [
+                {
+                    "acc/test": 0.871408998966217,
+                    "loss/test": 0.438895046710968
+                }
+            ],
+            "DTD": [
+                {
+                    "acc/test": 0.804964542388916,
+                    "loss/test": 0.8493257761001587
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.9805092811584473,
+                    "loss/test": 0.06144607439637184
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.9871733784675598,
+                    "loss/test": 0.04731815308332443
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.9916999936103821,
+                    "loss/test": 0.04415517672896385
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.945555567741394,
+                    "loss/test": 0.19704988598823547
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.9629302620887756,
+                    "loss/test": 0.14994709193706512
+                }
+            ],
+            "SUN397": [
+                {
+                    "acc/test": 0.7731485962867737,
+                    "loss/test": 0.8438129425048828
+                }
+            ]
+        },
+        "0.4": {
+            "Cars": [
+                {
+                    "acc/test": 0.8743937611579895,
+                    "loss/test": 0.4465002119541168
+                }
+            ],
+            "DTD": [
+                {
+                    "acc/test": 0.8093971610069275,
+                    "loss/test": 0.8655834197998047
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.9930555820465088,
+                    "loss/test": 0.021209033206105232
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.9900237321853638,
+                    "loss/test": 0.04158540070056915
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.9945999979972839,
+                    "loss/test": 0.03197857737541199
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.95333331823349,
+                    "loss/test": 0.17475856840610504
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.9686155319213867,
+                    "loss/test": 0.129378542304039
+                }
+            ],
+            "SUN397": [
+                {
+                    "acc/test": 0.7850377559661865,
+                    "loss/test": 0.8401274085044861
+                }
+            ]
+        },
+        "0.5": {
+            "Cars": [
+                {
+                    "acc/test": 0.8929237723350525,
+                    "loss/test": 0.3968510925769806
+                }
+            ],
+            "DTD": [
+                {
+                    "acc/test": 0.826241135597229,
+                    "loss/test": 0.823072612285614
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.9952315092086792,
+                    "loss/test": 0.01819406822323799
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.9906571507453918,
+                    "loss/test": 0.038229603320360184
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.9950000047683716,
+                    "loss/test": 0.029866378754377365
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.9617460370063782,
+                    "loss/test": 0.14037178456783295
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.9685003161430359,
+                    "loss/test": 0.1284407526254654
+                }
+            ],
+            "SUN397": [
+                {
+                    "acc/test": 0.7856423258781433,
+                    "loss/test": 0.8613499402999878
+                }
+            ]
+        },
+        "0.6": {
+            "Cars": [
+                {
+                    "acc/test": 0.8947892189025879,
+                    "loss/test": 0.38833361864089966
+                }
+            ],
+            "DTD": [
+                {
+                    "acc/test": 0.832446813583374,
+                    "loss/test": 0.8233826160430908
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.9962499737739563,
+                    "loss/test": 0.015133537352085114
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.9914489388465881,
+                    "loss/test": 0.03664088249206543
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.9955999851226807,
+                    "loss/test": 0.027805902063846588
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.9634920358657837,
+                    "loss/test": 0.1381109207868576
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.9739935398101807,
+                    "loss/test": 0.11047717928886414
+                }
+            ],
+            "SUN397": [
+                {
+                    "acc/test": 0.7905289530754089,
+                    "loss/test": 0.859790027141571
+                }
+            ]
+        },
+        "0.7": {
+            "Cars": [
+                {
+                    "acc/test": 0.9017534852027893,
+                    "loss/test": 0.37650996446609497
+                }
+            ],
+            "DTD": [
+                {
+                    "acc/test": 0.8342198729515076,
+                    "loss/test": 0.8261333703994751
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.9972222447395325,
+                    "loss/test": 0.012091544456779957
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.9903404712677002,
+                    "loss/test": 0.03989715129137039
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.996399998664856,
+                    "loss/test": 0.023758934810757637
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.9655555486679077,
+                    "loss/test": 0.13812215626239777
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.9781807065010071,
+                    "loss/test": 0.09790840744972229
+                }
+            ],
+            "SUN397": [
+                {
+                    "acc/test": 0.7915365099906921,
+                    "loss/test": 0.8700635433197021
+                }
+            ]
+        },
+        "0.8": {
+            "Cars": [
+                {
+                    "acc/test": 0.9008829593658447,
+                    "loss/test": 0.37556880712509155
+                }
+            ],
+            "DTD": [
+                {
+                    "acc/test": 0.8359929323196411,
+                    "loss/test": 0.8276167511940002
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.9973148107528687,
+                    "loss/test": 0.01200958527624607
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.9903404712677002,
+                    "loss/test": 0.039917007088661194
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.9969000220298767,
+                    "loss/test": 0.02153034135699272
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.9666666388511658,
+                    "loss/test": 0.13852979242801666
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.9762983918190002,
+                    "loss/test": 0.10410740971565247
+                }
+            ],
+            "SUN397": [
+                {
+                    "acc/test": 0.7901259660720825,
+                    "loss/test": 0.8741065859794617
+                }
+            ]
+        },
+        "0.9": {
+            "Cars": [
+                {
+                    "acc/test": 0.9012560844421387,
+                    "loss/test": 0.37605467438697815
+                }
+            ],
+            "DTD": [
+                {
+                    "acc/test": 0.8359929323196411,
+                    "loss/test": 0.8284180760383606
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.9972684979438782,
+                    "loss/test": 0.012107144109904766
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.9904988408088684,
+                    "loss/test": 0.03956222906708717
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.996999979019165,
+                    "loss/test": 0.020350556820631027
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.9660317301750183,
+                    "loss/test": 0.13654637336730957
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.977066695690155,
+                    "loss/test": 0.10208680480718613
+                }
+            ],
+            "SUN397": [
+                {
+                    "acc/test": 0.7907304763793945,
+                    "loss/test": 0.876787006855011
+                }
+            ]
+        },
+        "1.0": {
+            "Cars": [
+                {
+                    "acc/test": 0.900634229183197,
+                    "loss/test": 0.3759705424308777
+                }
+            ],
+            "DTD": [
+                {
+                    "acc/test": 0.835106372833252,
+                    "loss/test": 0.8285925388336182
+                }
+            ],
+            "EuroSAT": [
+                {
+                    "acc/test": 0.9972222447395325,
+                    "loss/test": 0.012122439220547676
+                }
+            ],
+            "GTSRB": [
+                {
+                    "acc/test": 0.9904196262359619,
+                    "loss/test": 0.03951707482337952
+                }
+            ],
+            "MNIST": [
+                {
+                    "acc/test": 0.9969000220298767,
+                    "loss/test": 0.020369796082377434
+                }
+            ],
+            "RESISC45": [
+                {
+                    "acc/test": 0.9665079116821289,
+                    "loss/test": 0.1362258642911911
+                }
+            ],
+            "SVHN": [
+                {
+                    "acc/test": 0.9771819114685059,
+                    "loss/test": 0.10192029178142548
+                }
+            ],
+            "SUN397": [
+                {
+                    "acc/test": 0.7911335229873657,
+                    "loss/test": 0.876882791519165
+                }
+            ]
+        }
+    },
+    "results": {
+        "Cars": [
+            {
+                "acc/test": 0.900634229183197,
+                "loss/test": 0.3759705424308777
+            }
+        ],
+        "DTD": [
+            {
+                "acc/test": 0.835106372833252,
+                "loss/test": 0.8285925388336182
+            }
+        ],
+        "EuroSAT": [
+            {
+                "acc/test": 0.9972222447395325,
+                "loss/test": 0.012122439220547676
+            }
+        ],
+        "GTSRB": [
+            {
+                "acc/test": 0.9904196262359619,
+                "loss/test": 0.03951707482337952
+            }
+        ],
+        "MNIST": [
+            {
+                "acc/test": 0.9969000220298767,
+                "loss/test": 0.020369796082377434
+            }
+        ],
+        "RESISC45": [
+            {
+                "acc/test": 0.9665079116821289,
+                "loss/test": 0.1362258642911911
+            }
+        ],
+        "SVHN": [
+            {
+                "acc/test": 0.9771819114685059,
+                "loss/test": 0.10192029178142548
+            }
+        ],
+        "SUN397": [
+            {
+                "acc/test": 0.7911335229873657,
+                "loss/test": 0.876882791519165
+            }
+        ]
+    },
+    "cfg": {
+        "nn": {
+            "data": {
+                "dataset": {
+                    "dataset_name": "CIFAR100",
+                    "ft_epochs": 6,
+                    "posthoc_epochs": 2,
+                    "finegrained_epochs": 1,
+                    "num_classes": 100
+                },
+                "accelerator": "gpu",
+                "batch_size": {
+                    "test": 128,
+                    "train": 128,
+                    "val": 128
+                },
+                "data_path": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/data",
+                "num_workers": {
+                    "test": 0,
+                    "train": 4,
+                    "val": 2
+                },
+                "train_dataset": "CIFAR100Val"
+            },
+            "module": {
+                "_target_": "tvp.pl_module.image_classifier.ImageClassifier",
+                "x_key": "x",
+                "y_key": "y",
+                "encoder": "??",
+                "classifier": "??",
+                "optimizer": {
+                    "_target_": "torch.optim.AdamW",
+                    "lr": 1e-05,
+                    "weight_decay": 0.1
+                },
+                "model": {
+                    "_target_": "tvp.modules.encoder.ImageEncoder",
+                    "model_name": "ViT-B-16",
+                    "openclip_cachedir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
+                    "cache_dir": null,
+                    "keep_lang": "??"
+                },
+                "lr_scheduler": {
+                    "warmup_steps_or_ratio": 200
+                }
+            }
+        },
+        "train": {
+            "seed_index": 0,
+            "deterministic": false,
+            "trainer": {
+                "fast_dev_run": false,
+                "accelerator": "gpu",
+                "devices": 1,
+                "precision": 32,
+                "max_steps": -1,
+                "num_sanity_val_steps": 2,
+                "gradient_clip_val": 10.0,
+                "val_check_interval": 1.0,
+                "deterministic": false
+            },
+            "restore": {
+                "ckpt_or_run_path": null,
+                "mode": null
+            },
+            "monitor": {
+                "metric": "loss/train",
+                "mode": "min"
+            },
+            "callbacks": [
+                {
+                    "_target_": "pytorch_lightning.callbacks.progress.tqdm_progress.TQDMProgressBar",
+                    "refresh_rate": 1
+                }
+            ],
+            "logging": {
+                "upload": {
+                    "run_files": false,
+                    "source": true
+                },
+                "logger": {
+                    "_target_": "lightning.pytorch.loggers.WandbLogger",
+                    "project": "task-vectors-playground",
+                    "entity": "dansolombrinoandfriends",
+                    "log_model": false,
+                    "mode": "online",
+                    "tags": [
+                        "dev"
+                    ]
+                }
+            }
+        },
+        "conventions": {
+            "x_key": "x",
+            "y_key": "y"
+        },
+        "core": {
+            "entity": "dansolombrinoandfriends",
+            "project_name": "task-vectors-playground",
+            "storage_dir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/storage",
+            "tags": [
+                "dev"
+            ],
+            "version": "0.0.1"
+        },
+        "epoch_divisor": "None",
+        "eval_datasets": [
+            "Cars",
+            "DTD",
+            "EuroSAT",
+            "GTSRB",
+            "MNIST",
+            "RESISC45",
+            "SVHN",
+            "SUN397"
+        ],
+        "eval_on_train": false,
+        "misc": {
+            "cache_dir": null,
+            "ckpt_path": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16",
+            "openclip_cachedir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
+            "pretrained_checkpoint": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16/zeroshot.pt"
+        },
+        "order": 1,
+        "seed_index": 0,
+        "task_vectors": {
+            "aggregator": {
+                "_target_": "tvp.task_vectors.aggregator.SumAggregator",
+                "mean": true
+            },
+            "breadcrumbs": {
+                "beta": 0.85,
+                "gamma": 0.993
+            },
+            "dare": {
+                "rate": 0.9
+            },
+            "merging_method": "normal",
+            "num_task_vectors": 8,
+            "orthogonalize": false,
+            "scaling_coefficient": 1,
+            "ties": {
+                "ties_lambda": 1,
+                "top_k": 20,
+                "merge_func": "mean"
+            },
+            "to_apply": [
+                "Cars",
+                "DTD",
+                "EuroSAT",
+                "GTSRB",
+                "MNIST",
+                "RESISC45",
+                "SVHN",
+                "SUN397"
+            ]
+        },
+        "ft_regime": "ta",
+        "tvs_to_apply_group_name": "paper-ta",
+        "optimizer_name": "adamw",
+        "lr_scheduler_name": "cosine_annealing",
+        "upload_merged_to_wandb": false,
+        "evaluation_export_dir": "./evaluations/ft_progress_merging",
+        "eval_merged_ratios": [
+            0.1,
+            0.2,
+            0.3,
+            0.4,
+            0.5,
+            0.6,
+            0.7,
+            0.8,
+            0.9,
+            1.0
+        ],
+        "eval_skip_if_exists": true,
+        "eval_orthogonalization_method": "none",
+        "eval_ft_progress_merging": true,
+        "timestamp": "2025_01_25_at_20_10_07"
+    }
+}
