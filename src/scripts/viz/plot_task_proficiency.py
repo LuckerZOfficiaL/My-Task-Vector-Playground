@@ -93,8 +93,6 @@ def main():
             plt.plot(
                 [int(ratio*100) for ratio in RATIOS], 
                 plot_data[dataset], 
-                marker="o", 
-                color="b", 
                 label="Task Proficiency"
             )
             plt.xlabel("TA Training Steps %")
@@ -175,8 +173,6 @@ def main():
         plt.plot(
             [int(ratio*100) for ratio in RATIOS], 
             plot_data_error[dataset], 
-            marker="o", 
-            color="b", 
             label="Task Proficiency Error"
         )
         plt.xlabel("TA Training Steps %")
