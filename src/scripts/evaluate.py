@@ -126,14 +126,14 @@ def run(cfg: DictConfig) -> str:
         template_core=template_core,
     )        
 
-    export_json_to_disk(
-        {
-            "results": eval_results,
-            "cfg": OmegaConf.to_container(cfg, resolve=True),
-        },
-        cfg.evaluation_export_dir,
-        artifact_name
-    )
+    # export_json_to_disk(
+    #     {
+    #         "results": eval_results,
+    #         "cfg": OmegaConf.to_container(cfg, resolve=True),
+    #     },
+    #     cfg.evaluation_export_dir,
+    #     artifact_name
+    # )
 
 
 def eval_merged_model(
@@ -244,12 +244,14 @@ def eval(
 
     eval_results = eval_merged_model(
         cfg=cfg, 
-        task_equipped_model=task_equipped_model, 
+        # task_equipped_model=task_equipped_model, 
+        task_equipped_model=copy.deepcopy(zeroshot_model), 
         template_core=template_core, 
         logger=logger
     )
 
     print(f"\n\n")
+    pylogger.info(f"[evaluate.eval()] eval_results:")
     pprint(eval_results, expand_all=True)
 
     return eval_results

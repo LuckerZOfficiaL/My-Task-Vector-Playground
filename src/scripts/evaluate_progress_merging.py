@@ -135,19 +135,63 @@ def run(cfg: DictConfig) -> str:
             print(f"\n\n\n")
 
             continue
-        
-        eval_results[ratio] = eval(
-            finetuned_id_fn=finetuned_id_fn,
-            logger=logger,
-            cfg=cfg,
-            zeroshot_model=zeroshot_model,
-            artifact_name=artifact_name_tmp,
-            template_core=template_core,
-        )
+
+        if cfg.eval_ft_progress_merging:
+
+            tmp_eval_results = {}
+            tmp_eval_results[ratio] = {}
+            tvs_to_apply_original = copy.deepcopy(cfg.task_vectors.to_apply)
+            
+            zeroshot_model_all_zeros = copy.deepcopy(zeroshot_model)
+            for parameter in zeroshot_model_all_zeros.parameters():
+                parameter.data = torch.zeros_like(parameter.data)
+                if parameter.grad is not None:
+                    parameter.grad.zero_()
+            for buffer in zeroshot_model_all_zeros.buffers():
+                buffer.data = torch.zeros_like(buffer)
+
+            for dataset in tvs_to_apply_original:
+
+                cfg_copy = copy.deepcopy(cfg)
+
+                cfg_copy.task_vectors.to_apply = [dataset]
+                cfg_copy.eval_datasets = [dataset]
+
+                tmp_eval_results[ratio][dataset] = eval(
+                    finetuned_id_fn=finetuned_id_fn,
+                    logger=logger,
+                    cfg=cfg_copy,
+                    zeroshot_model=zeroshot_model_all_zeros,
+                    artifact_name=artifact_name_tmp,
+                    template_core=template_core,
+                )[dataset]
+                
+                print(f"\n\n\n")
+                pylogger.info(f"Results for ratio {ratio} and dataset {dataset}")
+                pprint(tmp_eval_results, expand_all=True)
+                print(f"\n\n\n")
+
+            eval_results[ratio] = tmp_eval_results[ratio]
+
+
+        else:
+            eval_results[ratio] = eval(
+                finetuned_id_fn=finetuned_id_fn,
+                logger=logger,
+                cfg=cfg,
+                zeroshot_model=zeroshot_model,
+                artifact_name=artifact_name_tmp,
+                template_core=template_core,
+            )
+
+        # print(f"\n\n\n")
+        # pylogger.info(f"Results for ratio {ratio}")
+        # pprint(eval_results[ratio], expand_all=True)
+        # print(f"\n\n\n")
 
         print(f"\n\n\n")
-        pylogger.info(f"Results for ratio {ratio}")
-        pprint(eval_results[ratio])
+        pylogger.info(f"Results for ALL ratios")
+        pprint(eval_results, expand_all=True)
         print(f"\n\n\n")
 
     

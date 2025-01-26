@@ -13,6 +13,7 @@ from src.tvp.data.datasets.constants import DATASETS_PAPER_TSV_8
 from src.tvp.data.datasets.constants import DATASETS_PAPER_TSV_14
 from src.tvp.data.datasets.constants import DATASETS_PAPER_TSV_20
 from src.tvp.data.datasets.constants import DATASETS_PAPER_TSV_20_MINUS_PAPER_ATM
+from src.tvp.data.datasets.constants import DATASETS_PAPER_TA
 from src.tvp.data.datasets.constants import DATASET_TO_STYLED
 
 
@@ -52,6 +53,8 @@ def _handle_task_group_name(task_group_name: str):
         return DATASETS_PAPER_TSV_20
     elif task_group_name.lower() == "paper-tsv-20-minus-paper-atm":
         return DATASETS_PAPER_TSV_20_MINUS_PAPER_ATM
+    elif task_group_name.lower() == "paper-ta":
+        return DATASETS_PAPER_TA
     else:
         raise ValueError(f"Invalid task group name: {task_group_name}")
 
@@ -149,6 +152,9 @@ def _validate_args(args: dict):
         if args["eval_use_wita"] is None:
             raise ValueError("--perform-eval true requires --eval-use-wita to be explicitly provided")
 
+        if args["eval_ft_progress_merging"] is None:
+            raise ValueError("--perform-eval true requires --eval-ft-progress-merging to be explicitly provided")
+
         if args["eval_use_wita"]:
             if args["wita_top_k_weakest"] is None:
                 raise ValueError("--perform-eval true requires --wita-top-k-weakest to be explicitly provided")
@@ -203,11 +209,12 @@ def _parse_args():
     parser.add_argument("--perform-eval", type=str_to_bool, required=True, help="Flag to indicate if evaluation should be performed (true/false)")
     parser.add_argument("--eval-skip-if-exists", type=str_to_bool, help="Flag to indicate if evaluation should be skipped if the evaluation results already exist (true/false)")
     parser.add_argument("--upload-merged-to-wandb", type=str_to_bool, help="Flag to indicate if merged model should be uploaded to wandb (true/false)")
-    parser.add_argument("--eval-use-merged-ratios", type=str, help="Whether to eval progress merging")
+    parser.add_argument("--eval-use-merged-ratios", type=str_to_bool, help="Whether to eval progress merging")
     parser.add_argument("--evaluation-export-dir", type=str, help="Directory to export evaluation results")
     parser.add_argument("--eval-orthogonalization-method", type=str, help="Name of the orthogonalization method to use while applying TVs in eval")
     parser.add_argument("--eval-conflict-res-method", type=str, help="Name of the conflict resolution method to use while applying TVs in eval")
     parser.add_argument("--eval-use-wita", type=str_to_bool, help="Flag to indicate if WITA should be used for evaluation (true/false)")
+    parser.add_argument("--eval-ft-progress-merging", type=str_to_bool, help="Flag to indicate if progress merging should be used for evaluation (true/false)")
     parser.add_argument("--wita-top-k-weakest", type=int, help="Top k weakest tasks to consider for WITA")
     parser.add_argument("--wita-top-k-strongest", type=int, help="Top k strongest tasks to consider for WITA")
     parser.add_argument("--wita-num-iters", type=int, help="Number of iterations for WITA (H)")
@@ -323,6 +330,7 @@ def main():
                     f"+eval_merged_ratios={[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}",
                     f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
                     f"+eval_orthogonalization_method={args['eval_orthogonalization_method']}",
+                    f"+eval_ft_progress_merging={args['eval_ft_progress_merging']}",
                     f"+timestamp={timestamp}",
                 ], 
                 check=True

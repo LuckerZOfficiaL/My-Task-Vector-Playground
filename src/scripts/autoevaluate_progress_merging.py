@@ -15,6 +15,17 @@ def str_to_float_or_int(value: str):
         return int(value)  # If not, it's an integer
     except ValueError:
         raise ValueError(f"Unable to parse '{value}' as int, float, or None.")
+
+
+def str_to_bool(value):
+    if isinstance(value, bool):
+        return value
+    if value.lower() in {"true", "t", "yes", "y", "1"}:
+        return True
+    elif value.lower() in {"false", "f", "no", "n", "0"}:
+        return False
+    else:
+        raise argparse.ArgumentTypeError(f"Invalid boolean value: {value}")
     
 
 def parse_args():
@@ -25,9 +36,12 @@ def parse_args():
     parser.add_argument("--lr-scheduler-name", type=str, required=True)
     parser.add_argument("--cosine-annealing-warmup-step-number-or-ratio", type=str_to_float_or_int, required=True)
     parser.add_argument("--ft-regime", type=str, required=True)
-    parser.add_argument("--tvs-to-apply-group-name", type=str, required=True)
-    parser.add_argument("--eval-dataset-group-name", type=str, required=True)
+    parser.add_argument("--tvs-to-apply-group-name", type=str)
+    parser.add_argument("--tvs-to-apply-names", type=str, nargs="+")
+    parser.add_argument("--eval-dataset-names", type=str, nargs="+")
+    parser.add_argument("--eval-dataset-group-name", type=str)
     parser.add_argument("--eval-orthogonalization-method", type=str, required=True)
+    parser.add_argument("--eval-ft-progress-merging", type=str_to_bool, required=True)
     parser.add_argument("--eval-skip-if-exists", type=bool, required=True)
 
     args = parser.parse_args()
@@ -41,6 +55,11 @@ def main():
     args = parse_args()
 
     pprint(args, expand_all=True)
+
+    if args["eval_ft_progress_merging"]:
+        eval_dir = "./evaluations/ft_progress_merging"
+    else:
+        eval_dir = "./evaluations/merged_progress_merging"
 
     subprocess.run(
         [
@@ -60,8 +79,9 @@ def main():
             f"--eval-orthogonalization-method {args['eval_orthogonalization_method']}",
             f"--eval-use-wita false",
             f"--eval-use-merged-ratios true",
+            f"--eval-ft-progress-merging {args['eval_ft_progress_merging']}",
             f"--upload-merged-to-wandb false",
-            f"--evaluation-export-dir ./evaluations/merged_progress_merging",
+            f"--evaluation-export-dir {eval_dir}",
             f"--timestamp"
         ]
     )
