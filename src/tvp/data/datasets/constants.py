@@ -17,6 +17,10 @@ DATASETS_PAPER_TSV_20 = [
     "cifar10", "food101", "fashionmnist", "renderedsst2", "emnist", "kmnist"
 ]
 
+DATASETS_PAPER_TA = [
+    "cars", "dtd", "eurosat", "gtsrb", "mnist", "resisc45", "svhn", "sun397"
+]
+
 DATASETS_PAPER_TSV_20_MINUS_PAPER_ATM = [
     dataset
     for dataset in DATASETS_PAPER_TSV_20
@@ -43,7 +47,8 @@ DATASET_TO_STYLED = {
     "fashionmnist": "FashionMNIST",
     "renderedsst2": "RenderedSST2",
     "emnist": "EMNIST",
-    "kmnist": "KMNIST"
+    "kmnist": "KMNIST",
+    "average_of_tasks": "Average of Tasks"
 }
 
 DATASET_TO_NUM_BATCHES = {
