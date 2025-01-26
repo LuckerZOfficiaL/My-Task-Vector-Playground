@@ -63,11 +63,41 @@ def get_task_vector(zeroshot_model: ImageEncoder, ft_model: ImageEncoder) -> Ten
     return task_vector
 
 
+def layerwise_cosine_similarity(
+    tv_ta_model: ImageEncoder, grad: Dict[str, Tensor]
+) -> float:
+    
+    tv_ta_named_params = dict(tv_ta_model.named_parameters())
+
+    # check whether they have the same keys
+    if tv_ta_named_params.keys() != grad.keys():
+        raise ValueError("The two models have different parameters!")
+
+    count_none_parms = 0
+    running_cos_sin = 0
+
+    for name, param in tv_ta_named_params.items():
+
+        if grad[name] is None:
+            count_none_parms += param.numel()
+        else:
+            if param.shape != grad[name].shape:
+                raise ValueError(f"Parameter shape mismatch for {name}!")
+            cos_sim = cosine_similarity(param.flatten().cpu(), -1 * grad[name].flatten().cpu(), dim=0).item()
+            running_cos_sin += cos_sim * param.numel()
+
+    return running_cos_sin / (
+        parameters_to_vector(tv_ta_model.parameters()).numel() - count_none_parms
+    )   
+
+
 @hydra.main(config_path=str(PROJECT_ROOT / "conf"), config_name="task_vectors.yaml")
 def main(cfg: DictConfig):
 
-    COMPUTE_GRAD_MISMATCH: bool = True
-    GRAD_MISMATCH: str = "./evaluations/grad_mismatch/grad_mismatch.json"
+    COMPUTE_GRAD_MISMATCH: bool = False
+    # COSINE_MODE = "flattened_params"
+    COSINE_MODE = "layerwise_params"
+    GRAD_MISMATCH: str = f"./evaluations/grad_mismatch/grad_mismatch_{COSINE_MODE}.json"
 
     PLOT_GRAD_MISMATCH: bool = True
 
@@ -140,24 +170,37 @@ def main(cfg: DictConfig):
 
                 grad_atm_model: ImageEncoder = deepcopy(zeroshot_model)
 
-                # TODO some grads are None. Replace them with zero tensors.
-                #      take the shape from the corresponding parameter in the zeroshot model
-                #      and replace the None with a zero tensor of that shape
-                for name, grad in grad_atm_named_parameters.items():
-                    if grad_atm_named_parameters[name] is None:
-                        grad_atm_named_parameters[name] = torch.zeros_like(dict(ft_ta_model.named_parameters())[name])
-                        
-                        if dict(ft_ta_model.named_parameters())[name].allclose(torch.zeros_like(dict(ft_ta_model.named_parameters())[name])):
-                            print(f"Replaced None with zeros for {name} successfully!")
-                        else:
-                            print(f"Replaced None with zeros for {name} NOT successfully!")
+                if COSINE_MODE == "flattened_params":
 
-                grad_atm_model.load_state_dict(grad_atm_named_parameters)
-                grad_atm_vec = parameters_to_vector(grad_atm_model.parameters())
+                    # TODO some grads are None. Replace them with zero tensors.
+                    #      take the shape from the corresponding parameter in the zeroshot model
+                    #      and replace the None with a zero tensor of that shape
+                    for name, grad in grad_atm_named_parameters.items():
+                        if grad_atm_named_parameters[name] is None:
+                            grad_atm_named_parameters[name] = torch.zeros_like(dict(ft_ta_model.named_parameters())[name])
+                            
+                            if dict(ft_ta_model.named_parameters())[name].allclose(torch.zeros_like(dict(ft_ta_model.named_parameters())[name])):
+                                print(f"Replaced None with zeros for {name} successfully!")
+                            else:
+                                print(f"Replaced None with zeros for {name} NOT successfully!")
 
-                grad_mismatches[dataset].append(
-                    cosine_similarity(tv_ta_vec, -1 * grad_atm_vec, dim=0).item()
-                )
+                    grad_atm_model.load_state_dict(grad_atm_named_parameters)
+
+                    cos_sim = cosine_similarity(tv_ta_vec, -1 * grad_atm_vec, dim=0).item()
+
+                elif COSINE_MODE == "layerwise_params":
+
+                    grad_atm_vec = parameters_to_vector(grad_atm_model.parameters())
+
+                    cos_sim = layerwise_cosine_similarity(
+                        tv_ta_model=ft_ta_model, 
+                        grad=grad_atm_named_parameters
+                    )
+
+                else:
+                    raise ValueError(f"Invalid cosine mode: {COSINE_MODE}")
+                
+                grad_mismatches[dataset].append(cos_sim)
 
                 
 
@@ -177,12 +220,14 @@ def main(cfg: DictConfig):
         grad_mismatches = import_json_from_disk(file_path=GRAD_MISMATCH)
         print("\n\n\n\n\n")
         print("Loaded cosine similarities:")
-    
+
+    grad_mismatches["average_of_tasks"] = np.array(list(grad_mismatches.values())).mean(axis=0).tolist()
+
     pprint(grad_mismatches, expand_all=True)
 
     if PLOT_GRAD_MISMATCH:
 
-        export_file_path = "./plots/grad_mismatch/grad_mismatch.png"
+        export_file_path = f"./plots/grad_mismatch/heatmap/grad_mismatch_{COSINE_MODE}.png"
         os.makedirs(os.path.dirname(export_file_path), exist_ok=True)
         
         plt.figure(figsize=(12, 12))
@@ -204,6 +249,20 @@ def main(cfg: DictConfig):
         plt.tight_layout()  # Automatically adjust layout to prevent overlapping
 
         plt.savefig(export_file_path, dpi=400)
+
+        for dataset, cos_sims in grad_mismatches.items():
+            plt.figure(figsize=(10, 6))
+            plt.plot(TA_PROGRESS_RATIO_LIST, cos_sims)
+            plt.xlabel("% of training steps")
+            plt.xticks(TA_PROGRESS_RATIO_LIST)
+            plt.ylabel("Cosine Similarity between TV and grad")
+            plt.title(f"TVs at progresses vs. 1 epoch grad\n{DATASET_TO_STYLED[dataset]}")
+            plt.savefig(
+                f"./plots/grad_mismatch/line/grad_mismatch_{COSINE_MODE}_{dataset}.png", 
+                dpi=400
+            )
+
+            plt.close()
 
 
 
