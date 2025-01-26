@@ -143,11 +143,13 @@ def main(cfg: DictConfig):
         print("\n\n\n\n\n")
         print("Loaded cosine similarities:")
     
+    cos_sims["average_of_tasks"] = np.array(list(cos_sims.values())).mean(axis=0).tolist()
+
     pprint(cos_sims, expand_all=True)
 
     if PLOT_TV_SIMS:
 
-        export_file_path = "./plots/atm_ta_tv_similarity/atm_ta_tv_similarity.png"
+        export_file_path = "./plots/atm_ta_tv_similarity/heatmap/atm_ta_tv_similarity.png"
         os.makedirs(os.path.dirname(export_file_path), exist_ok=True)
         
         plt.figure(figsize=(12, 12))
@@ -169,6 +171,36 @@ def main(cfg: DictConfig):
         plt.tight_layout()  # Automatically adjust layout to prevent overlapping
 
         plt.savefig(export_file_path, dpi=400)
+
+        plt.close()
+
+        ########################################################################
+
+        # plot the heatmap as single line plots
+
+        for dataset_idx, dataset in enumerate(cos_sims.keys()):
+
+            export_file_path = f"./plots/atm_ta_tv_similarity/line/atm_ta_tv_similarity_{dataset}.png"
+            os.makedirs(os.path.dirname(export_file_path), exist_ok=True)
+
+            plt.figure(figsize=(10, 6))
+
+            plt.plot(
+                TA_PROGRESS_RATIO_LIST, 
+                cos_sims[dataset], 
+            )
+
+            plt.xlabel("TA Training Steps %")
+            plt.xticks(TA_PROGRESS_RATIO_LIST, [f"{int(ratio*100)}%" for ratio in TA_PROGRESS_RATIO_LIST])
+            plt.ylabel("Cosine Similarity")
+
+            plt.title(f"{DATASET_TO_STYLED[dataset]}: ATM vs TA Cosine Similarity")
+
+            plt.tight_layout()
+
+            plt.savefig(export_file_path, dpi=400)
+
+            plt.close()
 
 
 
