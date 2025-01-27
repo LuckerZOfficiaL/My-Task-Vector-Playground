@@ -20,6 +20,7 @@ import torch
 import numpy as np
 import plotly.graph_objects as go
 from sklearn.decomposition import PCA
+import time
 
 
 def init_logger(cfg: DictConfig) -> NNLogger:
@@ -260,11 +261,22 @@ def main(cfg: DictConfig):
         print(f"Performing PCA... this may take a while (approx. 35 mins for 8 tasks and 10 ratios, 2 mins for 2 tasks and 4 ratios)")
         print(f"\n\n")
 
+        pca_start_time = time.time()
         checkpoints_reduced, checkpoints_reduced_dict, pca_stats = perform_pca(
             data_dict=plot_data, 
             num_components=NUM_COMPONENTS,
             pca_export_path=PCA_PATH
         )
+        pca_end_time = time.time()
+        elapsed_time = pca_end_time - pca_start_time
+
+        hours = int(elapsed_time // 3600)
+        minutes = int((elapsed_time % 3600) // 60)
+        seconds = elapsed_time % 60
+
+        print(f"\n\n")
+        print(f"PCA took {hours}h {minutes}m {seconds:.2f}s")
+
     else:
         print(f"\n\n")
         print(f"Loading PCA data from {PCA_PATH}")
