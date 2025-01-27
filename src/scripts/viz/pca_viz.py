@@ -225,11 +225,9 @@ def perform_pca(
 
 @hydra.main(config_path=str(PROJECT_ROOT / "conf"), config_name="task_vectors.yaml")
 def main(cfg: DictConfig):
-    # datasets = DATASETS_PAPER_TA
-    datasets = ["cars", "dtd"]
+    datasets = DATASETS_PAPER_TA
 
-    # RATIOS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-    RATIOS = [0.2, 0.4, 0.6, 0.8]
+    RATIOS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
     # USE_TVS_OR_CHECKPOINTS: str = "checkpoints"
     USE_TVS_OR_CHECKPOINTS: str = "tvs"
