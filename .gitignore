@@ -232,3 +232,5 @@ outputs/
 artifacts_downloaded_from_wandb/
 
 /grads
+
+*_stats.npy
