@@ -187,10 +187,10 @@ def run(cfg: DictConfig) -> str:
                 template_core=template_core,
             )
 
-        # print(f"\n\n\n")
-        # pylogger.info(f"Results for ratio {ratio}")
-        # pprint(eval_results[ratio], expand_all=True)
-        # print(f"\n\n\n")
+        print(f"\n\n\n")
+        pylogger.info(f"Results for ratio {ratio}")
+        pprint(eval_results[ratio], expand_all=True)
+        print(f"\n\n\n")
 
         print(f"\n\n\n")
         pylogger.info(f"Results for ALL ratios")
@@ -213,15 +213,15 @@ def run(cfg: DictConfig) -> str:
     pprint(euclidean_dists, expand_all=True)
     print(f"\n\n\n\n\n")
 
-    # export_json_to_disk(
-    #     {
-    #         "results_all_ratios": eval_results,
-    #         "results": eval_results[1.0],
-    #         "cfg": OmegaConf.to_container(cfg, resolve=True),
-    #     },
-    #     cfg.evaluation_export_dir,
-    #     artifact_name
-    # )
+    export_json_to_disk(
+        {
+            "results_all_ratios": eval_results,
+            "results": eval_results[1.0],
+            "cfg": OmegaConf.to_container(cfg, resolve=True),
+        },
+        cfg.evaluation_export_dir,
+        artifact_name
+    )
 
     sims_dists_artifact_name = artifact_name.replace(f"_merged_{'-'.join(cfg.task_vectors.to_apply)}", f"_merged_{cfg.tvs_to_apply_group_name}")
     np.save(f"./evaluations/tvs_sims_dists/{sims_dists_artifact_name}_cos_sims.npy", cos_sims)

@@ -248,14 +248,13 @@ def eval(
 
     seed_index_everything(cfg)
 
-    # eval_results = eval_merged_model(
-    #     cfg=cfg, 
-    #     # task_equipped_model=task_equipped_model, 
-    #     task_equipped_model=copy.deepcopy(zeroshot_model), 
-    #     template_core=template_core, 
-    #     logger=logger
-    # )
-    eval_results = {"key": -421337}
+    eval_results = eval_merged_model(
+        cfg=cfg, 
+        # task_equipped_model=task_equipped_model, 
+        task_equipped_model=copy.deepcopy(zeroshot_model), 
+        template_core=template_core, 
+        logger=logger
+    )
 
     print(f"\n\n")
     pylogger.info(f"[evaluate.eval()] eval_results:")
