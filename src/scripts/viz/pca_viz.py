@@ -298,7 +298,7 @@ def main(cfg: DictConfig):
     print(f"checkpoints_reduced_dict:")
     pprint(checkpoints_reduced_dict, expand_all=True)
 
-    pca_plot_output_path = f"./plots/low_dim_weight_viz/low_dim_weight_viz_{NUM_COMPONENTS}D_{'-'.join([DATASET_TO_STYLED[t] for t in datasets])}.html"
+    pca_plot_output_path = f"./plots/pca_viz/pca_viz_{NUM_COMPONENTS}D_{'-'.join([DATASET_TO_STYLED[t] for t in datasets])}.html"
     plot_interactive_pca(
         checkpoints_reduced=checkpoints_reduced, 
         datasets=datasets,
