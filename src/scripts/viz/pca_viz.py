@@ -16,6 +16,7 @@ from tvp.modules.encoder import ClassificationHead, ImageEncoder
 from tvp.utils.io_utils import load_model_from_artifact
 from torch.nn.utils import parameters_to_vector
 import torch
+import copy
 
 import numpy as np
 import plotly.graph_objects as go
@@ -224,9 +225,14 @@ def perform_pca(
 
 @hydra.main(config_path=str(PROJECT_ROOT / "conf"), config_name="task_vectors.yaml")
 def main(cfg: DictConfig):
-    datasets = DATASETS_PAPER_TA
+    # datasets = DATASETS_PAPER_TA
+    datasets = ["cars", "dtd"]
 
-    RATIOS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    # RATIOS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    RATIOS = [0.2, 0.4, 0.6, 0.8]
+
+    # USE_TVS_OR_CHECKPOINTS: str = "checkpoints"
+    USE_TVS_OR_CHECKPOINTS: str = "tvs"
 
     logger: NNLogger = init_logger(cfg)
 
@@ -248,13 +254,26 @@ def main(cfg: DictConfig):
 
             plot_data[f"{dataset}, {int(ratio*100)}%"] = model_vec.detach().cpu().numpy()
 
-    plot_data["zs"] = parameters_to_vector(
-        get_zeroshot_model(logger).parameters()
-    ).detach().cpu().numpy()
+    zs_model = get_zeroshot_model(logger)
+    plot_data["zs"] = parameters_to_vector(zs_model.parameters()).detach().cpu().numpy()
+
+    if USE_TVS_OR_CHECKPOINTS == "tvs":
+
+        print(f"\n\n")
+        print(f"Working on Task Vectors...")
+
+        zs_vec = copy.deepcopy(plot_data["zs"])
+        for dataset_ratio_config in plot_data.keys():
+            plot_data[dataset_ratio_config] -= zs_vec
+    elif USE_TVS_OR_CHECKPOINTS == "checkpoints": 
+        print(f"\n\n")
+        print(f"Working on Checkpoints...")
+    else:
+        raise ValueError(f"Invalid value for USE_TVS_OR_CHECKPOINTS: {USE_TVS_OR_CHECKPOINTS}")
 
     PERFORM_PCA: bool = True
     NUM_COMPONENTS: int = 2
-    PCA_PATH = f"./plots/pca_embedding/pca_embedding_{NUM_COMPONENTS}D_{'_'.join([DATASET_TO_STYLED[t] for t in datasets])}.npy"
+    PCA_PATH = f"./plots/pca_embedding/pca_embedding_{NUM_COMPONENTS}D_{USE_TVS_OR_CHECKPOINTS}_{'_'.join([DATASET_TO_STYLED[t] for t in datasets])}.npy"
 
     if PERFORM_PCA:
         print(f"\n\n")
@@ -298,7 +317,7 @@ def main(cfg: DictConfig):
     print(f"checkpoints_reduced_dict:")
     pprint(checkpoints_reduced_dict, expand_all=True)
 
-    pca_plot_output_path = f"./plots/pca_viz/pca_viz_{NUM_COMPONENTS}D_{'-'.join([DATASET_TO_STYLED[t] for t in datasets])}.html"
+    pca_plot_output_path = f"./plots/pca_viz/pca_viz_{NUM_COMPONENTS}D_{USE_TVS_OR_CHECKPOINTS}_{'-'.join([DATASET_TO_STYLED[t] for t in datasets])}.html"
     plot_interactive_pca(
         checkpoints_reduced=checkpoints_reduced, 
         datasets=datasets,
