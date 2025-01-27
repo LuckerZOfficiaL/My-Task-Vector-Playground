@@ -270,7 +270,7 @@ def main(cfg: DictConfig):
         raise ValueError(f"Invalid value for USE_TVS_OR_CHECKPOINTS: {USE_TVS_OR_CHECKPOINTS}")
 
     PERFORM_PCA: bool = True
-    NUM_COMPONENTS: int = 2
+    NUM_COMPONENTS: int = 3
     PCA_PATH = f"./plots/pca_embedding/pca_embedding_{NUM_COMPONENTS}D_{USE_TVS_OR_CHECKPOINTS}_{'_'.join([DATASET_TO_STYLED[t] for t in datasets])}.npy"
 
     if PERFORM_PCA:

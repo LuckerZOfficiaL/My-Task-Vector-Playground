@@ -23,15 +23,26 @@ import logging
 pylogger = logging.getLogger(__name__)
 
 
-def print_pairwise_cos_sim(task_vectors: Tensor): # input shape: [num_vectors, vector_size]:
+def print_pairwise_cos_sim(task_vectors: Tensor) -> np.ndarray:
     norm_tensor = F.normalize(task_vectors, p=2, dim=1)
     cosine_similarity_matrix = torch.mm(norm_tensor, norm_tensor.T)
     cosine_similarity_matrix_np = cosine_similarity_matrix.detach().numpy()
     print(f"\n")
     pylogger.info("Pairwise Cosine Similarity Matrix:")
-    pylogger.info(cosine_similarity_matrix_np)
+    pprint(cosine_similarity_matrix_np, expand_all=True)
     print(f"\n")
 
+    return cosine_similarity_matrix_np
+
+def print_pairwise_euclidean_dist(task_vectors: Tensor) -> np.ndarray:
+    euclidean_distance_matrix = torch.cdist(task_vectors, task_vectors, p=2)
+    euclidean_distance_matrix_np = euclidean_distance_matrix.detach().numpy()
+    print(f"\n")
+    pylogger.info("Pairwise Euclidean Distance Matrix:")
+    pprint(euclidean_distance_matrix_np, expand_all=True)
+    print(f"\n")
+
+    return euclidean_distance_matrix_np
 
 def generate_orthogonal_directions_for_tv(state_dict, num_directions): # returns a dictionary where keys are the parameter names and the values are many orthogonal directions
     orthogonal_directions = {}

@@ -1,7 +1,7 @@
 ## Imports
 import logging
 import os
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Union, Optional, Tuple
 import wandb
 import hydra
 import omegaconf
@@ -39,7 +39,7 @@ import hydra
 from hydra import initialize, compose
 from typing import Dict, List, Callable
 
-from tvp.utils.vectors import print_pairwise_cos_sim, orthogonalize_task_vectors, apply_task_vector
+from tvp.utils.vectors import print_pairwise_cos_sim, print_pairwise_euclidean_dist, orthogonalize_task_vectors, apply_task_vector
 
 from rich.pretty import pprint
 
@@ -117,7 +117,7 @@ def run(cfg: DictConfig) -> str:
         f":latest"
     )
 
-    eval_results = eval(
+    eval_results, cos_sims, euclidean_dists = eval(
         finetuned_id_fn=finetuned_id_fn,
         logger=logger,
         cfg=cfg,
@@ -126,14 +126,14 @@ def run(cfg: DictConfig) -> str:
         template_core=template_core,
     )        
 
-    # export_json_to_disk(
-    #     {
-    #         "results": eval_results,
-    #         "cfg": OmegaConf.to_container(cfg, resolve=True),
-    #     },
-    #     cfg.evaluation_export_dir,
-    #     artifact_name
-    # )
+    export_json_to_disk(
+        {
+            "results": eval_results,
+            "cfg": OmegaConf.to_container(cfg, resolve=True),
+        },
+        cfg.evaluation_export_dir,
+        artifact_name
+    )
 
 
 def eval_merged_model(
@@ -205,7 +205,7 @@ def eval(
     zeroshot_model: ImageEncoder,
     artifact_name: str,
     template_core: NNTemplateCore,
-) -> dict:
+) -> Tuple[dict, np.ndarray, np.ndarray]:
     finetuned_models: Dict[str, ImageEncoder] = {
         dataset: load_model_from_artifact(artifact_path=finetuned_id_fn(dataset), run=logger.experiment)
         for dataset in cfg.task_vectors.to_apply
@@ -220,12 +220,18 @@ def eval(
         }
     
     pylogger.info(f"pairwise cosine similarity between task vectors before orthogonalization:")
-    print_pairwise_cos_sim(torch.stack(list(task_vectors.values())))
+    cos_sims: np.ndarray = print_pairwise_cos_sim(torch.stack(list(task_vectors.values())))
+
+    pylogger.info(f"pairwise euclidean distance between task vectors before orthogonalization:")
+    euclidean_dists: np.ndarray = print_pairwise_euclidean_dist(torch.stack(list(task_vectors.values())))
 
     task_vectors = orthogonalize_task_vectors(task_vectors, cfg, artifact_name)
 
     pylogger.info(f"pairwise cosine similarity between task vectors after orthogonalization:")
-    print_pairwise_cos_sim(torch.stack(list(task_vectors.values())))
+    cos_sims: np.ndarray = print_pairwise_cos_sim(torch.stack(list(task_vectors.values())))
+
+    pylogger.info(f"pairwise euclidean distance between task vectors after orthogonalization:")
+    euclidean_dists: np.ndarray = print_pairwise_euclidean_dist(torch.stack(list(task_vectors.values())))
  
     task_vector_aggregator = instantiate(cfg.task_vectors.aggregator)
     multi_task_vector = task_vector_aggregator(torch.stack(list(task_vectors.values())))
@@ -242,19 +248,20 @@ def eval(
 
     seed_index_everything(cfg)
 
-    eval_results = eval_merged_model(
-        cfg=cfg, 
-        # task_equipped_model=task_equipped_model, 
-        task_equipped_model=copy.deepcopy(zeroshot_model), 
-        template_core=template_core, 
-        logger=logger
-    )
+    # eval_results = eval_merged_model(
+    #     cfg=cfg, 
+    #     # task_equipped_model=task_equipped_model, 
+    #     task_equipped_model=copy.deepcopy(zeroshot_model), 
+    #     template_core=template_core, 
+    #     logger=logger
+    # )
+    eval_results = {"key": -421337}
 
     print(f"\n\n")
     pylogger.info(f"[evaluate.eval()] eval_results:")
     pprint(eval_results, expand_all=True)
 
-    return eval_results
+    return eval_results, cos_sims, euclidean_dists
 
 
 @hydra.main(config_path=str(PROJECT_ROOT / "conf"), config_name="task_vectors.yaml")

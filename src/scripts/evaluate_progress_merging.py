@@ -103,6 +103,8 @@ def run(cfg: DictConfig) -> str:
     )
 
     eval_results: Dict[str, dict] = {}
+    cos_sims: Dict[str, np.ndarray] = {}
+    euclidean_dists: Dict[str, np.ndarray] = {}
 
     for ratio in cfg.eval_merged_ratios:
 
@@ -157,7 +159,8 @@ def run(cfg: DictConfig) -> str:
                 cfg_copy.task_vectors.to_apply = [dataset]
                 cfg_copy.eval_datasets = [dataset]
 
-                tmp_eval_results[ratio][dataset] = eval(
+                # for single datasets, we do not care about cos sims and euclidean dists
+                tmp_eval_results[ratio][dataset], _, _ = eval(
                     finetuned_id_fn=finetuned_id_fn,
                     logger=logger,
                     cfg=cfg_copy,
@@ -175,7 +178,7 @@ def run(cfg: DictConfig) -> str:
 
 
         else:
-            eval_results[ratio] = eval(
+            eval_results[ratio], cos_sims[ratio], euclidean_dists[ratio] = eval(
                 finetuned_id_fn=finetuned_id_fn,
                 logger=logger,
                 cfg=cfg,
@@ -200,15 +203,29 @@ def run(cfg: DictConfig) -> str:
     pprint(eval_results, expand_all=True)
     print(f"\n\n\n\n\n")
 
-    export_json_to_disk(
-        {
-            "results_all_ratios": eval_results,
-            "results": eval_results[1.0],
-            "cfg": OmegaConf.to_container(cfg, resolve=True),
-        },
-        cfg.evaluation_export_dir,
-        artifact_name
-    )
+    print(f"\n\n\n\n\n")
+    pylogger.info(f"Cosine similarities for ALL ratios before export")
+    pprint(cos_sims, expand_all=True)
+    print(f"\n\n\n\n\n")
+
+    print(f"\n\n\n\n\n")
+    pylogger.info(f"Euclidean distances for ALL ratios before export")
+    pprint(euclidean_dists, expand_all=True)
+    print(f"\n\n\n\n\n")
+
+    # export_json_to_disk(
+    #     {
+    #         "results_all_ratios": eval_results,
+    #         "results": eval_results[1.0],
+    #         "cfg": OmegaConf.to_container(cfg, resolve=True),
+    #     },
+    #     cfg.evaluation_export_dir,
+    #     artifact_name
+    # )
+
+    sims_dists_artifact_name = artifact_name.replace(f"_merged_{'-'.join(cfg.task_vectors.to_apply)}", f"_merged_{cfg.tvs_to_apply_group_name}")
+    np.save(f"./evaluations/tvs_sims_dists/{sims_dists_artifact_name}_cos_sims.npy", cos_sims)
+    np.save(f"./evaluations/tvs_sims_dists/{sims_dists_artifact_name}_l2_dists.npy", euclidean_dists)
 
 
 @hydra.main(config_path=str(PROJECT_ROOT / "conf"), config_name="task_vectors.yaml")
