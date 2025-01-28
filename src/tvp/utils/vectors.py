@@ -22,6 +22,12 @@ import logging
 
 pylogger = logging.getLogger(__name__)
 
+def pairwise_cos_sim(task_vectors: Tensor) -> np.ndarray:
+    norm_tensor = F.normalize(task_vectors, p=2, dim=1)
+    cosine_similarity_matrix = torch.mm(norm_tensor, norm_tensor.T)
+    cosine_similarity_matrix_np = cosine_similarity_matrix.detach().numpy()
+
+    return cosine_similarity_matrix_np
 
 def print_pairwise_cos_sim(task_vectors: Tensor) -> np.ndarray:
     norm_tensor = F.normalize(task_vectors, p=2, dim=1)
@@ -33,6 +39,12 @@ def print_pairwise_cos_sim(task_vectors: Tensor) -> np.ndarray:
     print(f"\n")
 
     return cosine_similarity_matrix_np
+
+def pairwise_euclidean_dist(task_vectors: Tensor) -> np.ndarray:
+    euclidean_distance_matrix = torch.cdist(task_vectors, task_vectors, p=2)
+    euclidean_distance_matrix_np = euclidean_distance_matrix.detach().numpy()
+
+    return euclidean_distance_matrix_np
 
 def print_pairwise_euclidean_dist(task_vectors: Tensor) -> np.ndarray:
     euclidean_distance_matrix = torch.cdist(task_vectors, task_vectors, p=2)
