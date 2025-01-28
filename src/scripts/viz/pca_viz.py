@@ -220,8 +220,8 @@ def perform_pca(
     }
 
     if pca_export_path is not None:
-        np.save(pca_export_path.replace(".npy", "_ndarray.npy"), checkpoints_reduced_dict)
-        np.save(pca_export_path.replace(".npy", "_dict.npy"), checkpoints_reduced)
+        np.save(pca_export_path.replace(".npy", "_ndarray.npy"), checkpoints_reduced)
+        np.save(pca_export_path.replace(".npy", "_dict.npy"), checkpoints_reduced_dict)
         np.save(pca_export_path.replace(".npy", "_stats.npy"), pca_stats)
 
     return checkpoints_reduced, checkpoints_reduced_dict, pca_stats
