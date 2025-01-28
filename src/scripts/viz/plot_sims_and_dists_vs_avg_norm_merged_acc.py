@@ -84,7 +84,7 @@ def get_task_vectors_dict(
 import matplotlib.pyplot as plt
 import numpy as np
 
-def plot(
+def plot_2d(
     x: List[float],
     y: List[float],
     x_label: str,
@@ -109,6 +109,46 @@ def plot(
     plt.title(title)
 
     plt.legend()  # Add legend to distinguish data points and trendline
+    
+    plt.savefig(save_path, dpi=400)
+    plt.close()
+
+def plot_3d(
+    x: List[float],
+    y: List[float],
+    z: List[float],  # Third dimension for color
+    x_label: str,
+    y_label: str,
+    title: str,
+    save_path: str
+):
+    plt.figure()
+
+    # Normalize z for consistent color mapping
+    # z_normalized = (np.array(z) - min(z)) / (max(z) - min(z))  # Normalize z to range [0, 1]
+    z_normalized = np.array(z)  # No need to normalize, as we are dealing with accuracies ranging from 0 to 1
+    
+    # Scatter plot with z as color
+    scatter = plt.scatter(
+        x, y, c=z_normalized, cmap="RdYlGn", label="Merged subsets", edgecolors="face", s=50
+    )
+    
+    # Compute trendline
+    # coefficients = np.polyfit(x, y, deg=1)  # Linear fit (degree=1)
+    # trendline = np.polyval(coefficients, x)  # Evaluate the polynomial at x points
+
+    # Plot trendline
+    # plt.plot(x, trendline, label="Trendline", color="red")
+    
+    # Add colorbar for z
+    cbar = plt.colorbar(scatter)
+    cbar.set_label("Avg Norm Merged Acc")
+
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title(title)
+
+    plt.legend()  # Add legend for the trendline
     
     plt.savefig(save_path, dpi=400)
     plt.close()
@@ -188,7 +228,7 @@ def main(cfg: DictConfig):
 
         avg_norm_merged_accs.append(float(avg_norm_merged_acc))
 
-    plot(
+    plot_2d(
         x=cos_sims,
         y=avg_norm_merged_accs,
         x_label="Avg all-against-all cosine similarity",
@@ -197,7 +237,7 @@ def main(cfg: DictConfig):
         save_path="./plots/sims_and_dists_vs_avg_norm_merged_acc/cos_sims/cos_sims_vs_avg_norm_merged_acc.png"
     )
 
-    plot(
+    plot_2d(
         x=l2_dists,
         y=avg_norm_merged_accs,
         x_label="Avg all-against-all L2 distance",
@@ -205,6 +245,18 @@ def main(cfg: DictConfig):
         title="L2 Distance vs. Avg. Norm Merged Acc.",
         save_path="./plots/sims_and_dists_vs_avg_norm_merged_acc/l2_dists/l2_dists_vs_avg_norm_merged_acc.png"
     )
+
+    plot_3d(
+        x=cos_sims,
+        y=l2_dists,
+        z=avg_norm_merged_accs,
+        x_label="Avg all-against-all cosine similarity",
+        y_label="Avg all-against-all L2 distance",
+        title="Cosine Similarity and L2 Distance vs. Avg. Norm Merged Acc.",
+        save_path="./plots/sims_and_dists_vs_avg_norm_merged_acc/cos_sims_and_l2_dists/cos_sims_and_l2_dists_vs_avg_norm_merged_acc.png"
+    )
+
+
 
     
 
