@@ -364,8 +364,8 @@ def main(cfg: DictConfig):
     ]
 
     # RATIOS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-    # RATIOS = [1.0]
-    RATIOS = [0.1, 0.4, 0.7, 1.0]
+    RATIOS = [1.0]
+    # RATIOS = [0.1, 0.4, 0.7, 1.0]
 
     USE_TVS_OR_CHECKPOINTS: str = "checkpoints"
     # USE_TVS_OR_CHECKPOINTS: str = "tvs"
@@ -429,7 +429,8 @@ def main(cfg: DictConfig):
                 checkpoints_reduced, checkpoints_reduced_dict, pca_stats = perform_pca(
                     data_dict=plot_data, 
                     num_components=NUM_COMPONENTS,
-                    pca_export_path=PCA_PATH
+                    # pca_export_path=PCA_PATH
+                    pca_export_path=None
                 )
             
             elif PCA_MODE == "incremental_pca":
@@ -437,7 +438,8 @@ def main(cfg: DictConfig):
                     data_dict=plot_data, 
                     num_components=NUM_COMPONENTS,
                     pca_export_path=PCA_PATH,
-                    chunk_size=IPCA_CHUNK_SIZE
+                    # chunk_size=IPCA_CHUNK_SIZE
+                    chunk_size=None
                 )
             
             else:
@@ -474,7 +476,7 @@ def main(cfg: DictConfig):
         print(f"checkpoints_reduced_dict:")
         pprint(checkpoints_reduced_dict, expand_all=True)
 
-        pca_plot_output_path = f"./plots/{PCA_PATH_PCA_NAME}_viz/pca_viz_{NUM_COMPONENTS}D_{USE_TVS_OR_CHECKPOINTS}_{'-'.join([DATASET_TO_STYLED[t] for t in datasets])}.html"
+        pca_plot_output_path = f"./plots/{PCA_PATH_PCA_NAME}_viz/pca_viz_{NUM_COMPONENTS}D_{USE_TVS_OR_CHECKPOINTS}_{'-'.join([DATASET_TO_STYLED[t] for t in datasets])}_{'-'.join([str(r) for r in RATIOS])}.html"
         plot_interactive_pca(
             checkpoints_reduced=checkpoints_reduced, 
             datasets=datasets,
