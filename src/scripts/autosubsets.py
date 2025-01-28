@@ -172,6 +172,7 @@ def main():
                 f"--upload-merged-to-wandb false",
                 f"--evaluation-export-dir {evaluation_export_dir}",
                 f"--eval-skip-if-exists {args['eval_skip_if_exists']}",
+                f"--eval-ft-progress-merging false"
             ]
         )
 
