@@ -2,6 +2,7 @@ from rich import print
 from rich.pretty import pprint
 
 from src.tvp.utils.io_utils import list_all_files_in_dir, import_json_from_disk
+from src.tvp.utils.vectors import pairwise_cos_sim, pairwise_euclidean_dist
 from typing import List
 
 import numpy as np
@@ -13,6 +14,7 @@ import os
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import copy
+import torch
 
 def task_to_color(task: str) -> str:
     COLOR_MAP = {
@@ -120,13 +122,15 @@ def main():
         task_pca_embeddings.append(pca_embeddings["zs"])
         task_pca_embeddings = np.vstack(task_pca_embeddings)
 
+        cos_sim = float(pairwise_cos_sim(torch.tensor(task_pca_embeddings)).mean())
+        l2_dist = float(pairwise_euclidean_dist(torch.tensor(task_pca_embeddings)).mean())
         task_names_for_plot = copy.deepcopy(task_names)
         task_names_for_plot.append("zero-shot")
         plot(
             tasks_pca_embeddings=task_pca_embeddings,
             task_colors=task_colors,
             task_names=task_names_for_plot,
-            title=f"{' '.join(task_names).replace('average_of_tasks', '')}\nAvg. Norm. Merged Acc.: {avg_norm_merged_acc:.8f}",
+            title=f"{' '.join(task_names).replace('average_of_tasks', '')}\nAvg. Norm. Merged Acc.: {avg_norm_merged_acc:.8f}\nAvg cos sim: {cos_sim:.8f}\nAvg l2 dist: {l2_dist:.8f}",
             export_path=f"plots/pca_vs_norm_merged_acc/pca_vs_norm_merged_acc_{avg_norm_merged_acc:.8f}_{'-'.join(task_names).replace('average_of_tasks', '')}.png"
         )
 
