@@ -27,6 +27,18 @@ DATASETS_PAPER_TSV_20_MINUS_PAPER_ATM = [
     if dataset not in DATASETS_PAPER_ATM
 ]
 
+DATASETS_PCA_BAD_1 = ["cars", "dtd", "emnist", "fer2013", "kmnist"]
+DATASETS_PCA_BAD_2 = ["emnist", "fer2013", "gtsrb", "kmnist", "svhn"]
+DATASETS_PCA_BAD = [
+    DATASETS_PCA_BAD_1, DATASETS_PCA_BAD_2
+]
+
+DATASETS_PCA_GOOD_1 = ["cifar10", "eurosat", "food101", "mnist", "flowers102"]
+DATASETS_PCA_GOOD_2 = ["cifar10", "eurosat", "oxfordiiitpet", "renderedsst2", "stl10"]
+DATASETS_PCA_GOOD = [
+    DATASETS_PCA_GOOD_1, DATASETS_PCA_GOOD_2
+]
+
 DATASET_TO_STYLED = {
     "dtd": "DTD",
     "gtsrb": "GTSRB",
