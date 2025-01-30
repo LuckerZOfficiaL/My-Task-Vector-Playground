@@ -180,10 +180,10 @@ def apply_conflict_res_method(
     ref_model: torch.nn.Module,
 ) -> Union[Dict[str, Tensor], Tensor]:
 
-    if cfg.conflict_res_method == "none":
+    if cfg.eval_conflict_res_method == "none":
         return task_vectors
     
-    elif cfg.conflict_res_method == "bc":
+    elif cfg.eval_conflict_res_method == "bc":
         print(f"\n\n")
         pylogger.info(f"Applying Model BreadCrumbs")
         
@@ -195,7 +195,7 @@ def apply_conflict_res_method(
 
         return task_vectors
 
-    elif cfg.conflict_res_method == "dare":
+    elif cfg.eval_conflict_res_method == "dare":
 
         print(f"\n\n")
         pylogger.info(f"Applying DARE")
@@ -203,7 +203,7 @@ def apply_conflict_res_method(
             task_vectors=task_vectors, ref_model=ref_model, p=cfg.task_vectors.dare.rate
         )
     
-    elif cfg.conflict_res_method == "ties":
+    elif cfg.eval_conflict_res_method == "ties":
         return ties.their_ties_merging(
             task_vectors=task_vectors,
             reset_thresh=cfg.task_vectors.ties.top_k,
@@ -211,7 +211,7 @@ def apply_conflict_res_method(
         )
 
     else:
-        raise ValueError(f"Unknown conflict resolution method: {cfg.conflict_res_method}")
+        raise ValueError(f"Unknown conflict resolution method: {cfg.eval_conflict_res_method}")
 
 
 def apply_task_vector(model, task_vector, scaling_coef=1):

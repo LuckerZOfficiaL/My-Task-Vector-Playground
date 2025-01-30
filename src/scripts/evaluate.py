@@ -39,7 +39,7 @@ import hydra
 from hydra import initialize, compose
 from typing import Dict, List, Callable
 
-from tvp.utils.vectors import print_pairwise_cos_sim, print_pairwise_euclidean_dist, orthogonalize_task_vectors, apply_task_vector
+from tvp.utils.vectors import print_pairwise_cos_sim, print_pairwise_euclidean_dist, orthogonalize_task_vectors, apply_task_vector, apply_conflict_res_method
 
 from rich.pretty import pprint
 
@@ -238,14 +238,20 @@ def eval(
 
     task_vectors = orthogonalize_task_vectors(task_vectors, cfg, artifact_name)
 
-    pylogger.info(f"pairwise cosine similarity between task vectors after orthogonalization:")
-    cos_sims: np.ndarray = print_pairwise_cos_sim(torch.stack(list(task_vectors.values())))
+    task_vectors: Union[Dict[str, Tensor], Tensor] = apply_conflict_res_method(
+        task_vectors=task_vectors, cfg=cfg, ref_model=copy.deepcopy(zeroshot_model)
+    )
 
-    pylogger.info(f"pairwise euclidean distance between task vectors after orthogonalization:")
-    euclidean_dists: np.ndarray = print_pairwise_euclidean_dist(torch.stack(list(task_vectors.values())))
- 
-    task_vector_aggregator = instantiate(cfg.task_vectors.aggregator)
-    multi_task_vector = task_vector_aggregator(torch.stack(list(task_vectors.values())))
+    if cfg.eval_conflict_res_method != "ties":
+        pylogger.info(f"pairwise cosine similarity between task vectors after orthogonalization:")
+        print_pairwise_cos_sim(torch.stack(list(task_vectors.values())) if isinstance(task_vectors, dict) else task_vectors)
+
+    # NOTE: this is needed because ties method already comprises an aggregation step
+    if cfg.eval_conflict_res_method == "ties":
+        multi_task_vector = task_vectors * cfg.task_vectors.ties.ties_lambda
+    else:
+        task_vector_aggregator = instantiate(cfg.task_vectors.aggregator)
+        multi_task_vector = task_vector_aggregator(torch.stack(list(task_vectors.values())))
 
     delta_model = copy.deepcopy(zeroshot_model)
     vector_to_parameters(multi_task_vector, delta_model.parameters())
