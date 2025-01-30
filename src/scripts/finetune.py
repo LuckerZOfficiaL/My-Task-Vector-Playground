@@ -1,7 +1,7 @@
 import logging
 import os
 import time
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Callable
 
 import hydra
 import omegaconf
@@ -12,6 +12,8 @@ import wandb
 from omegaconf import DictConfig, ListConfig, OmegaConf
 import json
 from pytorch_lightning import Callback, LightningModule
+from torch import Tensor
+from torch.nn.utils import parameters_to_vector
 from tqdm import tqdm
 
 from nn_core.callbacks import NNTemplateCore
@@ -43,8 +45,12 @@ def _replace_train_dataset(cfg: DictConfig):
 
 
 def _set_max_epochs(cfg: DictConfig):
+    # this is NOT the true ATM, because this just means to train for one epoch, merge, but NOT continue training
     if cfg.ft_regime == "atm":
         cfg.nn.data.dataset.ft_epochs = 1
+    # this is the true ATM, with the model being trained for a single epoch, merged, trained again, etc...
+    elif cfg.ft_regime == "atm-true": 
+        cfg.nn.data.dataset.ft_epochs = cfg.epochs_per_order
     elif cfg.ft_regime == "ta":
         cfg.nn.data.dataset.ft_epochs = cfg.nn.data.dataset.ft_epochs
     else:
@@ -223,12 +229,6 @@ def run(cfg: DictConfig):
     print("\n\n")
     pylogger.info(f"num train samples: {len(dataset.train_dataset)}, num train batches: {len(dataset.train_loader)}")
     pylogger.info(f"num test samples: {len(dataset.test_dataset)}, num test batches: {len(dataset.test_loader)}")
-    pylogger.info(f"max train steps: {model.max_train_steps}")
-    pylogger.info(f"save ckpts @ progress: {model.save_ckpt_progress_list}")
-    pylogger.info(f"save ckpts @ steps: {model.save_ckpt_steps_list}")
-    pylogger.info(f"save grads @ progress: {model.save_grads_progress_list}")
-    pylogger.info(f"save grads @ steps: {model.save_grads_steps_list}")
-    pylogger.info(f"cosine annealing warmup steps: {model.cosine_annealing_warmup_steps}")
 
     model.freeze_head()
 
@@ -244,6 +244,7 @@ def run(cfg: DictConfig):
         # plugins=[NNCheckpointIO(jailing_dir=logger.run_dir)],
         enable_checkpointing=False,
         max_epochs=cfg.nn.data.dataset.ft_epochs,
+        limit_train_batches=cfg.train_batches_ratio,
         logger=logger,
         callbacks=callbacks,
         accumulate_grad_batches=accumulate_grad_batches,
@@ -260,25 +261,54 @@ def run(cfg: DictConfig):
     ckpt_step_ratio = "_CKPT_STEP_RATIO_PLACEHOLDER_" if model.save_ckpt_steps_list is not None else ""
     grad_step_ratio = "_GRAD_STEP_RATIO_PLACEHOLDER_" if model.save_grads_steps_list is not None else ""
     accumulate_grad_batches_str = "" if accumulate_grad_batches == 1 else f"_acc_grad_batches_{accumulate_grad_batches}"
+    atm_true_info = "" if cfg.ft_regime != "atm-true" else (
+        f"_confl_res_{cfg.eval_conflict_res_method}"
+        f"_train_batches_{cfg.train_batches_ratio}"
+        f"_ord_{cfg.ft_current_order}"
+        f"_eps_per_ord_{cfg.epochs_per_order}"
+    )
     artifact_name = (
         f"{cfg.nn.module.model.model_name}"
         f"_{cfg.nn.data.dataset.dataset_name}"
         f"_{cfg.seed_index}"
         f"_{cfg.ft_regime}"
-        f"_{cfg.optimizer_name}"
-        f"_wd_{cfg.nn.module.optimizer.weight_decay}"
-        f"_lr_scheduler_{cfg.lr_scheduler_name}"
-        f"{lr_scheduler_warmup_steps}"
-        f"{ckpt_step_ratio}"
-        f"{grad_step_ratio}"
-        f"{accumulate_grad_batches_str}"
+        f"{atm_true_info}"
     )
     print("\n\n")
     pylogger.info(f"artifact_name: {artifact_name}")
     print("\n\n")
 
+    if cfg.ft_regime == "atm-true" and cfg.ft_current_order > 1:
+
+        atm_true_info_prev_order = (
+            f"_confl_res_{cfg.eval_conflict_res_method}"
+            f"_train_batches_{cfg.train_batches_ratio}"
+            f"_ord_{cfg.ft_current_order - 1}"
+            f"_eps_per_ord_{cfg.epochs_per_order}"
+        )
+        prev_order_merged_artifact_name = (
+            f"{cfg.nn.module.model.model_name}"
+            f"_{cfg.seed_index}"
+            f"_{cfg.ft_regime}"
+            f"{atm_true_info_prev_order}"
+            # f"_merged_{'-'.join(cfg.task_vectors.to_apply)}"
+            f"_merged"
+        )
+        model.encoder = load_model_from_artifact(
+            artifact_path=f"{prev_order_merged_artifact_name}:latest", 
+            run=logger.experiment
+        )
+        model.freeze_head()
+
     model.artifact_name = artifact_name
     model.cfg = cfg
+
+    pylogger.info(f"max train steps: {model.max_train_steps}")
+    pylogger.info(f"save ckpts @ progress: {model.save_ckpt_progress_list}")
+    pylogger.info(f"save ckpts @ steps: {model.save_ckpt_steps_list}")
+    pylogger.info(f"save grads @ progress: {model.save_grads_progress_list}")
+    pylogger.info(f"save grads @ steps: {model.save_grads_steps_list}")
+    pylogger.info(f"cosine annealing warmup steps: {model.cosine_annealing_warmup_steps}")
 
     print(f"\n\n")
     pylogger.info("Starting training!")
@@ -304,13 +334,14 @@ def run(cfg: DictConfig):
     if logger is not None:
         logger.experiment.finish()
 
-    if cfg.timestamp is not None:
-        export_run_data_to_disk(
-            cfg=cfg, 
-            logger=logger, 
-            export_dir=f"./evaluations/ft/{cfg.ft_regime}/{cfg.optimizer_name}/lr_scheduler_{cfg.lr_scheduler_name}{lr_scheduler_warmup_steps}", 
-            file_base_name=artifact_name
-        )
+    # NOT needed in workshop submission, it was for old, discarded stuff
+    # if cfg.timestamp is not None:
+    #     export_run_data_to_disk(
+    #         cfg=cfg, 
+    #         logger=logger, 
+    #         export_dir=f"./evaluations/ft/{cfg.ft_regime}/{cfg.optimizer_name}/lr_scheduler_{cfg.lr_scheduler_name}{lr_scheduler_warmup_steps}", 
+    #         file_base_name=artifact_name
+    #     )
 
 
 @hydra.main(config_path=str(PROJECT_ROOT / "conf"), config_name="finetune.yaml")

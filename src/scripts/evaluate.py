@@ -54,31 +54,34 @@ def run(cfg: DictConfig) -> str:
     print("evaluate cfg")
     pprint(OmegaConf.to_container(cfg, resolve=True))
 
-    lr_scheduler_warmup_steps = "" if cfg.nn.module.lr_scheduler.warmup_steps_or_ratio is None else f"_warmup_steps_{cfg.nn.module.lr_scheduler.warmup_steps_or_ratio}"
+    # lr_scheduler_warmup_steps = "" if cfg.nn.module.lr_scheduler.warmup_steps_or_ratio is None else f"_warmup_steps_{cfg.nn.module.lr_scheduler.warmup_steps_or_ratio}"
     
     if cfg.eval_orthogonalization_method == "none":
-        orthogonalization_method = ""
+        orthogonalization_method = "_none"
     elif cfg.eval_orthogonalization_method == "pc_grad":
         orthogonalization_method = "_pc_grad"
     elif cfg.eval_orthogonalization_method == "sorted_pc_grad":
         orthogonalization_method = "_sorted_pc_grad"
     else:
         raise ValueError(f"Unknown orthogonalization method: {cfg.eval_orthogonalization_method}")
-    
+
+    atm_true_info = "" if cfg.ft_regime != "atm-true" else (
+        f"_confl_res_{cfg.eval_conflict_res_method}"
+        f"_train_batches_{cfg.train_batches_ratio}"
+        f"_ord_{cfg.ft_current_order}"
+        f"_eps_per_ord_{cfg.epochs_per_order}"
+    )
     artifact_name = (
         f"{cfg.nn.module.model.model_name}"
         f"_{cfg.seed_index}"
         f"_{cfg.ft_regime}"
-        f"_{cfg.optimizer_name}"
-        f"_wd_{cfg.nn.module.optimizer.weight_decay}"
-        f"_lr_scheduler_{cfg.lr_scheduler_name}"
-        f"{lr_scheduler_warmup_steps}"
-        f"{orthogonalization_method}"
-        f"_merged_{'-'.join(cfg.task_vectors.to_apply)}"
+        f"{atm_true_info}"
+        f"_merged"
+        # f"_merged_{'-'.join(cfg.task_vectors.to_apply)}"
     )
 
     print(f"\n\n\n")
-    pylogger.info(f"Merrged artifact name: {artifact_name}")
+    pylogger.info(f"Merged artifact name: {artifact_name}")
     print(f"\n\n\n")
 
     if cfg.eval_skip_if_exists and os.path.exists(f"{cfg.evaluation_export_dir}/{artifact_name}.json"):
@@ -105,15 +108,18 @@ def run(cfg: DictConfig) -> str:
         artifact_path=f"{zeroshot_identifier}:latest", run=logger.experiment
     )
 
+    atm_true_info = "" if cfg.ft_regime != "atm-true" else (
+        f"_confl_res_{cfg.eval_conflict_res_method}"
+        f"_train_batches_{cfg.train_batches_ratio}"
+        f"_ord_{cfg.ft_current_order}"
+        f"_eps_per_ord_{cfg.epochs_per_order}"
+    )
     finetuned_id_fn = lambda dataset: (
         f"{cfg.nn.module.model.model_name}"
         f"_{dataset}"
         f"_{cfg.seed_index}"
         f"_{cfg.ft_regime}"
-        f"_{cfg.optimizer_name}"
-        f"_wd_{cfg.nn.module.optimizer.weight_decay}"
-        f"_lr_scheduler_{cfg.lr_scheduler_name}"
-        f"{lr_scheduler_warmup_steps}"
+        f"{atm_true_info}"
         f":latest"
     )
 
@@ -134,6 +140,11 @@ def run(cfg: DictConfig) -> str:
         cfg.evaluation_export_dir,
         artifact_name
     )
+
+    if logger is not None:
+        logger.experiment.finish()
+
+
 
 
 def eval_merged_model(
@@ -250,8 +261,7 @@ def eval(
 
     eval_results = eval_merged_model(
         cfg=cfg, 
-        # task_equipped_model=task_equipped_model, 
-        task_equipped_model=copy.deepcopy(zeroshot_model), 
+        task_equipped_model=task_equipped_model, 
         template_core=template_core, 
         logger=logger
     )

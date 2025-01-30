@@ -76,7 +76,7 @@ def _validate_args(args: dict):
         print(f"[bold red]This script should be called from bash[/bold red]")
         exit(-1)
 
-    if args["ft_regime"].lower() not in ["atm", "ta"]:
+    if args["ft_regime"].lower() not in ["atm", "atm-true", "ta"]:
         raise ValueError(f"Invalid finetuning regime: {args['ft_regime']}")
 
     if args["perform_ft"]:
@@ -106,6 +106,37 @@ def _validate_args(args: dict):
         
         if args["ft_acc_grad_batches_strategy"] not in ["1", "dataset-num-batches"]:
             raise ValueError(f"Invalid accumulation strategy: {args['ft_acc_grad_batches_strategy']}")
+
+        if args["ft_regime"] == "atm-true":
+            if args["ft_orders"] is None:
+                raise ValueError("ft regime atm-true requires --ft-orders to be provided")
+
+            if args["epochs_per_order"] is None:
+                raise ValueError("ft regime atm-true requires --epochs-per-order to be provided")
+
+            if not args["perform_eval"]:
+                raise ValueError("ft regime atm-true requires --perform-eval to be true")
+
+            if not args["upload_merged_to_wandb"]:
+                raise ValueError("ft regime atm-true requires --upload-merged-to-wandb to be true")
+
+            if args["eval_conflict_res_method"] is None:
+                raise ValueError("ft regime atm-true requires --eval-conflict-res-method to be provided")
+        
+        if args["ft_regime"] != "atm-true":
+            if args["ft_orders"] is not None:
+                raise ValueError("ft regime != atm-true requires --ft-orders to be NOT be provided")
+            
+            if args["epochs_per_order"] is not None:
+                raise ValueError("ft regime != atm-true requires --epochs-per-order to NOT be provided")
+
+        if args["ft_train_batches_ratio"] is None:
+            raise ValueError("--perform-ft requires --ft-train-batches-ratio to be provided")
+
+        if args["ft_train_batches_ratio"] is not None:
+            if not 0 <= args["ft_train_batches_ratio"] <= 1:
+                raise ValueError(f"Invalid ratio: {args['ft_train_batches_ratio']}")
+
 
     if args["perform_eval"]:
         if args["tvs_to_apply_group_name"] is None and args["tvs_to_apply_names"] is None:
@@ -206,6 +237,9 @@ def _parse_args():
     parser.add_argument("--ft-acc-grad-batches-strategy", type=str, help="Strategy to accumulate gradients over batches. Options: ['1', 'dataset-num-batches']")
     parser.add_argument("--ft-save-ckpt-progress-list", type=str, nargs='+', help="List of ratios to save checkpoints at")
     parser.add_argument("--ft-save-grads-progress-list", type=str, nargs='+', help="List of ratios to save gradients at")
+    parser.add_argument("--ft-train-batches-ratio", type=float, help="Ratio of training batches to use")
+    parser.add_argument("--ft-orders", type=int, help="Number of orders to finetune")
+    parser.add_argument("--epochs-per-order", type=int, help="Number of epochs per order")
     parser.add_argument("--perform-eval", type=str_to_bool, required=True, help="Flag to indicate if evaluation should be performed (true/false)")
     parser.add_argument("--eval-skip-if-exists", type=str_to_bool, help="Flag to indicate if evaluation should be skipped if the evaluation results already exist (true/false)")
     parser.add_argument("--upload-merged-to-wandb", type=str_to_bool, help="Flag to indicate if merged model should be uploaded to wandb (true/false)")
@@ -244,33 +278,69 @@ def main():
         accumulate_grad_batches = f"+accumulate_grad_batches={args['ft_acc_grad_batches_strategy']}"
 
         ft_tasks = args["ft_tasks"]
-        print(f"\n\nFinetuning tasks: {ft_tasks}\n\n")
+        print(f"\n\nFinetuning tasks {ft_tasks} for {args['ft_orders']} orders\n\n")
 
-        for dataset_id, task_to_finetune in enumerate(ft_tasks):
+        for order in range(1, args["ft_orders"] + 1):
 
-            print(
-                f"\n\n{task_to_finetune} ({dataset_id + 1}/{len(ft_tasks)})\n\n"
-            )
+            for dataset_id, task_to_finetune in enumerate(ft_tasks):
 
-            subprocess.run(
-                [
-                    "python", 
-                    "src/scripts/finetune.py",
-                    f"+task_to_finetune={task_to_finetune}",
-                    f"+ft_regime={args['ft_regime']}",
-                    f"+optimizer_name={args['optim_name']}",
-                    f"{ft_save_ckpt_progress_list}",
-                    f"{ft_save_grads_progress_list}",
-                    f"nn.module.optimizer._target_={args['optim_class']}",
-                    f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
-                    f"+lr_scheduler_name={args['lr_scheduler_name']}",
-                    lr_scheduler_target,
-                    cosine_annealing_warmup_steps_or_ratio,
-                    accumulate_grad_batches,
-                    f"+timestamp={timestamp}",
-                ], 
-                check=True
-            )
+                print(
+                    f"\n\n{task_to_finetune} ({dataset_id + 1}/{len(ft_tasks)}), order ({order}/{args['ft_orders']})\n\n"
+                )
+
+                subprocess.run(
+                    [
+                        "python", 
+                        "src/scripts/finetune.py",
+                        f"+task_to_finetune={task_to_finetune}",
+                        f"+ft_regime={args['ft_regime']}",
+                        f"+optimizer_name={args['optim_name']}",
+                        f"{ft_save_ckpt_progress_list}",
+                        f"{ft_save_grads_progress_list}",
+                        f"+train_batches_ratio={args['ft_train_batches_ratio']}",
+                        f"+ft_current_order={order}",
+                        f"+ft_total_orders={args['ft_orders']}",
+                        f"+epochs_per_order={args['epochs_per_order']}",
+                        f"+task_vectors.to_apply={args['tvs_to_apply']}",
+                        f"+eval_orthogonalization_method={args['eval_orthogonalization_method']}",
+                        f"+eval_conflict_res_method={args['eval_conflict_res_method']}",
+                        f"nn.module.optimizer._target_={args['optim_class']}",
+                        f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
+                        f"+lr_scheduler_name={args['lr_scheduler_name']}",
+                        lr_scheduler_target,
+                        cosine_annealing_warmup_steps_or_ratio,
+                        accumulate_grad_batches,
+                        f"+timestamp={timestamp}",
+                    ], 
+                    check=True
+                )
+
+            if args["ft_regime"] == "atm-true":
+                subprocess.run(
+                    [
+                        "python", 
+                        "src/scripts/evaluate.py",
+                        f"+ft_regime={args['ft_regime']}",
+                        f"task_vectors.to_apply={args['tvs_to_apply']}",
+                        f"eval_datasets={args['eval_datasets']}",
+                        f"+optimizer_name={args['optim_name']}",
+                        f"nn.module.optimizer._target_={args['optim_class']}",
+                        f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
+                        f"+lr_scheduler_name={args['lr_scheduler_name']}",
+                        cosine_annealing_warmup_steps_or_ratio,
+                        f"+upload_merged_to_wandb=true",
+                        f"+evaluation_export_dir={args['evaluation_export_dir']}",
+                        f"+eval_orthogonalization_method={args['eval_orthogonalization_method']}",
+                        f"+eval_conflict_res_method={args['eval_conflict_res_method']}",
+                        f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
+                        f"+ft_current_order={order}",
+                        f"+ft_total_orders={args['ft_orders']}",
+                        f"+epochs_per_order={args['epochs_per_order']}",
+                        f"+train_batches_ratio={args['ft_train_batches_ratio']}",
+                        f"+timestamp={timestamp}",
+                    ], 
+                    check=True
+                )
     
     if args["perform_eval"]:
 
@@ -339,26 +409,32 @@ def main():
         
         else:
 
-            subprocess.run(
-                [
-                    "python", 
-                    "src/scripts/evaluate.py",
-                    f"+ft_regime={args['ft_regime']}",
-                    f"task_vectors.to_apply={args['tvs_to_apply']}",
-                    f"eval_datasets={args['eval_datasets']}",
-                    f"+optimizer_name={args['optim_name']}",
-                    f"nn.module.optimizer._target_={args['optim_class']}",
-                    f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
-                    f"+lr_scheduler_name={args['lr_scheduler_name']}",
-                    cosine_annealing_warmup_steps_or_ratio,
-                    f"+upload_merged_to_wandb={args['upload_merged_to_wandb']}",
-                    f"+evaluation_export_dir={args['evaluation_export_dir']}",
-                    f"+eval_orthogonalization_method={args['eval_orthogonalization_method']}",
-                    f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
-                    f"+timestamp={timestamp}",
-                ], 
-                check=True
-            )
+            # ATM true already evals at each order, so no need for this call
+            if args["ft_regime"] != "atm-true":
+
+                subprocess.run(
+                    [
+                        "python", 
+                        "src/scripts/evaluate.py",
+                        f"+ft_regime={args['ft_regime']}",
+                        f"task_vectors.to_apply={args['tvs_to_apply']}",
+                        f"eval_datasets={args['eval_datasets']}",
+                        f"+optimizer_name={args['optim_name']}",
+                        f"nn.module.optimizer._target_={args['optim_class']}",
+                        f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
+                        f"+lr_scheduler_name={args['lr_scheduler_name']}",
+                        cosine_annealing_warmup_steps_or_ratio,
+                        f"+upload_merged_to_wandb={args['upload_merged_to_wandb']}",
+                        f"+ft_current_order={order}",
+                        f"+ft_total_orders={args['ft_orders']}",
+                        f"+epochs_per_order={args['epochs_per_order']}",
+                        f"+evaluation_export_dir={args['evaluation_export_dir']}",
+                        f"+eval_orthogonalization_method={args['eval_orthogonalization_method']}",
+                        f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
+                        f"+timestamp={timestamp}",
+                    ], 
+                    check=True
+                )
     
     
 
