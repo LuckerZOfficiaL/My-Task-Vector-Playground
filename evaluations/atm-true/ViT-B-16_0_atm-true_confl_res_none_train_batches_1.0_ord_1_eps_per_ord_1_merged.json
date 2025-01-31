@@ -214,9 +214,9 @@
         "eval_conflict_res_method": "none",
         "eval_skip_if_exists": false,
         "ft_current_order": 1,
-        "ft_total_orders": 10,
+        "ft_total_orders": 1,
         "epochs_per_order": 1,
         "train_batches_ratio": 1.0,
-        "timestamp": "2025_01_29_at_23_53_32"
+        "timestamp": "2025_01_31_at_10_34_46"
     }
 }
