@@ -2,53 +2,53 @@
     "results": {
         "Cars": [
             {
-                "acc/test": 0.705011785030365,
-                "loss/test": 0.8279827237129211
+                "acc/test": 0.824026882648468,
+                "loss/test": 0.5581321716308594
             }
         ],
         "DTD": [
             {
-                "acc/test": 0.5345744490623474,
-                "loss/test": 1.6356074810028076
+                "acc/test": 0.7491135001182556,
+                "loss/test": 0.9787909388542175
             }
         ],
         "EuroSAT": [
             {
-                "acc/test": 0.8975926041603088,
-                "loss/test": 0.34955722093582153
+                "acc/test": 0.9924073815345764,
+                "loss/test": 0.027032332494854927
             }
         ],
         "GTSRB": [
             {
-                "acc/test": 0.754790186882019,
-                "loss/test": 0.8562450408935547
+                "acc/test": 0.9878860116004944,
+                "loss/test": 0.056403692811727524
             }
         ],
         "MNIST": [
             {
-                "acc/test": 0.9767000079154968,
-                "loss/test": 0.14154724776744843
+                "acc/test": 0.9962000250816345,
+                "loss/test": 0.024264980107545853
             }
         ],
         "RESISC45": [
             {
-                "acc/test": 0.783650815486908,
-                "loss/test": 0.6602787375450134
+                "acc/test": 0.9401587247848511,
+                "loss/test": 0.23038549721240997
             }
         ],
         "SVHN": [
             {
-                "acc/test": 0.8594422340393066,
-                "loss/test": 0.4947511553764343
+                "acc/test": 0.9716118574142456,
+                "loss/test": 0.13171318173408508
             }
         ],
         "SUN397": [
             {
-                "acc/test": 0.6998488903045654,
-                "loss/test": 1.014129400253296
+                "acc/test": 0.75788414478302,
+                "loss/test": 0.955841064453125
             }
         ],
-        "average_of_tasks": 0.7764513716101646
+        "average_of_tasks": 0.9024110659956932
     },
     "cfg": {
         "nn": {
@@ -213,7 +213,7 @@
         "eval_orthogonalization_method": "none",
         "eval_conflict_res_method": "none",
         "eval_skip_if_exists": false,
-        "ft_current_order": 2,
+        "ft_current_order": 25,
         "ft_total_orders": 30,
         "epochs_per_order": 1,
         "train_batches_ratio": 1.0,

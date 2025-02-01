@@ -2,53 +2,53 @@
     "results": {
         "Cars": [
             {
-                "acc/test": 0.7814948558807373,
-                "loss/test": 0.6397786140441895
+                "acc/test": 0.7848526239395142,
+                "loss/test": 0.639544665813446
             }
         ],
         "DTD": [
             {
-                "acc/test": 0.6719858050346375,
-                "loss/test": 1.1578452587127686
+                "acc/test": 0.6684397459030151,
+                "loss/test": 1.174533486366272
             }
         ],
         "EuroSAT": [
             {
-                "acc/test": 0.9775000214576721,
-                "loss/test": 0.07445456087589264
+                "acc/test": 0.976805567741394,
+                "loss/test": 0.07550475746393204
             }
         ],
         "GTSRB": [
             {
-                "acc/test": 0.9643705487251282,
-                "loss/test": 0.15006154775619507
+                "acc/test": 0.9630245566368103,
+                "loss/test": 0.15799443423748016
             }
         ],
         "MNIST": [
             {
-                "acc/test": 0.9932000041007996,
-                "loss/test": 0.03824149817228317
+                "acc/test": 0.9926000237464905,
+                "loss/test": 0.03878391906619072
             }
         ],
         "RESISC45": [
             {
-                "acc/test": 0.894444465637207,
-                "loss/test": 0.34537333250045776
+                "acc/test": 0.8925396800041199,
+                "loss/test": 0.35023531317710876
             }
         ],
         "SVHN": [
             {
-                "acc/test": 0.9595497846603394,
-                "loss/test": 0.16589005291461945
+                "acc/test": 0.9612016081809998,
+                "loss/test": 0.16283391416072845
             }
         ],
         "SUN397": [
             {
-                "acc/test": 0.7448362708091736,
-                "loss/test": 0.9012436270713806
+                "acc/test": 0.7438790798187256,
+                "loss/test": 0.908014714717865
             }
         ],
-        "average_of_tasks": 0.8734227195382118
+        "average_of_tasks": 0.8729178607463837
     },
     "cfg": {
         "nn": {
@@ -66,7 +66,7 @@
                     "train": 128,
                     "val": 128
                 },
-                "data_path": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/data",
+                "data_path": "/root/ATM/Alternating-Tuning-and-Merging/data",
                 "num_workers": {
                     "test": 0,
                     "train": 4,
@@ -88,7 +88,7 @@
                 "model": {
                     "_target_": "tvp.modules.encoder.ImageEncoder",
                     "model_name": "ViT-B-16",
-                    "openclip_cachedir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
+                    "openclip_cachedir": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
                     "cache_dir": null,
                     "keep_lang": "??"
                 }
@@ -146,7 +146,7 @@
         "core": {
             "entity": "dansolombrinoandfriends",
             "project_name": "task-vectors-playground",
-            "storage_dir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/storage",
+            "storage_dir": "/root/ATM/Alternating-Tuning-and-Merging/storage",
             "tags": [
                 "dev"
             ],
@@ -166,9 +166,9 @@
         "eval_on_train": false,
         "misc": {
             "cache_dir": null,
-            "ckpt_path": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16",
-            "openclip_cachedir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
-            "pretrained_checkpoint": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16/zeroshot.pt"
+            "ckpt_path": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16",
+            "openclip_cachedir": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
+            "pretrained_checkpoint": "/root/ATM/Alternating-Tuning-and-Merging/checkpoints/ViT-B-16/zeroshot.pt"
         },
         "order": 1,
         "seed_index": 0,
@@ -214,9 +214,9 @@
         "eval_conflict_res_method": "none",
         "eval_skip_if_exists": false,
         "ft_current_order": 8,
-        "ft_total_orders": 10,
+        "ft_total_orders": 30,
         "epochs_per_order": 1,
         "train_batches_ratio": 1.0,
-        "timestamp": "2025_01_29_at_23_53_32"
+        "timestamp": "2025_01_31_at_19_50_39"
     }
 }
