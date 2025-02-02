@@ -245,6 +245,7 @@ def _parse_args():
     parser.add_argument("--upload-merged-to-wandb", type=str_to_bool, help="Flag to indicate if merged model should be uploaded to wandb (true/false)")
     parser.add_argument("--eval-use-merged-ratios", type=str_to_bool, help="Whether to eval progress merging")
     parser.add_argument("--evaluation-export-dir", type=str, help="Directory to export evaluation results")
+    parser.add_argument("--sims-dists-export-dir", type=str, help="Directory to export similarities and distances")
     parser.add_argument("--eval-orthogonalization-method", type=str, help="Name of the orthogonalization method to use while applying TVs in eval")
     parser.add_argument("--eval-conflict-res-method", type=str, help="Name of the conflict resolution method to use while applying TVs in eval")
     parser.add_argument("--eval-use-wita", type=str_to_bool, help="Flag to indicate if WITA should be used for evaluation (true/false)")
@@ -330,6 +331,7 @@ def main():
                         cosine_annealing_warmup_steps_or_ratio,
                         f"+upload_merged_to_wandb=true",
                         f"+evaluation_export_dir={args['evaluation_export_dir']}",
+                        f"+sims_dists_export_dir={args['sims_dists_export_dir']}",
                         f"+eval_orthogonalization_method={args['eval_orthogonalization_method']}",
                         f"+eval_conflict_res_method={args['eval_conflict_res_method']}",
                         f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
@@ -410,31 +412,34 @@ def main():
         else:
 
             # ATM true already evals at each order, so no need for this call
-            if args["ft_regime"] != "atm-true":
+            # if args["ft_regime"] != "atm-true":
 
-                subprocess.run(
-                    [
-                        "python", 
-                        "src/scripts/evaluate.py",
-                        f"+ft_regime={args['ft_regime']}",
-                        f"task_vectors.to_apply={args['tvs_to_apply']}",
-                        f"eval_datasets={args['eval_datasets']}",
-                        f"+optimizer_name={args['optim_name']}",
-                        f"nn.module.optimizer._target_={args['optim_class']}",
-                        f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
-                        f"+lr_scheduler_name={args['lr_scheduler_name']}",
-                        cosine_annealing_warmup_steps_or_ratio,
-                        f"+upload_merged_to_wandb={args['upload_merged_to_wandb']}",
-                        f"+ft_current_order={order}",
-                        f"+ft_total_orders={args['ft_orders']}",
-                        f"+epochs_per_order={args['epochs_per_order']}",
-                        f"+evaluation_export_dir={args['evaluation_export_dir']}",
-                        f"+eval_orthogonalization_method={args['eval_orthogonalization_method']}",
-                        f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
-                        f"+timestamp={timestamp}",
-                    ], 
-                    check=True
-                )
+            subprocess.run(
+                [
+                    "python", 
+                    "src/scripts/evaluate.py",
+                    f"+ft_regime={args['ft_regime']}",
+                    f"task_vectors.to_apply={args['tvs_to_apply']}",
+                    f"eval_datasets={args['eval_datasets']}",
+                    f"+optimizer_name={args['optim_name']}",
+                    f"nn.module.optimizer._target_={args['optim_class']}",
+                    f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
+                    f"+lr_scheduler_name={args['lr_scheduler_name']}",
+                    cosine_annealing_warmup_steps_or_ratio,
+                    f"+upload_merged_to_wandb={args['upload_merged_to_wandb']}",
+                    f"+ft_current_order={1}",
+                    f"+ft_total_orders={args['ft_orders']}",
+                    f"+epochs_per_order={args['epochs_per_order']}",
+                    f"+evaluation_export_dir={args['evaluation_export_dir']}",
+                    f"+sims_dists_export_dir={args['sims_dists_export_dir']}",
+                    f"+eval_orthogonalization_method={args['eval_orthogonalization_method']}",
+                    f"+eval_conflict_res_method={args['eval_conflict_res_method']}",
+                    f"+train_batches_ratio={args['ft_train_batches_ratio']}",
+                    f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
+                    f"+timestamp={timestamp}",
+                ], 
+                check=True
+            )
     
     
 

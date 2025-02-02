@@ -108,8 +108,11 @@ def run(cfg: DictConfig) -> str:
         artifact_path=f"{zeroshot_identifier}:latest", run=logger.experiment
     )
 
+    # here it's ok to use "conflict_res_none" because we do not adopt them in the
+    # atm true regime, i.e. we do not do o orders of e epochs while using 
+    # conflict resolution methods
     atm_true_info = "" if cfg.ft_regime != "atm-true" else (
-        f"_confl_res_{cfg.eval_conflict_res_method}"
+        f"_confl_res_none"
         f"_train_batches_{cfg.train_batches_ratio}"
         f"_ord_{cfg.ft_current_order}"
         f"_eps_per_ord_{cfg.epochs_per_order}"
@@ -140,6 +143,10 @@ def run(cfg: DictConfig) -> str:
         cfg.evaluation_export_dir,
         artifact_name
     )
+
+    if cfg.sims_dists_export_dir is not None:
+        np.save(f"{cfg.sims_dists_export_dir}/{artifact_name}_euclidean_dists.npy", euclidean_dists)
+        np.save(f"{cfg.sims_dists_export_dir}/{artifact_name}_cos_sims.npy", cos_sims)
 
     if logger is not None:
         logger.experiment.finish()
