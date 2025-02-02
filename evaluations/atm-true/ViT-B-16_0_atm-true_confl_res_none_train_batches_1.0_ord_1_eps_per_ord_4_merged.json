@@ -91,6 +91,9 @@
                     "openclip_cachedir": "/mnt/KS_2TB/PARA/Projects/ATM/Alternating-Tuning-and-Merging/checkpoints/openclip_cache",
                     "cache_dir": null,
                     "keep_lang": "??"
+                },
+                "lr_scheduler": {
+                    "warmup_steps_or_ratio": null
                 }
             }
         },
@@ -207,16 +210,16 @@
         "ft_regime": "atm-true",
         "optimizer_name": "adamw",
         "lr_scheduler_name": "none",
-        "empty_flag_2": -123456,
         "upload_merged_to_wandb": true,
-        "evaluation_export_dir": "evaluations/atm-true",
-        "eval_orthogonalization_method": "none",
-        "eval_conflict_res_method": "none",
-        "eval_skip_if_exists": false,
         "ft_current_order": 1,
         "ft_total_orders": 1,
         "epochs_per_order": 4,
+        "evaluation_export_dir": "evaluations/atm-true",
+        "sims_dists_export_dir": "evaluations/sims_dists",
+        "eval_orthogonalization_method": "none",
+        "eval_conflict_res_method": "none",
         "train_batches_ratio": 1.0,
-        "timestamp": "2025_01_31_at_11_44_03"
+        "eval_skip_if_exists": false,
+        "timestamp": null
     }
 }
