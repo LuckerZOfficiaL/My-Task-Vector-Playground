@@ -26,7 +26,7 @@ def plot_2d_embeddings(embeddings, labels, colors, file_path, legend_handles, la
     if not (len(embeddings) == len(labels) == len(colors)):
         raise ValueError("The lengths of embeddings, labels, and colors must be the same.")
 
-    plt.figure(figsize=(6, 6))
+    plt.figure(figsize=(4.5,4.5))
     
     # Plot each point and annotate it with a label using an offset.
     for point, label, color in zip(embeddings, labels, colors):
@@ -36,15 +36,18 @@ def plot_2d_embeddings(embeddings, labels, colors, file_path, legend_handles, la
             xy=(point[0], point[1]), 
             xytext=label_offset, 
             textcoords='offset points',
-            fontsize=8,
+            fontsize=12,
             ha='center'
         )
     
-    plt.xlabel("Principal Component 1")
-    plt.ylabel("Principal Component 2")
+    plt.xlabel("Principal Component 1", fontsize=13)
+    plt.ylabel("Principal Component 2", fontsize=13)
+
+    plt.xticks(fontsize=13)
+    plt.yticks(fontsize=13)
     
     # Create custom legend handles that map each color to its label.
-    plt.legend(handles=legend_handles, fontsize=12, loc='center')
+    plt.legend(handles=legend_handles, fontsize=13, loc='upper left')
 
     
     plt.tight_layout()
@@ -145,7 +148,7 @@ def main():
         labels=get_labels(list(atm_trajectory_embeddings.keys())),
         colors=labels_to_colors(list(atm_trajectory_embeddings.keys())),
         file_path="plots/pca_trajectory/pca_trajectory.png",
-        label_offset=(-24, -2.5),
+        label_offset=(-30, -5),
         legend_handles=get_legend_handles()
     )
 
