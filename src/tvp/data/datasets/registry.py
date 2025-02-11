@@ -35,6 +35,8 @@ class GenericDataset(object):
     def __init__(self):
         self.train_dataset = None
         self.train_loader = None
+        self.val_dataset = None
+        self.val_loader = None
         self.test_dataset = None
         self.test_loader = None
         self.classnames = None
@@ -72,7 +74,12 @@ def split_train_into_train_val(
         num_workers=num_workers,
     )
 
-    new_dataset.test_dataset = valset
+    new_dataset.val_dataset = valset
+    new_dataset.val_loader = torch.utils.data.DataLoader(
+        new_dataset.val_dataset, batch_size=batch_size, num_workers=num_workers
+    )
+
+    new_dataset.test_dataset = dataset.test_dataset
     new_dataset.test_loader = torch.utils.data.DataLoader(
         new_dataset.test_dataset, batch_size=batch_size, num_workers=num_workers
     )

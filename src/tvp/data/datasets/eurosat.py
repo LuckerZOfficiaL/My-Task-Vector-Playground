@@ -18,7 +18,8 @@ class EuroSATBase:
     def __init__(self, preprocess, test_split, location="~/datasets", batch_size=32, num_workers=6):
         # Data loading code
         traindir = os.path.join(location, "EuroSAT_splits", "train")
-        testdir = os.path.join(location, "EuroSAT_splits", test_split)
+        valdir = os.path.join(location, "EuroSAT_splits", "val")
+        testdir = os.path.join(location, "EuroSAT_splits", "test")
 
         self.train_dataset = datasets.ImageFolder(traindir, transform=preprocess)
         self.train_loader = torch.utils.data.DataLoader(
@@ -26,6 +27,11 @@ class EuroSATBase:
             shuffle=True,
             batch_size=batch_size,
             num_workers=num_workers,
+        )
+
+        self.val_dataset = datasets.ImageFolder(valdir, transform=preprocess)
+        self.val_loader = torch.utils.data.DataLoader(
+            self.val_dataset, batch_size=batch_size, num_workers=num_workers
         )
 
         self.test_dataset = datasets.ImageFolder(testdir, transform=preprocess)

@@ -51,6 +51,8 @@ def _set_max_epochs(cfg: DictConfig):
     # this is the true ATM, with the model being trained for a single epoch, merged, trained again, etc...
     elif cfg.ft_regime == "atm-true": 
         cfg.nn.data.dataset.ft_epochs = cfg.epochs_per_order
+    elif cfg.ft_regime == "atm-denoise":
+        cfg.nn.data.dataset.ft_epochs = cfg.epochs_per_order
     elif cfg.ft_regime == "ta":
         cfg.nn.data.dataset.ft_epochs = cfg.nn.data.dataset.ft_epochs
     else:
@@ -208,7 +210,14 @@ def run(cfg: DictConfig):
         batch_size=cfg.nn.data.batch_size.train,
     )
 
+    print(f"\n\n\n")
+    print(f"num train samples: {len(dataset.train_dataset)}, num train batches: {len(dataset.train_loader)}")
+    print(f"num val samples: {len(dataset.val_dataset)}, num val batches: {len(dataset.val_loader)}")
+    print(f"num test samples: {len(dataset.test_dataset)}, num test batches: {len(dataset.test_loader)}")
+    print(f"\n\n\n")
+
     model.max_train_steps = len(dataset.train_loader) * cfg.nn.data.dataset.ft_epochs
+    model.steps_per_epoch = len(dataset.train_loader)
 
     model.save_ckpt_progress_list = cfg.nn.module.save_ckpt_progress_list
     model.save_ckpt_progress_list_idx = 0 if model.save_ckpt_progress_list is not None else None
@@ -221,14 +230,15 @@ def run(cfg: DictConfig):
     model.save_grads_steps_list = _step_ratio_list_to_steps_list(
         cfg.nn.module.save_grads_progress_list, model.max_train_steps
     )
-    model.save_grads_dir = "./grads"
-    os.makedirs(model.save_grads_dir, exist_ok=True)
+    model.save_grads_epochs_list = None
+    model.save_grads_dir = None
+    model.save_ckpt_dir = None
+    if model.save_grads_dir is not None: 
+        os.makedirs(model.save_grads_dir, exist_ok=True)
+    if model.save_ckpt_dir is not None:
+        os.makedirs(model.save_ckpt_dir, exist_ok=True)
     
     model.cosine_annealing_warmup_steps = _get_warmpup_steps(model, cfg)
-    
-    print("\n\n")
-    pylogger.info(f"num train samples: {len(dataset.train_dataset)}, num train batches: {len(dataset.train_loader)}")
-    pylogger.info(f"num test samples: {len(dataset.test_dataset)}, num test batches: {len(dataset.test_loader)}")
 
     model.freeze_head()
 
@@ -236,7 +246,7 @@ def run(cfg: DictConfig):
 
     storage_dir: str = cfg.core.storage_dir
 
-    accumulate_grad_batches = _get_accumulate_grad_batches(cfg, dataset)
+    model.accumulate_grad_batches = _get_accumulate_grad_batches(cfg, dataset)
 
     pylogger.info("Instantiating the <Trainer>")
     trainer = pl.Trainer(
@@ -247,7 +257,7 @@ def run(cfg: DictConfig):
         limit_train_batches=cfg.train_batches_ratio,
         logger=logger,
         callbacks=callbacks,
-        accumulate_grad_batches=accumulate_grad_batches,
+        accumulate_grad_batches=model.accumulate_grad_batches,
         log_every_n_steps=1,
         **cfg.train.trainer,
     )
@@ -260,8 +270,14 @@ def run(cfg: DictConfig):
     lr_scheduler_warmup_steps = f"_warmup_steps_{cfg.nn.module.lr_scheduler.warmup_steps_or_ratio}" if "lr_scheduler" in cfg.nn.module else ""
     ckpt_step_ratio = "_CKPT_STEP_RATIO_PLACEHOLDER_" if model.save_ckpt_steps_list is not None else ""
     grad_step_ratio = "_GRAD_STEP_RATIO_PLACEHOLDER_" if model.save_grads_steps_list is not None else ""
-    accumulate_grad_batches_str = "" if accumulate_grad_batches == 1 else f"_acc_grad_batches_{accumulate_grad_batches}"
+    accumulate_grad_batches_str = "" if model.accumulate_grad_batches == 1 else f"_acc_grad_batches_{model.accumulate_grad_batches}"
     atm_true_info = "" if cfg.ft_regime != "atm-true" else (
+        f"_confl_res_{cfg.eval_conflict_res_method}"
+        f"_train_batches_{cfg.train_batches_ratio}"
+        f"_ord_{cfg.ft_current_order}"
+        f"_eps_per_ord_{cfg.epochs_per_order}"
+    )
+    atm_denoise_info = "" if cfg.ft_regime != "atm-denoise" else (
         f"_confl_res_{cfg.eval_conflict_res_method}"
         f"_train_batches_{cfg.train_batches_ratio}"
         f"_ord_{cfg.ft_current_order}"
@@ -273,7 +289,9 @@ def run(cfg: DictConfig):
         f"_{cfg.seed_index}"
         f"_{cfg.ft_regime}"
         f"{atm_true_info}"
+        f"{atm_denoise_info}"
     )
+    model.grad_name = None
     print("\n\n")
     pylogger.info(f"artifact_name: {artifact_name}")
     print("\n\n")
@@ -299,6 +317,37 @@ def run(cfg: DictConfig):
             run=logger.experiment
         )
         model.freeze_head()
+    
+    if cfg.ft_regime == "atm-denoise":
+        
+        if cfg.ft_current_order == 1:
+            zs_artifact_name = f"ViT-B-16_0_ta_merged"
+            model.encoder = load_model_from_artifact(
+                artifact_path=f"{zs_artifact_name}:latest", 
+                run=logger.experiment
+            )
+            model.freeze_head()
+
+        elif cfg.ft_current_order > 1:
+
+            atm_denoise_info_prev_order = (
+                f"_confl_res_{cfg.eval_conflict_res_method}"
+                f"_train_batches_{cfg.train_batches_ratio}"
+                f"_ord_{cfg.ft_current_order - 1}"
+                f"_eps_per_ord_{cfg.epochs_per_order}"
+            )
+            prev_order_merged_artifact_name = (
+                f"{cfg.nn.module.model.model_name}"
+                f"_{cfg.seed_index}"
+                f"_{cfg.ft_regime}"
+                f"{atm_denoise_info_prev_order}"
+                f"_merged"
+            )
+            model.encoder = load_model_from_artifact(
+                artifact_path=f"{prev_order_merged_artifact_name}:latest", 
+                run=logger.experiment
+            )
+            model.freeze_head()
 
     model.artifact_name = artifact_name
     model.cfg = cfg
@@ -312,11 +361,12 @@ def run(cfg: DictConfig):
 
     print(f"\n\n")
     pylogger.info("Starting training!")
-    trainer.fit(model=model, train_dataloaders=dataset.train_loader, val_dataloaders=dataset.test_loader, ckpt_path=template_core.trainer_ckpt_path)
+    train_dataloaders = dataset.train_loader if cfg.ft_regime != "atm-denoise" else dataset.val_loader
+    trainer.fit(model=model, train_dataloaders=train_dataloaders, val_dataloaders=None, ckpt_path=template_core.trainer_ckpt_path)
 
     print(f"\n\n")
     pylogger.info("Starting testing!")
-    trainer.test(model=model, dataloaders=dataset.test_loader)
+    # trainer.test(model=model, dataloaders=dataset.test_loader)
 
     print("\n\n")
     pylogger.info(f"optimizer(s): {model.optimizers()}")

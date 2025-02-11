@@ -76,7 +76,7 @@ def _validate_args(args: dict):
         print(f"[bold red]This script should be called from bash[/bold red]")
         exit(-1)
 
-    if args["ft_regime"].lower() not in ["atm", "atm-true", "ta"]:
+    if args["ft_regime"].lower() not in ["atm", "atm-true", "atm-denoise", "ta"]:
         raise ValueError(f"Invalid finetuning regime: {args['ft_regime']}")
 
     if args["perform_ft"]:
@@ -107,23 +107,23 @@ def _validate_args(args: dict):
         if args["ft_acc_grad_batches_strategy"] not in ["1", "dataset-num-batches"]:
             raise ValueError(f"Invalid accumulation strategy: {args['ft_acc_grad_batches_strategy']}")
 
-        if args["ft_regime"] == "atm-true":
+        if args["ft_regime"] in ["atm-true", "atm-denoise"]:
             if args["ft_orders"] is None:
-                raise ValueError("ft regime atm-true requires --ft-orders to be provided")
+                raise ValueError("ft regimes atm-true and atm-denoise require --ft-orders to be provided")
 
             if args["epochs_per_order"] is None:
-                raise ValueError("ft regime atm-true requires --epochs-per-order to be provided")
+                raise ValueError("ft regimes atm-true and atm-denoise require --epochs-per-order to be provided")
 
             if not args["perform_eval"]:
-                raise ValueError("ft regime atm-true requires --perform-eval to be true")
+                raise ValueError("ft regimes atm-true and atm-denoise require --perform-eval to be true")
 
             if not args["upload_merged_to_wandb"]:
-                raise ValueError("ft regime atm-true requires --upload-merged-to-wandb to be true")
+                raise ValueError("ft regimes atm-true and atm-denoise require --upload-merged-to-wandb to be true")
 
             if args["eval_conflict_res_method"] is None:
-                raise ValueError("ft regime atm-true requires --eval-conflict-res-method to be provided")
+                raise ValueError("ft regimes atm-true and atm-denoise require --eval-conflict-res-method to be provided")
         
-        if args["ft_regime"] != "atm-true":
+        if args["ft_regime"] not in ["atm-true", "atm-denoise"]:
             if args["ft_orders"] is not None:
                 raise ValueError("ft regime != atm-true requires --ft-orders to be NOT be provided")
             
@@ -281,7 +281,7 @@ def main():
         ft_tasks = args["ft_tasks"]
         print(f"\n\nFinetuning tasks {ft_tasks} for {args['ft_orders']} orders\n\n")
 
-        for order in range(1, args["ft_orders"] + 1):
+        for order in range(1, args["ft_orders"] + 1 if args["ft_regime"] == "atm-true" or args["ft_regime"] == "atm-denoise" else 2):
 
             for dataset_id, task_to_finetune in enumerate(ft_tasks):
 
@@ -316,7 +316,7 @@ def main():
                     check=True
                 )
 
-            if args["ft_regime"] == "atm-true":
+            if args["ft_regime"] == "atm-true" or args["ft_regime"] == "atm-denoise":
                 subprocess.run(
                     [
                         "python", 
@@ -411,35 +411,36 @@ def main():
         
         else:
 
-            # ATM true already evals at each order, so no need for this call
-            # if args["ft_regime"] != "atm-true":
+            # atm-true and atm-denoise already eval at each order, so no need for this additional call
+            if args["ft_regime"] not in ["atm-true", "atm-denoise"]:
 
-            subprocess.run(
-                [
-                    "python", 
-                    "src/scripts/evaluate.py",
-                    f"+ft_regime={args['ft_regime']}",
-                    f"task_vectors.to_apply={args['tvs_to_apply']}",
-                    f"eval_datasets={args['eval_datasets']}",
-                    f"+optimizer_name={args['optim_name']}",
-                    f"nn.module.optimizer._target_={args['optim_class']}",
-                    f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
-                    f"+lr_scheduler_name={args['lr_scheduler_name']}",
-                    cosine_annealing_warmup_steps_or_ratio,
-                    f"+upload_merged_to_wandb={args['upload_merged_to_wandb']}",
-                    f"+ft_current_order={1}",
-                    f"+ft_total_orders={args['ft_orders']}",
-                    f"+epochs_per_order={args['epochs_per_order']}",
-                    f"+evaluation_export_dir={args['evaluation_export_dir']}",
-                    f"+sims_dists_export_dir={args['sims_dists_export_dir']}",
-                    f"+eval_orthogonalization_method={args['eval_orthogonalization_method']}",
-                    f"+eval_conflict_res_method={args['eval_conflict_res_method']}",
-                    f"+train_batches_ratio={args['ft_train_batches_ratio']}",
-                    f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
-                    f"+timestamp={timestamp}",
-                ], 
-                check=True
-            )
+                for order in range(1, args["ft_orders"] + 1 if args["ft_regime"] == "atm-true" or args["ft_regime"] == "atm-denoise" else 2):
+                    subprocess.run(
+                        [
+                            "python", 
+                            "src/scripts/evaluate.py",
+                            f"+ft_regime={args['ft_regime']}",
+                            f"task_vectors.to_apply={args['tvs_to_apply']}",
+                            f"eval_datasets={args['eval_datasets']}",
+                            f"+optimizer_name={args['optim_name']}",
+                            f"nn.module.optimizer._target_={args['optim_class']}",
+                            f"+nn.module.optimizer.weight_decay={args['weight_decay']}",
+                            f"+lr_scheduler_name={args['lr_scheduler_name']}",
+                            cosine_annealing_warmup_steps_or_ratio,
+                            f"+upload_merged_to_wandb={args['upload_merged_to_wandb']}",
+                            f"+ft_current_order={order}",
+                            f"+ft_total_orders={args['ft_orders']}",
+                            f"+epochs_per_order={args['epochs_per_order']}",
+                            f"+evaluation_export_dir={args['evaluation_export_dir']}",
+                            f"+sims_dists_export_dir={args['sims_dists_export_dir']}",
+                            f"+eval_orthogonalization_method={args['eval_orthogonalization_method']}",
+                            f"+eval_conflict_res_method={args['eval_conflict_res_method']}",
+                            f"+train_batches_ratio={args['ft_train_batches_ratio']}",
+                            f"+eval_skip_if_exists={args['eval_skip_if_exists']}",
+                            f"+timestamp={timestamp}",
+                        ], 
+                        check=True
+                    )
     
     
 

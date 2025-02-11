@@ -70,12 +70,21 @@ def run(cfg: DictConfig) -> str:
         f"_train_batches_{cfg.train_batches_ratio}"
         f"_ord_{cfg.ft_current_order}"
         f"_eps_per_ord_{cfg.epochs_per_order}"
+        # f"_eps_per_ord_CONVERGENCE"
+    )
+    atm_denoise_info = "" if cfg.ft_regime != "atm-denoise" else (
+        f"_confl_res_{cfg.eval_conflict_res_method}"
+        f"_train_batches_{cfg.train_batches_ratio}"
+        f"_ord_{cfg.ft_current_order}"
+        f"_eps_per_ord_{cfg.epochs_per_order}"
+        # f"_eps_per_ord_CONVERGENCE"
     )
     artifact_name = (
         f"{cfg.nn.module.model.model_name}"
         f"_{cfg.seed_index}"
         f"_{cfg.ft_regime}"
         f"{atm_true_info}"
+        f"{atm_denoise_info}"
         f"_merged"
         # f"_merged_{'-'.join(cfg.task_vectors.to_apply)}"
     )
@@ -116,6 +125,14 @@ def run(cfg: DictConfig) -> str:
         f"_train_batches_{cfg.train_batches_ratio}"
         f"_ord_{cfg.ft_current_order}"
         f"_eps_per_ord_{cfg.epochs_per_order}"
+        # f"_eps_per_ord_CONVERGENCE"
+    )
+    atm_denoise_info = "" if cfg.ft_regime != "atm-denoise" else (
+        f"_confl_res_none"
+        f"_train_batches_{cfg.train_batches_ratio}"
+        f"_ord_{cfg.ft_current_order}"
+        f"_eps_per_ord_{cfg.epochs_per_order}"
+        # f"_eps_per_ord_CONVERGENCE"
     )
     finetuned_id_fn = lambda dataset: (
         f"{cfg.nn.module.model.model_name}"
@@ -123,6 +140,7 @@ def run(cfg: DictConfig) -> str:
         f"_{cfg.seed_index}"
         f"_{cfg.ft_regime}"
         f"{atm_true_info}"
+        f"{atm_denoise_info}"
         f":latest"
     )
 
@@ -251,7 +269,10 @@ def eval(
 
     if cfg.eval_conflict_res_method != "ties":
         pylogger.info(f"pairwise cosine similarity between task vectors after orthogonalization:")
-        print_pairwise_cos_sim(torch.stack(list(task_vectors.values())) if isinstance(task_vectors, dict) else task_vectors)
+        cos_sims: np.ndarray = print_pairwise_cos_sim(torch.stack(list(task_vectors.values())) if isinstance(task_vectors, dict) else task_vectors)
+
+        pylogger.info(f"pairwise euclidean distance between task vectors after orthogonalization:")
+        euclidean_dists: np.ndarray = print_pairwise_euclidean_dist(torch.stack(list(task_vectors.values())) if isinstance(task_vectors, dict) else task_vectors)
 
     # NOTE: this is needed because ties method already comprises an aggregation step
     if cfg.eval_conflict_res_method == "ties":

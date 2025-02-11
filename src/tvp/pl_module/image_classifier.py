@@ -51,8 +51,12 @@ class ImageClassifier(pl.LightningModule):
         # self.encoder.create_tv_mask() # call this to create the TV sparsity mask in the encoder, the mask is applied to the gradient to prevent pruned weights from updating
 
         self.max_train_steps = None
+        self.steps_per_epoch = None
+
+        self.accumulate_grad_batches = None
 
         self.elapsed_train_steps = 0
+        self.elapsed_train_epochs = 0
 
         self.save_ckpt_progress_list = None
         self.save_ckpt_steps_list = None
@@ -61,9 +65,11 @@ class ImageClassifier(pl.LightningModule):
         self.save_grads_progress_list = None
         self.save_grads_steps_list_idx = None
         self.save_grads_steps_list = None
+        self.save_grads_epochs_list = None
         self.save_grads_dir: str = None
+        self.grad_name: str = None
 
-        self.save_ckpt_path = None
+        self.save_ckpt_dir = None
         self.artifact_name: str = None
         
         self.cfg = None
@@ -257,10 +263,39 @@ class ImageClassifier(pl.LightningModule):
         pylogger.info(f"Loading image classifier from {filename}")
         return torch_load(filename)
 
-    """def on_train_epoch_end(self):
-        self.log_epoch_end_metrics("train")
+    def on_train_epoch_end(self):
+        self.elapsed_train_epochs += 1
 
-    def on_validation_epoch_end(self):
+    def on_train_batch_end(self, outputs, batch, batch_idx, dataloader_idx=0):
+        # Determine if this is the final batch of the current accumulation cycle.
+        # 'accumulate_grad_batches' should be defined in your config.
+        if ((batch_idx + 1) % self.accumulate_grad_batches == 0) or ((batch_idx + 1) == self.steps_per_epoch):
+
+            if self.save_grads_dir is not None:
+                # At this point, gradients are fully accumulated.
+                tmp_artifact_name = self.grad_name.replace(
+                    "_GRAD_EP_PLACEHOLDER_",
+                    # f"_ep_{self.elapsed_train_epochs}_batch_{batch_idx}_grads"
+                    f"_ep_{self.elapsed_train_epochs}_batch_{batch_idx}_grads"
+                )
+                file_path = f"{self.save_grads_dir}/{tmp_artifact_name}.pt"
+                self._save_grads(file_path)
+
+            if self.save_ckpt_dir is not None:
+                # At this point, gradients are fully accumulated.
+                tmp_artifact_name = self.grad_name.replace(
+                    "_GRAD_EP_PLACEHOLDER_",
+                    f"_ep_{self.elapsed_train_epochs}_batch_{batch_idx}_ckpt"
+                )
+                file_path = f"{self.save_ckpt_dir}/{tmp_artifact_name}.pt"
+                torch.save(
+                    self.encoder.state_dict(), file_path
+                )
+                pylogger.info(f"Saved encoder weights to {file_path}")
+
+
+
+    """def on_validation_epoch_end(self):
         self.log_epoch_end_metrics("val")
 
     def on_test_epoch_end(self):
