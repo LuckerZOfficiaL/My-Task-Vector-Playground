@@ -233,4 +233,6 @@ artifacts_downloaded_from_wandb/
 
 /grads
 
+/ckpts
+
 *_stats.npy
