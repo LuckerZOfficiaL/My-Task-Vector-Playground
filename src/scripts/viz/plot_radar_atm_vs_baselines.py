@@ -153,7 +153,7 @@ def main():
     BUDGETS = [2, 4, 10]
     METHODS = ["ta", "bc", "ties", "dare", "atm"]
     legend_labels = [
-        "Task Arithmetic", "Model Breadcrumbs", "TIES-merging", "DARE", "ATM"
+        "Task Arithmetic", "Model Breadcrumbs", "TIES-merging", "DARE", "PA-ATM"
     ]
     legend_colors = [
         "#ffbe0b", "#fb5607", "#3a86ff", "#8338ec", "#ff006e"
@@ -176,7 +176,8 @@ def main():
             print(f"Budget: {b}, Method: {m}")
 
             conf_res_name = "none" if m == "ta" or m == "atm" else m
-            train_batches = 0.1 if m == "atm" else 1.0
+            # train_batches = 0.1 if m == "atm" else 1.0
+            train_batches = 1.0
             ord = 1 if m != "atm" else b
             eps_per_ord = b if m != "atm" else 1
 

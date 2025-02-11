@@ -26,7 +26,7 @@ def plot_2d_embeddings(embeddings, labels, colors, file_path, legend_handles, la
     if not (len(embeddings) == len(labels) == len(colors)):
         raise ValueError("The lengths of embeddings, labels, and colors must be the same.")
 
-    plt.figure(figsize=(3.75,3.75))
+    plt.figure(figsize=(4.125,4.125))
     
     # Plot each point and annotate it with a label using an offset.
     for point, label, color in zip(embeddings, labels, colors):
@@ -36,18 +36,18 @@ def plot_2d_embeddings(embeddings, labels, colors, file_path, legend_handles, la
             xy=(point[0], point[1]), 
             xytext=label_offset, 
             textcoords='offset points',
-            fontsize=12,
+            fontsize=12.8,
             ha='center'
         )
     
-    plt.xlabel("Principal Component 1", fontsize=12)
-    plt.ylabel("Principal Component 2", fontsize=12)
+    plt.xlabel("Principal Component 1", fontsize=12.8)
+    plt.ylabel("Principal Component 2", fontsize=12.8)
 
-    plt.xticks(fontsize=12)
-    plt.yticks(fontsize=12)
+    plt.xticks(fontsize=12.8)
+    plt.yticks(fontsize=12.8)
     
     # Create custom legend handles that map each color to its label.
-    plt.legend(handles=legend_handles, fontsize=12, loc='upper left')
+    plt.legend(handles=legend_handles, fontsize=12.8, loc='center left')
 
     
     plt.tight_layout()
@@ -74,7 +74,7 @@ def get_labels(labels):
         if "atm" in l:
             order = int(l.split(' ')[-1])
             new_labels.append(
-                f"{num_to_cardinality(order)} order" if order in [1, 5, 10] else " "
+                f"{num_to_cardinality(order)} order" if order in [10] else " "
             )
         else:
             new_labels.append(" ")
@@ -85,8 +85,8 @@ from matplotlib.lines import Line2D
 
 def get_legend_handles():
 
-    colors = ["#000000", "#ffbe0b", "#3a86ff", "#fb5607", "#8338ec", "#ff006e"]
-    labels = ["Pre-trained", "Task Arithmetic", "TIES-merging", "Model Breadcrumbs", "DARE", "ATM"]
+    colors = ["#000000", "#ffbe0b", "#3a86ff", "#fb5607", "#8338ec", "#ff006e", "#02c39a"]
+    labels = ["Pre-trained", "Task Arithmetic", "TIES-merging", "Model Breadcrumbs", "DARE", "PA-ATM", "PH-ATM"]
 
     legend_handles = [
         Line2D(
@@ -115,16 +115,26 @@ def labels_to_colors(labels):
         "ties": "#3a86ff",
         "breadcrumbs": "#fb5607",
         "dare": "#8338ec",
-        "atm order 1": "#ff006e",
-        "atm order 2": "#ff006e",
-        "atm order 3": "#ff006e",
-        "atm order 4": "#ff006e",
-        "atm order 5": "#ff006e",
-        "atm order 6": "#ff006e",
-        "atm order 7": "#ff006e",
-        "atm order 8": "#ff006e",
-        "atm order 9": "#ff006e",
-        "atm order 10": "#ff006e"
+        "atm-true order 1": "#ff006e",
+        "atm-true order 2": "#ff006e",
+        "atm-true order 3": "#ff006e",
+        "atm-true order 4": "#ff006e",
+        "atm-true order 5": "#ff006e",
+        "atm-true order 6": "#ff006e",
+        "atm-true order 7": "#ff006e",
+        "atm-true order 8": "#ff006e",
+        "atm-true order 9": "#ff006e",
+        "atm-true order 10": "#ff006e",
+        "atm-denoise order 1": "#02c39a",
+        "atm-denoise order 2": "#02c39a",
+        "atm-denoise order 3": "#02c39a",
+        "atm-denoise order 4": "#02c39a",
+        "atm-denoise order 5": "#02c39a",
+        "atm-denoise order 6": "#02c39a",
+        "atm-denoise order 7": "#02c39a",
+        "atm-denoise order 8": "#02c39a",
+        "atm-denoise order 9": "#02c39a",
+        "atm-denoise order 10": "#02c39a"
     }
     
     # Map each label to its corresponding color.

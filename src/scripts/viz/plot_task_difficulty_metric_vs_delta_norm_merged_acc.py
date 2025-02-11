@@ -13,20 +13,45 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def _check_list_of_merged_accs(merged_accs_files_ta, merged_accs_files_atm):
-    if len(merged_accs_files_ta) != len(merged_accs_files_atm):
+# def _check_list_of_merged_accs(merged_accs_files_ta, merged_accs_files_atm):
+#     if len(merged_accs_files_ta) != len(merged_accs_files_atm):
+#         raise ValueError(
+#             "The number of TA and ATM merged accuracies files are not equal."
+#         )
+
+#     for ta, atm in zip(merged_accs_files_ta, merged_accs_files_atm):
+#         ta = ta.split("/")[-1].split("_")[-1].split(".")[0]
+#         atm = atm.split("/")[-1].split("_")[-1].split(".")[0]
+
+#         if ta != atm:
+#             raise ValueError(
+#                 f"TA and ATM merged accuracies files are not equal: {ta} != {atm}"
+#             )
+
+def _find_common_combos(merged_accs_files_ta, merged_accs_files_atm):
+
+    merged_accs_files_ta_clean = []
+    merged_accs_files_atm_clean = []
+
+    for ta_raw in merged_accs_files_ta:
+
+        ta = ta_raw.split("/")[-1].split("_")[-1].split(".")[0]
+
+        for atm_raw in merged_accs_files_atm:
+
+            atm = atm_raw.split("/")[-1].split("_")[-1].split(".")[0]
+
+            if ta == atm:
+                merged_accs_files_ta_clean.append(ta_raw)
+                merged_accs_files_atm_clean.append(atm_raw)
+                break
+
+    if len(merged_accs_files_ta_clean) != len(merged_accs_files_atm_clean):
         raise ValueError(
             "The number of TA and ATM merged accuracies files are not equal."
         )
 
-    for ta, atm in zip(merged_accs_files_ta, merged_accs_files_atm):
-        ta = ta.split("/")[-1].split("_")[-1].split(".")[0]
-        atm = atm.split("/")[-1].split("_")[-1].split(".")[0]
-
-        if ta != atm:
-            raise ValueError(
-                f"TA and ATM merged accuracies files are not equal: {ta} != {atm}"
-            )
+    return merged_accs_files_ta_clean, merged_accs_files_atm_clean
 
 
 def _get_list_of_merged_accs(
@@ -41,7 +66,10 @@ def _get_list_of_merged_accs(
     merged_accs_files_ta = [os.path.join(merged_accs_dir_ta, f) for f in merged_accs_files_ta]
     merged_accs_files_ta = sorted(merged_accs_files_ta)
 
-    _check_list_of_merged_accs(merged_accs_files_ta, merged_accs_files_atm)
+    # _check_list_of_merged_accs(merged_accs_files_ta, merged_accs_files_atm)
+    merged_accs_files_ta, merged_accs_files_atm = _find_common_combos(
+        merged_accs_files_ta, merged_accs_files_atm
+    )
 
     return merged_accs_files_atm, merged_accs_files_ta
 
@@ -128,6 +156,7 @@ def _prepare_data_for_plot(
 
     return df
 
+import matplotlib as mpl
 
 def _plot_or_save(
     df: pd.DataFrame,
@@ -155,6 +184,11 @@ def _plot_or_save(
     Returns:
     None
     """
+
+    # latex stuff for the paper
+    mpl.rcParams['text.usetex'] = True
+    mpl.rcParams['font.family'] = 'serif'
+
     # Check if specified columns exist in the DataFrame
     if x_col not in df.columns:
         raise ValueError(f"Columns '{x_col}' not found in the DataFrame.")
@@ -167,19 +201,19 @@ def _plot_or_save(
     y = df[y_col]
 
     # Create the scatter plot
-    plt.figure(figsize=(10, 6))
-    plt.scatter(x, y, alpha=0.7, edgecolor='k', label="Merged accuracies")
+    plt.figure(figsize=(8,8))
+    plt.scatter(x, y, color='#540B0E', alpha=0.7, edgecolor='k', label="Merged accuracies")
 
     # Fit a regression line
     coeffs = np.polyfit(x, y, deg=1)  # Linear regression (degree 1)
     regression_line = np.polyval(coeffs, x)
-    plt.plot(x, regression_line, color='red', linestyle='-', linewidth=2, label="Trend line")
+    plt.plot(x, regression_line, color='black', linestyle='-', linewidth=2, label="Trend line")
 
     # Add labels, title, and grid
-    plt.title(title, fontsize=14)
-    plt.xlabel(x_label, fontsize=12)
-    plt.ylabel(y_label, fontsize=12)
-    plt.legend()
+    # plt.title(title, fontsize=16)
+    plt.xlabel(x_label, fontsize=16)
+    plt.ylabel(y_label, fontsize=16)
+    # plt.legend()
     plt.grid(True, linestyle='--', alpha=0.6)
 
     # Save or display the plot
@@ -203,10 +237,14 @@ def _plot(
     METRIC_NAMES = ["Accuracy Gap", "Accuracy Ratio", "Loss Gap", "Normalized Loss Gap"]
     # TODO check this with Luca
     METRIC_LABELS = [
-        "Accuracy Gap\n(higher means more difficult task)", 
-        "Accuracy Ratio\n(higher means simpler task)", 
-        "Loss Gap\n(higher means more difficult task)", 
-        "Normalized Loss Gap\n(higher means more difficult task)"
+        # "Accuracy Gap\n(higher means more difficult task)", 
+        # "Accuracy Ratio\n(higher means simpler task)", 
+        # "Loss Gap\n(higher means more difficult task)", 
+        # "Normalized Loss Gap\n(higher means more difficult task)"
+        "Accuracy Gap", 
+        "Accuracy Ratio", 
+        "Loss Gap", 
+        "Normalized Loss Gap"
     ]
 
 
@@ -218,7 +256,8 @@ def _plot(
             y_col="norm_merged_acc_delta",
             title=f"{metric_name} vs. Delta Normalized Merged Accuracy\n{add_to_title}",
             x_label=f"Average {metric_label}",
-            y_label="Delta Normalized Merged Accuracy\n(norm_merged_acc_atm - norm_merged_acc_ta)",
+            # y_label="Delta Normalized Merged Accuracy\n(norm_merged_acc_atm - norm_merged_acc_ta)",
+            y_label="Delta Normalized Merged Accuracy",
             save_path=plot_save_path.replace(".png", f"_{metric}.png")
         )
 
@@ -238,7 +277,7 @@ def main():
     SUBSET_SIZE = "05"
     OPTIM = "adamw_wd_0.1"
     LR_SCHEDULER_TA = "cosine_annealing_warmup_steps_200"
-    LR_SCHEDULER_ATM = "none"
+    LR_SCHEDULER_ATM = "cosine_annealing_warmup_steps_0.1"
     ATM_SUBDIR = f"atm/optim_{OPTIM}/{LR_SCHEDULER_ATM}"
     TA_SUBDIR  = f"ta/optim_{OPTIM}/{LR_SCHEDULER_TA}"
     EVALS_DIR = f"./evaluations/merged_subsets/{TASKS}"
@@ -249,6 +288,9 @@ def main():
         merged_accs_dir_atm=merged_accs_dir_atm,
         merged_accs_dir_ta=merged_accs_dir_ta
     )
+
+    print(f"Found {len(merged_accs_files_ta)} TA merged accuracies files.")
+    print(f"Found {len(merged_accs_files_atm)} ATM merged accuracies files.")
 
     df: pd.DataFrame = _prepare_data_for_plot(
         merged_accs_files_ta=merged_accs_files_ta, 

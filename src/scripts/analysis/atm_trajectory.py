@@ -31,6 +31,7 @@ def get_zeroshot_model(logger: NNLogger) -> Union[ClassificationHead, ImageEncod
 from tvp.data.datasets.constants import DATASET_TO_STYLED
 
 def get_artifact_name_merged(
+    atm_version: str,
     confl_res: str, 
     train_batches: float, 
     order: int, 
@@ -39,7 +40,7 @@ def get_artifact_name_merged(
 
     return (
         f"ViT-B-16_0"
-        f"_atm-true"
+        f"_{atm_version}"
         f"_confl_res_{confl_res}"
         f"_train_batches_{train_batches}"
         f"_ord_{order}"
@@ -112,6 +113,7 @@ def main(cfg: DictConfig) -> None:
     checkpoints["breadcrumbs"] = parameters_to_vector(
         load_model_from_artifact(
             artifact_path=get_artifact_name_merged(
+                atm_version="atm-true",
                 confl_res="bc",
                 train_batches=1.0,
                 order=1,
@@ -124,6 +126,7 @@ def main(cfg: DictConfig) -> None:
     checkpoints["ties"] = parameters_to_vector(
         load_model_from_artifact(
             artifact_path=get_artifact_name_merged(
+                atm_version="atm-true",
                 confl_res="ties",
                 train_batches=1.0,
                 order=1,
@@ -136,6 +139,7 @@ def main(cfg: DictConfig) -> None:
     checkpoints["dare"] = parameters_to_vector(
         load_model_from_artifact(
             artifact_path=get_artifact_name_merged(
+                atm_version="atm-true",
                 confl_res="dare",
                 train_batches=1.0,
                 order=1,
@@ -148,6 +152,7 @@ def main(cfg: DictConfig) -> None:
     checkpoints["ta"] = parameters_to_vector(
         load_model_from_artifact(
             artifact_path=get_artifact_name_merged(
+                atm_version="atm-true",
                 confl_res="none",
                 train_batches=1.0,
                 order=1,
@@ -159,11 +164,25 @@ def main(cfg: DictConfig) -> None:
 
     for order in range(1, MAX_ORDERS + 1):
 
-        checkpoints[f"atm order {order}"] = parameters_to_vector(
+        checkpoints[f"atm-true order {order}"] = parameters_to_vector(
             load_model_from_artifact(
                 artifact_path=get_artifact_name_merged(
+                    atm_version="atm-true",
                     confl_res="none", 
-                    train_batches=0.1, 
+                    train_batches=1.0, 
+                    order=order, 
+                    eps_per_ord=1
+                ), 
+                run=logger.experiment
+            ).parameters()
+        ).detach().cpu().numpy()
+        
+        checkpoints[f"atm-denoise order {order}"] = parameters_to_vector(
+            load_model_from_artifact(
+                artifact_path=get_artifact_name_merged(
+                    atm_version="atm-denoise",
+                    confl_res="none", 
+                    train_batches=1.0, 
                     order=order, 
                     eps_per_ord=1
                 ), 

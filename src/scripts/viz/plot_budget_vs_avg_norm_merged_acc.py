@@ -37,7 +37,9 @@ def plot_lines(
 
     ax.grid(True)
 
-    ax.legend(bbox_to_anchor=(0.5, 0.325), loc='center', fontsize=16)
+    ax.legend(bbox_to_anchor=(0.5, 0.275), loc='center', fontsize=14)
+
+    plt.tight_layout()
 
     plt.savefig(export_path, dpi=400)
     plt.close(fig)
@@ -62,7 +64,7 @@ def main():
         "ties": "TIES-merging",
         "bc": "Model Breadcrumbs",
         "dare": "DARE",
-        "atm": "ATM"
+        "atm": "PA-ATM"
     }
     METHODS_TO_COLORS = {
         "ta": "#ffbe0b",
@@ -82,7 +84,8 @@ def main():
             print(f"{m} @ {b}")
 
             conf_res_name = "none" if m == "ta" or m == "atm" else m
-            train_batches = 0.1 if m == "atm" else 1.0
+            # train_batches = 0.1 if m == "atm" else 1.0
+            train_batches = 1.0
             ord = 1 if m != "atm" else b
             eps_per_ord = b if m != "atm" else 1
 
@@ -111,7 +114,7 @@ def main():
         data=data_dict,
         x_axis_label="Budget",
         x_ticks=BUDGETS,
-        y_axis_label="Average Normalized Merged Accuracy",
+        y_axis_label="Average Merged Accuracy",
         legend_names=METHODS_TO_LEGEND_NAMES,
         line_colors=METHODS_TO_COLORS,
         export_path=export_path
